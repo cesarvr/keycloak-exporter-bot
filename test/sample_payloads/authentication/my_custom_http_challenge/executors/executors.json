@@ -1,0 +1,94 @@
+[
+    {
+        "authenticationFlow": true,
+        "configurable": false,
+        "displayName": "_xx1_",
+        "index": 0,
+        "level": 0,
+        "requirement": "REQUIRED",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED",
+            "CONDITIONAL"
+        ]
+    },
+    {
+        "authenticationFlow": true,
+        "configurable": false,
+        "displayName": "__ppppp__",
+        "index": 1,
+        "level": 0,
+        "requirement": "DISABLED",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED",
+            "CONDITIONAL"
+        ]
+    },
+    {
+        "configurable": false,
+        "displayName": "Browser Redirect/Refresh",
+        "index": 0,
+        "level": 1,
+        "providerId": "no-cookie-redirect",
+        "requirement": "DISABLED",
+        "requirementChoices": [
+            "REQUIRED"
+        ]
+    },
+    {
+        "authenticationFlow": true,
+        "configurable": false,
+        "displayName": "__x1",
+        "index": 2,
+        "level": 0,
+        "requirement": "DISABLED",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED",
+            "CONDITIONAL"
+        ]
+    },
+    {
+        "authenticationFlow": true,
+        "configurable": false,
+        "displayName": "__x12",
+        "index": 0,
+        "level": 1,
+        "requirement": "DISABLED",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED",
+            "CONDITIONAL"
+        ]
+    },
+    {
+        "authenticationFlow": true,
+        "configurable": false,
+        "displayName": "__x123",
+        "index": 0,
+        "level": 2,
+        "requirement": "DISABLED",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED",
+            "CONDITIONAL"
+        ]
+    },
+    {
+        "configurable": false,
+        "displayName": "Docker Authenticator",
+        "index": 0,
+        "level": 3,
+        "providerId": "docker-http-basic-authenticator",
+        "requirement": "REQUIRED",
+        "requirementChoices": [
+            "REQUIRED"
+        ]
+    }
+]

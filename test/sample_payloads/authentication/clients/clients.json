@@ -1,0 +1,33 @@
+{
+    "alias": "clients",
+    "authenticationExecutions": [
+        {
+            "authenticator": "client-secret",
+            "priority": 10,
+            "requirement": "ALTERNATIVE",
+            "userSetupAllowed": false
+        },
+        {
+            "authenticator": "client-jwt",
+            "priority": 20,
+            "requirement": "ALTERNATIVE",
+            "userSetupAllowed": false
+        },
+        {
+            "authenticator": "client-secret-jwt",
+            "priority": 30,
+            "requirement": "REQUIRED",
+            "userSetupAllowed": false
+        },
+        {
+            "authenticator": "client-x509",
+            "priority": 40,
+            "requirement": "ALTERNATIVE",
+            "userSetupAllowed": false
+        }
+    ],
+    "builtIn": true,
+    "description": "Base authentication for clients",
+    "providerId": "client-flow",
+    "topLevel": true
+}

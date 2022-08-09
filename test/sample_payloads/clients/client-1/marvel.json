@@ -1,0 +1,41 @@
+{
+    "access": {
+        "configure": true,
+        "manage": true,
+        "view": true
+    },
+    "alwaysDisplayInConsole": false,
+    "attributes": {},
+    "authenticationFlowBindingOverrides": {},
+    "bearerOnly": false,
+    "clientAuthenticatorType": "client-secret",
+    "clientId": "marvel_1",
+    "consentRequired": false,
+    "defaultClientScopes": [
+        "web-origins",
+        "role_list",
+        "roles",
+        "profile",
+        "email"
+    ],
+    "directAccessGrantsEnabled": true,
+    "enabled": true,
+    "frontchannelLogout": false,
+    "fullScopeAllowed": true,
+    "implicitFlowEnabled": false,
+    "nodeReRegistrationTimeout": -1,
+    "notBefore": 0,
+    "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+    ],
+    "protocol": "openid-connect",
+    "publicClient": true,
+    "redirectUris": [],
+    "serviceAccountsEnabled": false,
+    "standardFlowEnabled": true,
+    "surrogateAuthRequired": false,
+    "webOrigins": []
+}

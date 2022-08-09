@@ -1,0 +1,33 @@
+{
+    "alias": "my_custom_http_challenge",
+    "authenticationExecutions": [
+        {
+            "authenticator": "registration-page-flow",
+            "autheticatorFlow": true,
+            "flowAlias": "_xx1_",
+            "priority": 0,
+            "requirement": "REQUIRED",
+            "userSetupAllowed": false
+        },
+        {
+            "authenticator": "registration-page-flow",
+            "autheticatorFlow": true,
+            "flowAlias": "__ppppp__",
+            "priority": 1,
+            "requirement": "DISABLED",
+            "userSetupAllowed": false
+        },
+        {
+            "authenticator": "registration-page-flow",
+            "autheticatorFlow": true,
+            "flowAlias": "__x1",
+            "priority": 2,
+            "requirement": "DISABLED",
+            "userSetupAllowed": false
+        }
+    ],
+    "builtIn": false,
+    "description": "An authentication flow based on challenge-response HTTP Authentication Schemes",
+    "providerId": "basic-flow",
+    "topLevel": true
+}

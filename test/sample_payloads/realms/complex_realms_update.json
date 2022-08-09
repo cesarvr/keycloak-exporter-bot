@@ -1,0 +1,352 @@
+{
+    "accessCodeLifespan": 60,
+    "accessCodeLifespanLogin": 1800,
+    "accessCodeLifespanUserAction": 300,
+    "accessTokenLifespan": 600,
+    "accessTokenLifespanForImplicitFlow": 900,
+    "accountTheme": "base",
+    "actionTokenGeneratedByAdminLifespan": 43200,
+    "actionTokenGeneratedByUserLifespan": 1800,
+    "adminEventsDetailsEnabled": true,
+    "adminEventsEnabled": true,
+    "adminTheme": "base",
+    "attributes": {},
+    "browserFlow": "browser",
+    "browserSecurityHeaders": {
+        "contentSecurityPolicy": "frame-src 'self'; object-src 'none';",
+        "contentSecurityPolicyReportOnly": "",
+        "strictTransportSecurity": "max-age=31536000; includeSubDomains",
+        "xContentTypeOptions": "nosniff",
+        "xFrameOptions": "",
+        "xRobotsTag": "none",
+        "xXSSProtection": "1; mode=block"
+    },
+    "bruteForceProtected": false,
+    "clientAuthenticationFlow": "clients",
+    "defaultLocale": "en",
+    "defaultRoles": [
+        "uma_authorization",
+        "offline_access"
+    ],
+    "directGrantFlow": "direct grant",
+    "dockerAuthenticationFlow": "docker auth",
+    "duplicateEmailsAllowed": false,
+    "editUsernameAllowed": false,
+    "emailTheme": "emca",
+    "enabled": true,
+    "enabledEventTypes": [
+        "SEND_RESET_PASSWORD",
+        "REMOVE_TOTP",
+        "REVOKE_GRANT",
+        "UPDATE_TOTP",
+        "LOGIN_ERROR",
+        "CLIENT_LOGIN",
+        "RESET_PASSWORD_ERROR",
+        "IMPERSONATE_ERROR",
+        "CODE_TO_TOKEN_ERROR",
+        "CUSTOM_REQUIRED_ACTION",
+        "RESTART_AUTHENTICATION",
+        "IMPERSONATE",
+        "UPDATE_PROFILE_ERROR",
+        "LOGIN",
+        "UPDATE_PASSWORD_ERROR",
+        "CLIENT_INITIATED_ACCOUNT_LINKING",
+        "TOKEN_EXCHANGE",
+        "LOGOUT",
+        "REGISTER",
+        "CLIENT_REGISTER",
+        "IDENTITY_PROVIDER_LINK_ACCOUNT",
+        "UPDATE_PASSWORD",
+        "CLIENT_DELETE",
+        "FEDERATED_IDENTITY_LINK_ERROR",
+        "IDENTITY_PROVIDER_FIRST_LOGIN",
+        "CLIENT_DELETE_ERROR",
+        "VERIFY_EMAIL",
+        "CLIENT_LOGIN_ERROR",
+        "RESTART_AUTHENTICATION_ERROR",
+        "EXECUTE_ACTIONS",
+        "REMOVE_FEDERATED_IDENTITY_ERROR",
+        "TOKEN_EXCHANGE_ERROR",
+        "SEND_IDENTITY_PROVIDER_LINK_ERROR",
+        "EXECUTE_ACTION_TOKEN_ERROR",
+        "SEND_VERIFY_EMAIL",
+        "EXECUTE_ACTIONS_ERROR",
+        "REMOVE_FEDERATED_IDENTITY",
+        "IDENTITY_PROVIDER_POST_LOGIN",
+        "IDENTITY_PROVIDER_LINK_ACCOUNT_ERROR",
+        "UPDATE_EMAIL",
+        "REGISTER_ERROR",
+        "REVOKE_GRANT_ERROR",
+        "EXECUTE_ACTION_TOKEN",
+        "LOGOUT_ERROR",
+        "UPDATE_EMAIL_ERROR",
+        "CLIENT_UPDATE_ERROR",
+        "UPDATE_PROFILE",
+        "CLIENT_REGISTER_ERROR",
+        "FEDERATED_IDENTITY_LINK",
+        "SEND_IDENTITY_PROVIDER_LINK",
+        "SEND_VERIFY_EMAIL_ERROR",
+        "RESET_PASSWORD",
+        "CLIENT_INITIATED_ACCOUNT_LINKING_ERROR",
+        "REMOVE_TOTP_ERROR",
+        "VERIFY_EMAIL_ERROR",
+        "SEND_RESET_PASSWORD_ERROR",
+        "CLIENT_UPDATE",
+        "CUSTOM_REQUIRED_ACTION_ERROR",
+        "IDENTITY_PROVIDER_POST_LOGIN_ERROR",
+        "UPDATE_TOTP_ERROR",
+        "CODE_TO_TOKEN",
+        "IDENTITY_PROVIDER_FIRST_LOGIN_ERROR"
+    ],
+    "eventsEnabled": true,
+    "eventsListeners": [
+        "jboss-logging"
+    ],
+    "failureFactor": 30,
+    "id": "acme",
+    "identityProviderMappers": [
+        {
+            "config": {
+                "attribute.name": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname",
+                "user.attribute": "lastName"
+            },
+            "id": "294324c3-5824-4167-8691-995b935b550c",
+            "identityProviderAlias": "sts.adfs.com",
+            "identityProviderMapper": "saml-user-attribute-idp-mapper",
+            "name": "lastName"
+        },
+        {
+            "config": {
+                "attribute.name": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname",
+                "user.attribute": "firstName"
+            },
+            "id": "57104321-37f8-4942-8856-79cf6a93b3ab",
+            "identityProviderAlias": "saml",
+            "identityProviderMapper": "saml-user-attribute-idp-mapper",
+            "name": "firstName"
+        },
+        {
+            "config": {
+                "attribute.name": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+                "user.attribute": "email"
+            },
+            "id": "4aafa32a-33ee-4e5d-92d9-cfbe55ce65ab",
+            "identityProviderAlias": "saml",
+            "identityProviderMapper": "saml-user-attribute-idp-mapper",
+            "name": "email"
+        },
+        {
+            "config": {
+                "attribute.name": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname",
+                "user.attribute": "firstName"
+            },
+            "id": "3dca9ad5-7dbf-4085-a750-7609dffc335a",
+            "identityProviderAlias": "sts.adfs.com",
+            "identityProviderMapper": "saml-user-attribute-idp-mapper",
+            "name": "firstName"
+        },
+        {
+            "config": {
+                "role": "emcaUser"
+            },
+            "id": "5a0b15cb-5d4c-4729-a6c9-1337fe22d5e0",
+            "identityProviderAlias": "sts.adfs.com",
+            "identityProviderMapper": "oidc-hardcoded-role-idp-mapper",
+            "name": "emcaUser"
+        },
+        {
+            "config": {
+                "role": "emcaUser"
+            },
+            "id": "6a7f7228-574e-458a-9cbb-70b87b92c584",
+            "identityProviderAlias": "saml",
+            "identityProviderMapper": "oidc-hardcoded-role-idp-mapper",
+            "name": "emcaUser"
+        },
+        {
+            "config": {
+                "attribute.name": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname",
+                "user.attribute": "lastName"
+            },
+            "id": "74466c26-cf10-431c-8569-af394d15e618",
+            "identityProviderAlias": "saml",
+            "identityProviderMapper": "saml-user-attribute-idp-mapper",
+            "name": "lastName"
+        },
+        {
+            "config": {
+                "attribute.name": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+                "user.attribute": "email"
+            },
+            "id": "ee3a75b4-a2ee-41a2-aa61-a1385a6ea72f",
+            "identityProviderAlias": "sts.adfs.com",
+            "identityProviderMapper": "saml-user-attribute-idp-mapper",
+            "name": "email"
+        }
+    ],
+    "identityProviders": [
+        {
+            "addReadTokenRoleOnCreate": false,
+            "alias": "saml",
+            "authenticateByDefault": false,
+            "config": {
+                "addExtensionsElementWithKeyInfo": "false",
+                "authnContextComparisonType": "exact",
+                "backchannelSupported": "true",
+                "entityId": "https://qa.sso.acme.com/auth/realms/4pl",
+                "nameIDPolicyFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+                "postBindingAuthnRequest": "true",
+                "postBindingLogout": "true",
+                "postBindingResponse": "true",
+                "samlXmlKeyNameTranformer": "KEY_ID",
+                "signatureAlgorithm": "RSA_SHA256",
+                "signingCertificate": "MIIC8DCCAdigAwIBAgIQNjS9CiQokK9FjIRfJBiWEDANBgkqhkiG9w0BAQsFADA0MTIwMAYDVQQDEylNaWNyb3NvZnQgQXp1cmUgRmVkZXJhdGVkIFNTTyBDZXJ0aWZpY2F0ZTAeFw0yMDA5MDQwNzQ5NDBaFw0yMzA5MDQwNzQ5NDBaMDQxMjAwBgNVBAMTKU1pY3Jvc29mdCBBenVyZSBGZWRlcmF0ZWQgU1NPIENlcnRpZmljYXRlMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwBjAQtDRYyPeG0aAzKv+/GZhoGvQpi7wvXZ42t8FftfLLq5BOS6TAZMVpK1r115zm3QqZ4OxEQfXyvudSy55LwLWgBC+GWB7NLHAzjSMeWqcSHzr4FEG9fWJnBJ7Euzx8x5BrBXCBgYkdJYFcUGcTWn1PMNQFPJiJjusemLnymqcFd6QDmUaMgvnUY1jT8i5KevMHYhjsx9rqoRWGHVpYz8YCHRldW+WJwZ1OAG+ndgCeNzF2x5zjZDOeQ6wSP1hHkL9N47qm+T3mOgqNr8CDlAns/t1KKFK2aEdcXtoptuOchptPAy8OS4um+5AbEb6MHmafYk6Q97lVk+XyA4DmQIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQCF44d7FCAHaFlpcGofDDC9tk18SWOnHPcybjTZ/jGRiZwfYdTDeTfPzNNQm0Nvpy2GJny7uukv91yqYGL87mrsU1yXeuuDPOyVdN650CtYaMoldjovYV57K4PXfWecxT/lskBzFZq4z9PgkRvboIr8WAgguj07k1laC6ABWCSmbZqJfCoQOqsbi35N3x8itB7DlGCTRvD8WePQp3DDtF4WGPXY9Fnz07p8QTMqysGJ/NtkG9rreqsEJ1UpQ+1jlmokJaqtLRZpbSqHoBYFhX1/9RaUsO3YoZ2/j9L2/bdW4lZoYfDFbKFaDkwAr1/z6bvVq/hIdk9LmbjLkrIlq8Wv",
+                "singleLogoutServiceUrl": "https://login.microsoftonline.com/3bfeb222-e42c-4535-aace-ea6f7751369b/saml2",
+                "singleSignOnServiceUrl": "https://login.microsoftonline.com/3bfeb222-e42c-4535-aace-ea6f7751369b/saml2",
+                "useJwksUrl": "true",
+                "validateSignature": "true",
+                "wantAssertionsSigned": "true",
+                "wantAuthnRequestsSigned": "true",
+                "xmlSigKeyInfoKeyNameTransformer": "CERT_SUBJECT"
+            },
+            "displayName": "puma & partner users",
+            "enabled": true,
+
+            "internalId": "1783ea8b-563e-471f-9fe9-7565b8a7cfc8",
+            "linkOnly": false,
+            "providerId": "saml",
+            "storeToken": false,
+            "trustEmail": true,
+            "updateProfileFirstLoginMode": "on"
+        },
+        {
+            "addReadTokenRoleOnCreate": false,
+            "alias": "sts.adfs.com",
+            "authenticateByDefault": false,
+            "config": {
+                "addExtensionsElementWithKeyInfo": "false",
+                "authnContextComparisonType": "exact",
+                "backchannelSupported": "true",
+                "encryptionPublicKey": "MIIC2DCCAcCgAwIBAgIQSx1VBmbfGrhIMH6C0eSytTANBgkqhkiG9w0BAQsFADAoMSYwJAYDVQQDEx1BREZTIEVuY3J5cHRpb24gLSBzdHMuZHN2LmNvbTAeFw0yMTA5MjgyMzM0MzhaFw0yMzA5MjgyMzM0MzhaMCgxJjAkBgNVBAMTHUFERlMgRW5jcnlwdGlvbiAtIHN0cy5kc3YuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzpr7lO61WAWEzOkIaubjXO6wjT1Yk3bKlIWRYt36grnjxZKxOuZC8M+PkimT0TLiizejsssRz0iYEVhOIZdOFOvpUVtRy2CSbrg6nXsGpbk7BFc3QiGCPP3C71gT001we2jby4blmjLgA+YqFfG/yaE+b8gt/MAkqWOgkv1REfN1Fk3oVO0vwm4VOVEc2kNJSPoAaCRoChGONBSXa/qn8/ydaz4Yb/x9MP8AqJzc/gDX594fVgCF0SH761qEQLe1lzW6xAEiV1bR2n9qPZXk+knpiHhj8PX10ejx6TIbqVegaCVrfMpPGZqlgqOtDHJC3sf7/ms27ujFQxU6LYh2fQIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQAyirTtpqBC3kswEggqQsmLWoafAagd2lsqGeFLTX7ugjJqi6d7E+l+a+7CugJgwdejHJYpcPAg78WsfaNu0FRmQYKxoNQoNvg5EXd9ITF+AkxcgTjMOYQoqOVPxtf5iyClgP27lA6wXwgN+6R+veYAE/ItM5ncM/7sSg/X4ycXXBcC6/CIwl89qiHQfnyGU65pnxcU1Cyvr0oTcEMhwC4Twpm8OJ0uCc4DvlZeMKhaM6+KBn/hKNb+Y+T9dAK8zfWM16ij5ybXclAJ8kPcgYPnJNXuQketZCA5P0qRVT7huB55VsfSF1TempgQVgwCq7DUNDR5E/dtx8d6cvT4YeVy",
+                "entityId": "https://qa.sso.acme.com/auth/realms/4pl",
+                "nameIDPolicyFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+                "postBindingAuthnRequest": "true",
+                "postBindingLogout": "true",
+                "postBindingResponse": "true",
+                "samlXmlKeyNameTranformer": "KEY_ID",
+                "signatureAlgorithm": "RSA_SHA256",
+                "signingCertificate": "MIIC0jCCAbqgAwIBAgIQEbSLhj1jqp1E6QgK2tVKIDANBgkqhkiG9w0BAQsFADAlMSMwIQYDVQQDExpBREZTIFNpZ25pbmcgLSBzdHMuZHN2LmNvbTAeFw0yMTA5MjgyMzM0MzhaFw0yMzA5MjgyMzM0MzhaMCUxIzAhBgNVBAMTGkFERlMgU2lnbmluZyAtIHN0cy5kc3YuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2WxkWsx5kT5r/GadNvXJJRwcjTNzAAFDVTm+qBsCeyMSHhceqjJqUSMjk7qnASwM5U6aC8g+gpEb/Toyg7Zbc7dq+j4uQ+Q3dEN0oLjcOowlkxwzbyx9S51vWQR0O7SgTNsDdoDv3zYcEexzo6C1gKgflV3TC52FxZX8Qa5RQyaQ0yBsND+FyCkfufR3XG2FK0nfgux9TNnlBam4wsSY7gtRLLhDWMmVDI96rQcCsuVZkW6dCCcLnUIOBvwP0olOb58Qkk8bScugb13BDsDFxEHhDr2Rdf/J9opnX9JZaxnPZF/4Ouuli+FEoRUBvybrhcTbXx5bU0vh/uvsQ3OPCQIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQDNR2YKxhI+YfwEp08Y/CMosVUfGKa/mvRDOny25yGbx3YP5oMLHEixbcKPMaL7X6DG/CzFp0z6axXIZcjOC57Mr7Q4igy70r3PEzTb/lb2lMShiQ4eEqL/k4+nFKA5K2EOtHKIGG+j9w7UsMBz3K4cf8vhnKx3yTj6B3w5YsAA6DI5doaD33rpMYzh437qe4XTVmJqtk3jyHsX3nAFaayqPTIXgdaoTa6V6qfClCwaaTXlpgRARIDNzkO/EXVY2mEkWCgSuJ/R3/IMJWrVsR10rPfe8bFN0sSrJeEnWYFoCTOAw1zesuwOAjkASUlpaJaRtYzGS3z92A8Ig/lu0l+6",
+                "singleLogoutServiceUrl": "https://sts.adfs.com/adfs/ls/",
+                "singleSignOnServiceUrl": "https://sts.adfs.com/adfs/ls/",
+                "useJwksUrl": "true",
+                "validateSignature": "true",
+                "wantAssertionsSigned": "true",
+                "wantAuthnRequestsSigned": "true",
+                "xmlSigKeyInfoKeyNameTransformer": "CERT_SUBJECT"
+            },
+            "displayName": "ACME users",
+            "enabled": true,
+
+            "internalId": "edd12de8-b7f2-42db-bf3f-cf0f749240ed",
+            "linkOnly": false,
+            "providerId": "saml",
+            "storeToken": false,
+            "trustEmail": true,
+            "updateProfileFirstLoginMode": "on"
+        }
+    ],
+    "internationalizationEnabled": false,
+    "loginTheme": "puma",
+    "loginWithEmailAllowed": true,
+    "maxDeltaTimeSeconds": 43200,
+    "maxFailureWaitSeconds": 900,
+    "minimumQuickLoginWaitSeconds": 60,
+    "notBefore": 1598441381,
+    "offlineSessionIdleTimeout": 2592000,
+    "offlineSessionMaxLifespan": 5184000,
+    "offlineSessionMaxLifespanEnabled": false,
+    "otpPolicyAlgorithm": "HmacSHA1",
+    "otpPolicyDigits": 6,
+    "otpPolicyInitialCounter": 0,
+    "otpPolicyLookAheadWindow": 1,
+    "otpPolicyPeriod": 30,
+    "otpPolicyType": "totp",
+    "otpSupportedApplications": [
+        "FreeOTP",
+        "Google Authenticator"
+    ],
+    "passwordPolicy": "length(8) and notUsername(undefined) and upperCase(1) and lowerCase(1) and specialChars(1) and forceExpiredPasswordChange(90) and passwordHistory(3) and digits(1)",
+    "permanentLockout": false,
+    "quickLoginCheckMilliSeconds": 1000,
+    "realm": "realm-testing-acme",
+    "refreshTokenMaxReuse": 0,
+    "registrationAllowed": false,
+    "registrationEmailAsUsername": false,
+    "registrationFlow": "registration",
+    "rememberMe": false,
+    "requiredCredentials": [
+        "password"
+    ],
+    "resetCredentialsFlow": "reset credentials",
+    "resetPasswordAllowed": true,
+    "revokeRefreshToken": false,
+    "smtpServer": {
+        "auth": "",
+        "from": "no-reply@acme.com",
+        "fromDisplayName": "ACME Service Mail",
+        "host": "smrefarm01.dmz.acme.com",
+        "port": "25",
+        "replyTo": "no-reply@acme.com",
+        "replyToDisplayName": "",
+        "ssl": "",
+        "starttls": ""
+    },
+    "sslRequired": "external",
+    "ssoSessionIdleTimeout": 2592000,
+    "ssoSessionIdleTimeoutRememberMe": 0,
+    "ssoSessionMaxLifespan": 2592000,
+    "ssoSessionMaxLifespanRememberMe": 0,
+    "supportedLocales": [
+        "de",
+        "no",
+        "ru",
+        "sv",
+        "pt-BR",
+        "lt",
+        "en",
+        "it",
+        "fr",
+        "zh-CN",
+        "es",
+        "ja",
+        "ca",
+        "nl"
+    ],
+    "userManagedAccessAllowed": false,
+    "verifyEmail": false,
+    "waitIncrementSeconds": 60,
+    "webAuthnPolicyAcceptableAaguids": [],
+    "webAuthnPolicyAttestationConveyancePreference": "not specified",
+    "webAuthnPolicyAuthenticatorAttachment": "not specified",
+    "webAuthnPolicyAvoidSameAuthenticatorRegister": false,
+    "webAuthnPolicyCreateTimeout": 0,
+    "webAuthnPolicyPasswordlessAcceptableAaguids": [],
+    "webAuthnPolicyPasswordlessAttestationConveyancePreference": "not specified",
+    "webAuthnPolicyPasswordlessAuthenticatorAttachment": "not specified",
+    "webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister": false,
+    "webAuthnPolicyPasswordlessCreateTimeout": 0,
+    "webAuthnPolicyPasswordlessRequireResidentKey": "not specified",
+    "webAuthnPolicyPasswordlessRpEntityName": "keycloak",
+    "webAuthnPolicyPasswordlessRpId": "",
+    "webAuthnPolicyPasswordlessSignatureAlgorithms": [
+        "ES256"
+    ],
+    "webAuthnPolicyPasswordlessUserVerificationRequirement": "not specified",
+    "webAuthnPolicyRequireResidentKey": "not specified",
+    "webAuthnPolicyRpEntityName": "keycloak",
+    "webAuthnPolicyRpId": "",
+    "webAuthnPolicySignatureAlgorithms": [
+        "ES256"
+    ],
+    "webAuthnPolicyUserVerificationRequirement": "not specified"
+}

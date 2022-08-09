@@ -1,0 +1,30 @@
+{
+    "alias": "FS-AD first broker login",
+    "authenticationExecutions": [
+        {
+            "authenticator": "idp-review-profile",
+            "authenticatorConfig": "review profile config",
+            "priority": 0,
+            "requirement": "REQUIRED",
+            "userSetupAllowed": false
+        },
+        {
+            "flowAlias": "ADFS first broker login - Alternatives - 0",
+            "priority": 1,
+            "requirement": "REQUIRED",
+            "userSetupAllowed": false
+        },
+        {
+            "authenticator": "idp-create-user-if-unique",
+            "authenticatorConfig": "create unique user config",
+            "priority": 2,
+            "requirement": "DISABLED",
+            "userSetupAllowed": false
+        }
+    ],
+    "builtIn": false,
+    "description": "Actions taken after first broker login with identity provider account, which is not yet linked to any Keycloak account",
+    "id": "b0dd5e37-bc00-4939-9ef6-dcbc9bde08dc",
+    "providerId": "basic-flow",
+    "topLevel": true
+}

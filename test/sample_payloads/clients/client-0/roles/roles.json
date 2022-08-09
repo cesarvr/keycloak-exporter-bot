@@ -1,0 +1,14 @@
+[
+    {
+        "clientRole": true,
+        "composite": true,
+        "containerId": "7bdd87f3-7be9-4735-8904-2bcde978b3f9",
+        "name": "villain"
+    },
+    {
+        "clientRole": true,
+        "composite": false,
+        "containerId": "7bdd87f3-7be9-4735-8904-2bcde978b3f9",
+        "name": "hero"
+    }
+]
