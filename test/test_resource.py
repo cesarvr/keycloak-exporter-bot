@@ -63,7 +63,7 @@ class RHSSOExporterMain(unittest.TestCase):
         files = list(file_path_to_json_iterator)
 
         all = get_names(resources=all)
-        all = filter(lambda name: name not in ['uma_authorization', 'offline_access', 'default-roles-testing'], all)
+        all = filter(lambda name: name not in ['uma_authorization', 'offline_access', f'default-roles-{self.testbed.REALM}'], all)
         files = get_names(resources=files)
 
         self.assertListEqual(sorted(all), sorted(files), "They should match")
