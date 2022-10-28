@@ -1,6 +1,8 @@
 import json
 import unittest
+import os
 
+from .helper import TestBed, SAMPLES_PATH, SAMPLE_PAYLOADS_PATH
 from lib.tools import traverse_and_remove_field, bfs_folder
 
 
@@ -14,23 +16,26 @@ def load_file( fname):
 
 class TestingHelperAlgorithms(unittest.TestCase):
     def xtesting_tool_for_field_removal(self):
-        DC_Client = './sample_payloads/clients/client-0/dc.json'
+        DC_Client = os.path.join(SAMPLE_PAYLOADS_PATH, 'clients/client-0/dc.json')
         client_tmpl = load_file(DC_Client)
         client_tmpl = traverse_and_remove_field(client_tmpl, 'id')
         self.assertFalse('id' in client_tmpl['protocolMappers'][0], 'The id field have to be None')
 
     def testing_bfs_for_resource_file(self):
-        Clients = './sample_payloads/clients/'
-        success = ['./sample_payloads/clients/client-1/marvel.json', './sample_payloads/clients/client-0/dc.json']
+        Clients = os.path.join(SAMPLE_PAYLOADS_PATH, 'clients/')
+        success = [
+            os.path.join(SAMPLE_PAYLOADS_PATH, 'clients/client-1/marvel.json'),
+            os.path.join(SAMPLE_PAYLOADS_PATH, 'clients/client-0/dc.json'),
+        ]
         res = bfs_folder(Clients)
         self.assertListEqual(sorted(success),sorted(res))
 
-        Empty = './samples/bfs/empty/'
+        Empty = os.path.join(SAMPLES_PATH, 'bfs/empty/')
         empty_res = bfs_folder(Empty)
-        self.assertListEqual(['./samples/bfs/empty/1/1.json'], empty_res, "We expect this response:['./samples/bfs/empty/1/1.json'] " )
+        self.assertListEqual(['test/samples/bfs/empty/1/1.json'], empty_res, "We expect this response:['test/samples/bfs/empty/1/1.json'] " )
 
-        Empty2 = './samples/bfs/empty2/'
-        success2 = ['./samples/bfs/empty2/1/1.json', './samples/bfs/empty2/2/3/2.json']
+        Empty2 = os.path.join(SAMPLES_PATH, 'bfs/empty2/')
+        success2 = ['test/samples/bfs/empty2/1/1.json', 'test/samples/bfs/empty2/2/3/2.json']
         empty_res_2 = bfs_folder(Empty2)
         self.assertListEqual(sorted(success2), sorted(empty_res_2), "We expect this path: " + ''.join(success2))
 

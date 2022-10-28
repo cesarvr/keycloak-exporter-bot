@@ -3,9 +3,15 @@ import json
 from kcapi import OpenID, Keycloak
 import os
 
+# We run unittest from top level directory
+SAMPLES_PATH = "test/samples"
+SAMPLE_PAYLOADS_PATH = "test/sample_payloads"
+
+
 def readFromJSON(filename):
     with open(filename) as json_file:
         return json.load(json_file)
+
 
 class TestBed:
     def __init__(self, realm = None, username = None, password = None, endpoint = None): 

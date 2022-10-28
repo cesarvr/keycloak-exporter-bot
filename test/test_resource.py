@@ -1,5 +1,6 @@
 import unittest
-from helper import TestBed
+import os
+from .helper import TestBed, SAMPLES_PATH, SAMPLE_PAYLOADS_PATH
 from lib.resource import SingleResource, ManyResources, SingleClientResource, MultipleResourceInFolders, \
     SingleCustomAuthenticationResource
 from lib.tools import add_trailing_slash, readFromJSON, get_json_docs_from_folder
@@ -21,7 +22,7 @@ class RHSSOExporterMain(unittest.TestCase):
         self.assertTrue(True, "Good Starting Point")
 
     def testing_single_resource_class_creation(self):
-        realm_payload = './sample_payloads/realms/complex_realms.json'
+        realm_payload = os.path.join(SAMPLE_PAYLOADS_PATH, 'realms/complex_realms.json')
 
         params = {
             'path': realm_payload,
@@ -42,7 +43,7 @@ class RHSSOExporterMain(unittest.TestCase):
 
 
     def testing_multiple_resources(self):
-        roles_folder = './sample_payloads/roles'
+        roles_folder = os.path.join(SAMPLE_PAYLOADS_PATH, 'roles')
 
         roles = {
             'folder': roles_folder,
@@ -68,7 +69,7 @@ class RHSSOExporterMain(unittest.TestCase):
         self.assertListEqual(sorted(all), sorted(files), "They should match")
 
     def testing_client_creation(self):
-        DC_Client = './sample_payloads/clients/client-0/dc.json'
+        DC_Client = os.path.join(SAMPLE_PAYLOADS_PATH, 'clients/client-0/dc.json')
         client_tmpl = self.testbed.load_file(DC_Client)
         params = {
             'path': DC_Client,
@@ -85,7 +86,7 @@ class RHSSOExporterMain(unittest.TestCase):
 
         self.assertIsNotNone(created, "The realm should be created.")
 
-        roles_file = './sample_payloads/clients/client-0/roles/roles.json'
+        roles_file = os.path.join(SAMPLE_PAYLOADS_PATH, 'clients/client-0/roles/roles.json')
         roles_file_json = self.testbed.load_file(roles_file)
         r = list( map(lambda n: n['name'], roles_file_json) )
 
@@ -103,7 +104,7 @@ class RHSSOExporterMain(unittest.TestCase):
             'keycloak_api': self.keycloak_api,
             'realm': self.testbed.realm,
         }
-        clients_path = './sample_payloads/clients/'
+        clients_path = os.path.join(SAMPLE_PAYLOADS_PATH, 'clients/')
 
         multi = MultipleResourceInFolders(params=params, path=clients_path, ResourceClass=SingleClientResource)
         states = multi.publish()
@@ -113,7 +114,7 @@ class RHSSOExporterMain(unittest.TestCase):
 
 
     def testing_custom_flow_publishing(self):
-        authentication_folder = './sample_payloads/authentication/my_custom_http_challenge/my_custom_http_challenge.json'
+        authentication_folder = os.path.join(SAMPLE_PAYLOADS_PATH, 'authentication/my_custom_http_challenge/my_custom_http_challenge.json')
 
         params = {
             'folder': authentication_folder,
