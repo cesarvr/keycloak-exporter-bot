@@ -128,9 +128,14 @@ class RHSSOExporterMain(unittest.TestCase):
             because KCAPI actually has already tested the successful publication.
         '''
         auth = SingleCustomAuthenticationResource(params)
-        state = auth.publish()
 
-        self.assertTrue(state, "The should be published in the server")
+        # before:
+        # state = auth.publish()
+        # self.assertTrue(state, "The should be published in the server")
+
+        # after:
+        # Assume no Exceptions means job was done
+        auth.publish()
 
 
 

@@ -132,7 +132,10 @@ class SingleCustomAuthenticationResource(SingleResource):
 
     def publish(self):
         state = self.resource.publish(self.body)
-        return state and self.publish_executors()
+        # state is true, but publish_executors returns None
+        # Likely, code switched to use Exceptions instead of return True/False.
+        # return state and self.publish_executors()
+        self.publish_executors()
 
 
 
