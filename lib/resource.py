@@ -1,6 +1,6 @@
 from kcapi.ie import AuthenticationFlowsImporter
 
-from lib.tools import readFromJSON, get_json_docs_from_folder, add_trailing_slash, traverse_and_remove_field, get_path, \
+from lib.tools import read_from_json, get_json_docs_from_folder, add_trailing_slash, traverse_and_remove_field, get_path, \
     bfs_folder
 import os
 
@@ -8,6 +8,7 @@ import os
 class UpdatePolicy:
     PUT=0
     DELETE=1
+
 
 class ResourcePublisher:
     def __init__(self, key='key', body=''):
@@ -36,6 +37,7 @@ class ResourcePublisher:
             state = resource.create(self.body).isOk()
 
         return state
+
 
 class Resource:
     def __init__(self, params={}):
@@ -70,6 +72,7 @@ def remove_unnecessary_fields(resource):
 
     return updated_resource
 
+
 def lookup_child_resource(resource_path, child_path):
     new_path = get_path(resource_path) + child_path
     return [os.path.exists(new_path), new_path]
@@ -84,11 +87,12 @@ params = {
 }
 '''
 
+
 class SingleResource:
     def __init__(self, resource):
         self.resource = Resource(resource)
         self.resource_path = resource['path']
-        self.body = readFromJSON(self.resource_path)
+        self.body = read_from_json(self.resource_path)
         self.body = remove_unnecessary_fields(self.body)
 
     def publish(self):
@@ -105,7 +109,7 @@ class SingleClientResource(SingleResource):
         if roles_path_exist:
             id = ResourcePublisher(key='clientId', body=self.body).get_id(self.resource.api())
             roles = self.resource.api().roles({'key': 'id', 'value': id})
-            roles_objects = readFromJSON(roles_path)
+            roles_objects = read_from_json(roles_path)
             for object in roles_objects:
                 state = state and ResourcePublisher(key='name', body=object).publish(roles, update_policy=UpdatePolicy.DELETE)
 
@@ -126,7 +130,7 @@ class SingleCustomAuthenticationResource(SingleResource):
         if exists:
             parent = self.resource.api()
             auth_import_api = AuthenticationFlowsImporter(parent)
-            children_nodes = readFromJSON(executors)
+            children_nodes = read_from_json(executors)
             state = auth_import_api.update(self.body, children_nodes)
             return state
 
@@ -136,8 +140,6 @@ class SingleCustomAuthenticationResource(SingleResource):
         # Likely, code switched to use Exceptions instead of return True/False.
         # return state and self.publish_executors()
         self.publish_executors()
-
-
 
 
 '''

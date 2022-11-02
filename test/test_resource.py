@@ -3,7 +3,7 @@ import os
 from .helper import TestBed, SAMPLES_PATH, SAMPLE_PAYLOADS_PATH
 from lib.resource import SingleResource, ManyResources, SingleClientResource, MultipleResourceInFolders, \
     SingleCustomAuthenticationResource
-from lib.tools import add_trailing_slash, readFromJSON, get_json_docs_from_folder
+from lib.tools import add_trailing_slash, read_from_json, get_json_docs_from_folder
 
 
 def get_names(resources):
@@ -59,7 +59,7 @@ class RHSSOExporterMain(unittest.TestCase):
         all = cloud_roles.findAll().verify().resp().json()
 
         path = add_trailing_slash(roles_folder)
-        file_path_to_json_iterator = map(lambda file_path: readFromJSON(file_path), get_json_docs_from_folder(path))
+        file_path_to_json_iterator = map(lambda file_path: read_from_json(file_path), get_json_docs_from_folder(path))
         files = list(file_path_to_json_iterator)
 
         all = get_names(resources=all)
