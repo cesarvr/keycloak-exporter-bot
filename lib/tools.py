@@ -34,6 +34,7 @@ def get_json_docs_from_folder(folder):
 
 
 def bfs_folder(path):
+    # bfs = breadth-first search
     is_node = False
     path = add_trailing_slash(path)
     docs = os.listdir(path)

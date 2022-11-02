@@ -3,6 +3,13 @@
 import logging
 import argparse
 import sys
+import os
+
+from kcapi import Keycloak, OpenID
+
+# lib is the keycloak-exporter-bot main source directory
+from lib.resource import Resource, ResourcePublisher, SingleResource
+from lib.tools import bfs_folder, read_from_json
 
 _level = logging.INFO
 # _level = logging.DEBUG
@@ -13,8 +20,40 @@ logger = logging.getLogger(__name__)
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 
 
+def load_realm(realm_name, keycloak_api, datadir):
+    # See testing_single_resource_class_creation
+    # files = bfs_folder(datadir)
+    realm_payload = os.path.join(datadir, f'{realm_name}/{realm_name}.json')
+
+    params = {
+        'path': realm_payload,
+        'name': 'realm',
+        'id': 'realm',
+        'keycloak_api': keycloak_api,
+        'realm': None,
+    }
+    # document = read_from_json(realm_payload)
+
+    single_resource = SingleResource(params)
+
+    creation_state = single_resource.publish()
+    # self.assertTrue(creation_state, 'Publish operation should be completed')
+    # created_realm = self.admin.findFirstByKV('realm', document['realm'])
+    # self.assertIsNotNone(created_realm, "The realm should be created.")
+    # self.assertEqual('acme', created_realm['emailTheme'], "The theme should be updated.")
+
+
 def main(args):
     logger.debug(f"args={args}")
+    datadir = args.datadir
+
+    token = OpenID.createAdminClient(args.username, args.password, url=args.url).getToken()
+    keycloak_api = Keycloak(token, args.url)
+    # master_realm = keycloak_api.admin()
+
+    # load_authentication_flow("4pl", keycloak_api, datadir)
+    load_realm("4pl", keycloak_api, datadir)
+
 
 def arg_parse(argv):
     parser = argparse.ArgumentParser(description='Import data into RedHat SSO (Keycloak)')
