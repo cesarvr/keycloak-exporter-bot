@@ -20,6 +20,15 @@ logger = logging.getLogger(__name__)
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 
 
+def load_realm_empty(realm_name, keycloak_api, datadir, master_realm):
+    # Just create an empty realm
+    body = {
+        'id': 'realm',
+        'realm': realm_name,
+    }
+    return ResourcePublisher('realm', body).publish(master_realm)
+
+
 def load_realm(realm_name, keycloak_api, datadir):
     # See testing_single_resource_class_creation
     # files = bfs_folder(datadir)
@@ -42,6 +51,24 @@ def load_realm(realm_name, keycloak_api, datadir):
     # self.assertIsNotNone(created_realm, "The realm should be created.")
     # self.assertEqual('acme', created_realm['emailTheme'], "The theme should be updated.")
 
+def load_authentication_flow(realm_name, auth_flow_name, keycloak_api, datadir):
+    # TODO SingleCustomAuthenticationResource
+    payload = os.path.join(datadir, f'{realm_name}/authentication/{auth_flow_name}/{auth_flow_name}.json')
+
+    params = {
+        'path': payload,
+        'name': 'authentication',
+        'id': 'alias',
+        'keycloak_api': keycloak_api,
+        'realm': realm_name,
+    }
+    # document = read_from_json(realm_payload)
+
+    single_resource = SingleResource(params)
+
+    creation_state = single_resource.publish()
+
+
 
 def main(args):
     logger.debug(f"args={args}")
@@ -49,9 +76,10 @@ def main(args):
 
     token = OpenID.createAdminClient(args.username, args.password, url=args.url).getToken()
     keycloak_api = Keycloak(token, args.url)
-    # master_realm = keycloak_api.admin()
+    master_realm = keycloak_api.admin()
 
-    # load_authentication_flow("4pl", keycloak_api, datadir)
+    load_realm_empty("4pl", keycloak_api, datadir, master_realm)
+    load_authentication_flow("4pl", "adidas_first_broker_login", keycloak_api, datadir)
     load_realm("4pl", keycloak_api, datadir)
 
 
