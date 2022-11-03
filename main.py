@@ -8,7 +8,7 @@ import os
 from kcapi import Keycloak, OpenID
 
 # lib is the keycloak-exporter-bot main source directory
-from lib.resource import Resource, ResourcePublisher, SingleResource
+from lib.resource import Resource, ResourcePublisher, SingleResource, SingleCustomAuthenticationResource
 from lib.tools import bfs_folder, read_from_json
 
 _level = logging.INFO
@@ -51,6 +51,7 @@ def load_realm(realm_name, keycloak_api, datadir):
     # self.assertIsNotNone(created_realm, "The realm should be created.")
     # self.assertEqual('acme', created_realm['emailTheme'], "The theme should be updated.")
 
+
 def load_authentication_flow(realm_name, auth_flow_name, keycloak_api, datadir):
     # TODO SingleCustomAuthenticationResource
     payload = os.path.join(datadir, f'{realm_name}/authentication/{auth_flow_name}/{auth_flow_name}.json')
@@ -64,10 +65,8 @@ def load_authentication_flow(realm_name, auth_flow_name, keycloak_api, datadir):
     }
     # document = read_from_json(realm_payload)
 
-    single_resource = SingleResource(params)
-
+    single_resource = SingleCustomAuthenticationResource(params)
     creation_state = single_resource.publish()
-
 
 
 def main(args):
