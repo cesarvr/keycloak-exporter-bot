@@ -4,6 +4,7 @@ import logging
 import argparse
 import sys
 import os
+from glob import glob
 
 from kcapi import Keycloak, OpenID
 
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 
 
-def load_realm_empty(realm_name, keycloak_api, datadir, master_realm):
+def load_realm_empty(realm_name, keycloak_api, master_realm):
     # Just create an empty realm
     body = {
         'id': 'realm',
@@ -29,13 +30,13 @@ def load_realm_empty(realm_name, keycloak_api, datadir, master_realm):
     return ResourcePublisher('realm', body).publish(master_realm)
 
 
-def load_realm(realm_name, keycloak_api, datadir):
+def load_realm(realm_filepath, keycloak_api):
     # See testing_single_resource_class_creation
     # files = bfs_folder(datadir)
-    realm_payload = os.path.join(datadir, f'{realm_name}/{realm_name}.json')
+    # realm_filename = os.path.join(datadir, f'{realm_name}/{realm_name}.json')
 
     params = {
-        'path': realm_payload,
+        'path': realm_filepath,
         'name': 'realm',
         'id': 'realm',
         'keycloak_api': keycloak_api,
@@ -52,12 +53,9 @@ def load_realm(realm_name, keycloak_api, datadir):
     # self.assertEqual('acme', created_realm['emailTheme'], "The theme should be updated.")
 
 
-def load_authentication_flow(realm_name, auth_flow_name, keycloak_api, datadir):
-    # TODO SingleCustomAuthenticationResource
-    payload = os.path.join(datadir, f'{realm_name}/authentication/{auth_flow_name}/{auth_flow_name}.json')
-
+def load_authentication_flow(realm_name, auth_flow_filepath, keycloak_api):
     params = {
-        'path': payload,
+        'path': auth_flow_filepath,
         'name': 'authentication',
         'id': 'alias',
         'keycloak_api': keycloak_api,
@@ -67,6 +65,8 @@ def load_authentication_flow(realm_name, auth_flow_name, keycloak_api, datadir):
 
     single_resource = SingleCustomAuthenticationResource(params)
     creation_state = single_resource.publish()
+
+# TODO import clients
 
 
 def main(args):
@@ -80,6 +80,30 @@ def main(args):
     load_realm_empty("4pl", keycloak_api, datadir, master_realm)
     load_authentication_flow("4pl", "adidas_first_broker_login", keycloak_api, datadir)
     load_realm("4pl", keycloak_api, datadir)
+
+
+def main_try_sample_payloads(args):
+    # call like
+    # python3 main.py --url https://172.17.0.2:8443 --username admin --password admin --datadir test/sample_payloads
+    logger.debug(f"args={args}")
+    datadir = args.datadir
+
+    token = OpenID.createAdminClient(args.username, args.password, url=args.url).getToken()
+    keycloak_api = Keycloak(token, args.url)
+    master_realm = keycloak_api.admin()
+
+    # create realm
+    realm_name = "realm-testing-acme"
+    realm_filepath = os.path.join(datadir, f"realms/complex_realms.json")
+    load_realm(realm_filepath, keycloak_api)
+    # update realm
+    realm_filepath = os.path.join(datadir, f"realms/complex_realms_update.json")
+    load_realm(realm_filepath, keycloak_api)
+
+    # load all auth flows
+    auth_flow_filepaths = glob(os.path.join(datadir, f"authentication/*/*.json"))
+    for auth_flow_filepath in auth_flow_filepaths:
+        load_authentication_flow(realm_name, auth_flow_filepath, keycloak_api)
 
 
 def arg_parse(argv):
@@ -102,5 +126,10 @@ def arg_parse(argv):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+    if os.environ.get("KEYCLOAK_API_CA_BUNDLE") == "":
+        # disable annoying warning
+        import requests
+        requests.packages.urllib3.disable_warnings()
+
     args = arg_parse(sys.argv[1:])
-    main(args)
+    main_try_sample_payloads(args)
