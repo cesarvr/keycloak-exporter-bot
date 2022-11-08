@@ -10,7 +10,7 @@ from kcapi import Keycloak, OpenID
 
 # lib is the keycloak-exporter-bot main source directory
 from lib.resource import Resource, ResourcePublisher, SingleResource, SingleCustomAuthenticationResource, \
-    SingleClientResource
+    SingleClientResource, ManyResources
 from lib.tools import bfs_folder, read_from_json
 
 _level = logging.INFO
@@ -90,7 +90,7 @@ def load_role(realm_name, role_filepath, keycloak_api):
     creation_state = single_resource.publish()
 
 
-def main(args):
+def main_4pl(args):
     logger.debug(f"args={args}")
     datadir = args.datadir
 
@@ -98,9 +98,48 @@ def main(args):
     keycloak_api = Keycloak(token, args.url)
     master_realm = keycloak_api.admin()
 
-    load_realm_empty("4pl", keycloak_api, datadir, master_realm)
+    load_realm_empty("4pl", keycloak_api, master_realm)
     load_authentication_flow("4pl", "adidas_first_broker_login", keycloak_api, datadir)
     load_realm("4pl", keycloak_api, datadir)
+
+
+def main(args):
+    logger.debug(f"args={args}")
+    datadir = args.datadir
+    realm_name = args.realm_name
+    assert realm_name
+
+    token = OpenID.createAdminClient(args.username, args.password, url=args.url).getToken()
+    keycloak_api = Keycloak(token, args.url)
+    master_realm = keycloak_api.admin()
+
+    load_realm_empty(realm_name, keycloak_api, master_realm)
+    # load_authentication_flow("4pl", "adidas_first_broker_login", keycloak_api, datadir)
+    realm_filepath = os.path.join(datadir, f"{realm_name}/{realm_name}.json")  # often correct
+    load_realm(realm_filepath, keycloak_api)
+
+    # load all auth flows
+    auth_flow_filepaths = glob(os.path.join(datadir, f"{realm_name}/authentication/*/*.json"))
+    for auth_flow_filepath in auth_flow_filepaths:
+        load_authentication_flow(realm_name, auth_flow_filepath, keycloak_api)
+
+    # load clients
+    client_filepaths = glob(os.path.join(datadir, f"{realm_name}/clients/*/*.json"))
+    for client_filepath in client_filepaths:
+        load_client(realm_name, client_filepath, keycloak_api)
+
+    # load roles
+    # role_filepaths = glob(os.path.join(datadir, f"{realm_name}/roles/*.json"))
+    # for role_filepath in role_filepaths:
+    #     load_role(realm_name, role_filepath, keycloak_api)
+    roles = {
+        'folder': os.path.join(datadir, f"{realm_name}/roles"),
+        'name': 'roles',
+        'id': 'name',
+        'keycloak_api': keycloak_api,
+        'realm': realm_name,
+    }
+    ManyResources(roles).publish()
 
 
 def main_try_sample_payloads(args):
@@ -151,6 +190,9 @@ def arg_parse(argv):
 
     parser.add_argument('--datadir', required=True,
                         help="Directory with data dump")
+    parser.add_argument('--realm-name', required=False,
+                        default="",
+                        help="Realm name to load")
 
     args = parser.parse_args(argv)
     return args
@@ -164,4 +206,5 @@ if __name__ == '__main__':
         requests.packages.urllib3.disable_warnings()
 
     args = arg_parse(sys.argv[1:])
-    main_try_sample_payloads(args)
+    main(args)
+    # main_try_sample_payloads(args)
