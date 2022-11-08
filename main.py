@@ -9,7 +9,8 @@ from glob import glob
 from kcapi import Keycloak, OpenID
 
 # lib is the keycloak-exporter-bot main source directory
-from lib.resource import Resource, ResourcePublisher, SingleResource, SingleCustomAuthenticationResource
+from lib.resource import Resource, ResourcePublisher, SingleResource, SingleCustomAuthenticationResource, \
+    SingleClientResource
 from lib.tools import bfs_folder, read_from_json
 
 _level = logging.INFO
@@ -61,12 +62,32 @@ def load_authentication_flow(realm_name, auth_flow_filepath, keycloak_api):
         'keycloak_api': keycloak_api,
         'realm': realm_name,
     }
-    # document = read_from_json(realm_payload)
-
     single_resource = SingleCustomAuthenticationResource(params)
     creation_state = single_resource.publish()
 
-# TODO import clients
+
+def load_client(realm_name, client_filepath, keycloak_api):
+    params = {
+        'path': client_filepath,
+        'name': 'clients',
+        'id': 'clientId',
+        'keycloak_api': keycloak_api,
+        'realm': realm_name,
+    }
+    single_resource = SingleClientResource(params)
+    creation_state = single_resource.publish()
+
+
+def load_role(realm_name, role_filepath, keycloak_api):
+    params = {
+        'path': role_filepath,
+        'name': 'roles',
+        'id': 'name',
+        'keycloak_api': keycloak_api,
+        'realm': realm_name,
+    }
+    single_resource = SingleResource(params)
+    creation_state = single_resource.publish()
 
 
 def main(args):
@@ -104,6 +125,17 @@ def main_try_sample_payloads(args):
     auth_flow_filepaths = glob(os.path.join(datadir, f"authentication/*/*.json"))
     for auth_flow_filepath in auth_flow_filepaths:
         load_authentication_flow(realm_name, auth_flow_filepath, keycloak_api)
+
+    # load clients
+    client_filepaths = glob(os.path.join(datadir, f"clients/*/*.json"))
+    for client_filepath in client_filepaths:
+        load_client(realm_name, client_filepath, keycloak_api)
+
+    # load roles
+    role_filepaths = glob(os.path.join(datadir, f"roles/*.json"))
+    for role_filepath in role_filepaths:
+        load_role(realm_name, role_filepath, keycloak_api)
+    # or use ManyResources(roles).publish()
 
 
 def arg_parse(argv):
