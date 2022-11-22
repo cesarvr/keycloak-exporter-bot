@@ -1,8 +1,11 @@
+import logging
 from kcapi.ie import AuthenticationFlowsImporter
 
 from lib.tools import read_from_json, get_json_docs_from_folder, add_trailing_slash, traverse_and_remove_field, get_path, \
     bfs_folder
 import os
+
+logger = logging.getLogger(__name__)
 
 
 class UpdatePolicy:
@@ -16,14 +19,18 @@ class ResourcePublisher:
         self.body = body
 
     def get_id(self, resource):
-        found = resource.findFirstByKV(self.key, self.body[self.key])
-        if found:
-            return found['id'] if not "realm" in found else found['realm']
-        else:
+        assert self.body
+        obj = resource.findFirstByKV(self.key, self.body[self.key])
+        if not obj:
             return None
+        key = self.key
+        if "realm" in obj:
+            key = "realm"
+        return obj[key]
 
     def publish(self, resource = {}, update_policy=UpdatePolicy.PUT):
         self.resource_id = self.get_id(resource)
+        logger.debug(f"Publishing id={self.resource_id}")
         state = False
         if self.resource_id:
             if update_policy == UpdatePolicy.PUT:
