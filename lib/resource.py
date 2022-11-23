@@ -1,4 +1,6 @@
 import logging
+
+import kcapi.rest.auth_flows
 from kcapi.ie import AuthenticationFlowsImporter
 
 from lib.tools import read_from_json, get_json_docs_from_folder, add_trailing_slash, traverse_and_remove_field, get_path, \
@@ -19,6 +21,8 @@ class ResourcePublisher:
         self.body = body
 
     def get_id(self, resource):
+        # Return server-side unique id of the resource
+        # For authentication flow has unique alias (string), this function returns corresponding id (uuid).
         assert self.body
         obj = resource.findFirstByKV(self.key, self.body[self.key])
         if not obj:
@@ -26,6 +30,8 @@ class ResourcePublisher:
         key = self.key
         if "realm" in obj:
             key = "realm"
+        if isinstance(resource, kcapi.rest.auth_flows.AuthenticationFlows):
+            key = "id"
         return obj[key]
 
     def publish(self, resource = {}, update_policy=UpdatePolicy.PUT):
