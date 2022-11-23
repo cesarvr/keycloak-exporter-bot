@@ -148,7 +148,11 @@ class SingleCustomAuthenticationResource(SingleResource):
             return state
 
     def publish(self):
-        state = self.resource.publish(self.body)
+        if self.body["builtIn"]:
+            # builtin flows cannot be updated
+            logger.info(f"Authentication flow {self.body['alias']} is builtIn, we will not update it.")
+        else:
+            state = self.resource.publish(self.body)
         # state is true, but publish_executors returns None
         # Likely, code switched to use Exceptions instead of return True/False.
         # return state and self.publish_executors()
