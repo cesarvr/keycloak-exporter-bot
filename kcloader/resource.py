@@ -3,7 +3,7 @@ import logging
 import kcapi.rest.auth_flows
 from kcapi.ie import AuthenticationFlowsImporter
 
-from lib.tools import read_from_json, get_json_docs_from_folder, add_trailing_slash, traverse_and_remove_field, get_path, \
+from kcloader.tools import read_from_json, get_json_docs_from_folder, add_trailing_slash, traverse_and_remove_field, get_path, \
     bfs_folder
 import os
 
@@ -21,6 +21,7 @@ class ResourcePublisher:
         self.body = body
 
     def get_id(self, resource):
+        # TODO resource should know what is the 'key'
         # Return server-side unique id of the resource
         # For authentication flow has unique alias (string), this function returns corresponding id (uuid).
         assert self.body

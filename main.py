@@ -9,9 +9,9 @@ from glob import glob
 from kcapi import Keycloak, OpenID
 
 # lib is the keycloak-exporter-bot main source directory
-from lib.resource import Resource, ResourcePublisher, SingleResource, SingleCustomAuthenticationResource, \
+from kcloader.resource import Resource, ResourcePublisher, SingleResource, SingleCustomAuthenticationResource, \
     SingleClientResource, ManyResources, RoleResource
-from lib.tools import bfs_folder, read_from_json
+from kcloader.tools import bfs_folder, read_from_json
 
 _level = logging.INFO
 # _level = logging.DEBUG
