@@ -1,8 +1,10 @@
 import json
 import os, copy
 
+
 def retrieve_json_files_only(doc):
     return '.json' in doc
+
 
 def add_trailing_slash(path):
     if path[-1] != '/':
@@ -15,9 +17,11 @@ def get_path(filepath):
     f.pop()
     return '/'.join(f)
 
-def readFromJSON(filename):
+
+def read_from_json(filename):
     with open(filename) as json_file:
         return json.load(json_file)
+
 
 def get_json_docs_from_folder(folder):
     ret_list = []
@@ -28,7 +32,9 @@ def get_json_docs_from_folder(folder):
 
     return ret_list
 
+
 def bfs_folder(path):
+    # bfs = breadth-first search
     is_node = False
     path = add_trailing_slash(path)
     docs = os.listdir(path)
@@ -51,12 +57,11 @@ def bfs_folder(path):
     return ret
 
 
-
-
 def process_dict(val, field):
     if isinstance(val, dict):
         return traverse_and_remove_field(val, field)
     return val
+
 
 '''
     good to remove fields like id that can mess up publishing.

@@ -1,13 +1,19 @@
+import logging
+
+import kcapi.rest.auth_flows
 from kcapi.ie import AuthenticationFlowsImporter
 
-from lib.tools import readFromJSON, get_json_docs_from_folder, add_trailing_slash, traverse_and_remove_field, get_path, \
+from lib.tools import read_from_json, get_json_docs_from_folder, add_trailing_slash, traverse_and_remove_field, get_path, \
     bfs_folder
 import os
+
+logger = logging.getLogger(__name__)
 
 
 class UpdatePolicy:
     PUT=0
     DELETE=1
+
 
 class ResourcePublisher:
     def __init__(self, key='key', body=''):
@@ -15,14 +21,22 @@ class ResourcePublisher:
         self.body = body
 
     def get_id(self, resource):
-        found = resource.findFirstByKV(self.key, self.body[self.key])
-        if found:
-            return found['id'] if not "realm" in found else found['realm']
-        else:
+        # Return server-side unique id of the resource
+        # For authentication flow has unique alias (string), this function returns corresponding id (uuid).
+        assert self.body
+        obj = resource.findFirstByKV(self.key, self.body[self.key])
+        if not obj:
             return None
+        key = self.key
+        if "realm" in obj:
+            key = "realm"
+        if isinstance(resource, kcapi.rest.auth_flows.AuthenticationFlows):
+            key = "id"
+        return obj[key]
 
     def publish(self, resource = {}, update_policy=UpdatePolicy.PUT):
         self.resource_id = self.get_id(resource)
+        logger.debug(f"Publishing id={self.resource_id}")
         state = False
         if self.resource_id:
             if update_policy == UpdatePolicy.PUT:
@@ -36,6 +50,7 @@ class ResourcePublisher:
             state = resource.create(self.body).isOk()
 
         return state
+
 
 class Resource:
     def __init__(self, params={}):
@@ -70,6 +85,7 @@ def remove_unnecessary_fields(resource):
 
     return updated_resource
 
+
 def lookup_child_resource(resource_path, child_path):
     new_path = get_path(resource_path) + child_path
     return [os.path.exists(new_path), new_path]
@@ -84,11 +100,12 @@ params = {
 }
 '''
 
+
 class SingleResource:
     def __init__(self, resource):
         self.resource = Resource(resource)
         self.resource_path = resource['path']
-        self.body = readFromJSON(self.resource_path)
+        self.body = read_from_json(self.resource_path)
         self.body = remove_unnecessary_fields(self.body)
 
     def publish(self):
@@ -105,7 +122,7 @@ class SingleClientResource(SingleResource):
         if roles_path_exist:
             id = ResourcePublisher(key='clientId', body=self.body).get_id(self.resource.api())
             roles = self.resource.api().roles({'key': 'id', 'value': id})
-            roles_objects = readFromJSON(roles_path)
+            roles_objects = read_from_json(roles_path)
             for object in roles_objects:
                 state = state and ResourcePublisher(key='name', body=object).publish(roles, update_policy=UpdatePolicy.DELETE)
 
@@ -126,18 +143,20 @@ class SingleCustomAuthenticationResource(SingleResource):
         if exists:
             parent = self.resource.api()
             auth_import_api = AuthenticationFlowsImporter(parent)
-            children_nodes = readFromJSON(executors)
+            children_nodes = read_from_json(executors)
             state = auth_import_api.update(self.body, children_nodes)
             return state
 
     def publish(self):
-        state = self.resource.publish(self.body)
+        if self.body["builtIn"]:
+            # builtin flows cannot be updated
+            logger.info(f"Authentication flow {self.body['alias']} is builtIn, we will not update it.")
+        else:
+            state = self.resource.publish(self.body)
         # state is true, but publish_executors returns None
         # Likely, code switched to use Exceptions instead of return True/False.
         # return state and self.publish_executors()
         self.publish_executors()
-
-
 
 
 '''
