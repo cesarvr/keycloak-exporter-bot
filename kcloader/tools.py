@@ -80,3 +80,13 @@ def traverse_and_remove_field(resource = {}, field='id'):
             del update[key]
 
     return update
+
+
+def remove_unnecessary_fields(resource):
+    updated_resource = traverse_and_remove_field(resource, 'id')
+    return updated_resource
+
+
+def lookup_child_resource(resource_path, child_path):
+    new_path = get_path(resource_path) + child_path
+    return [os.path.exists(new_path), new_path]
