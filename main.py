@@ -143,6 +143,7 @@ def main(args):
         'keycloak_api': keycloak_api,
         'realm': realm_name,
     }
+    # TODO .composites needs to be computed
     ManyResources(roles).publish()
 
 

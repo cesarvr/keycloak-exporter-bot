@@ -30,9 +30,16 @@ class ResourcePublisher:
         key = self.key
         if "realm" in obj:
             key = "realm"
-        if isinstance(resource, kcapi.rest.auth_flows.AuthenticationFlows):
+        elif isinstance(resource, kcapi.rest.auth_flows.AuthenticationFlows):
             key = "id"
-        if isinstance(resource, kcapi.rest.clients.Clients):
+        elif isinstance(resource, kcapi.rest.clients.Clients):
+            key = "id"
+        elif isinstance(resource, kcapi.rest.clients.Role):
+            # this can be client or realm role
+            key = "id"
+        elif isinstance(resource, kcapi.rest.crud.KeycloakCRUD):
+            # this should pickup realm roles
+            # But KeycloakCRUD is for everyting, so be careful
             key = "id"
         return obj[key]
 
