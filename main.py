@@ -125,7 +125,11 @@ def main(args):
 
     # load clients
     client_filepaths = glob(os.path.join(datadir, f"{realm_name}/clients/*/*.json"))
+    # TODO move scope-mappings.json into subdirecotry ?
     for client_filepath in client_filepaths:
+        # TODO move client-scopes into subdirecotry?
+        if client_filepath.endswith("scope-mappings.json"):
+            continue
         load_client(realm_name, client_filepath, keycloak_api)
 
     # load roles

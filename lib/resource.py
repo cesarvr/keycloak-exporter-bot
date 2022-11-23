@@ -32,11 +32,13 @@ class ResourcePublisher:
             key = "realm"
         if isinstance(resource, kcapi.rest.auth_flows.AuthenticationFlows):
             key = "id"
+        if isinstance(resource, kcapi.rest.clients.Clients):
+            key = "id"
         return obj[key]
 
     def publish(self, resource = {}, update_policy=UpdatePolicy.PUT):
         self.resource_id = self.get_id(resource)
-        logger.debug(f"Publishing id={self.resource_id}")
+        logger.debug(f"Publishing id={self.resource_id}  type=X {self.key}={self.body[self.key]}")
         state = False
         if self.resource_id:
             if update_policy == UpdatePolicy.PUT:
@@ -129,6 +131,14 @@ class SingleClientResource(SingleResource):
         return state
 
     def publish(self):
+        # Uncaught server error: java.lang.RuntimeException: Unable to resolve auth flow binding override for: browser
+        # TODO support auth flow override
+        # For now, just skip this
+        body = self.body
+        if body["authenticationFlowBindingOverrides"] != {}:
+            logger.error(f"Client clientId={body['clientId']} - authenticationFlowBindingOverrides will not be changed, current server value=?, desired value={body['authenticationFlowBindingOverrides']}")
+            body.pop("authenticationFlowBindingOverrides")
+
         state = self.resource.publish(self.body)
         return state and self.publish_roles()
 
