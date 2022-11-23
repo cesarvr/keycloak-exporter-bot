@@ -1,0 +1,40 @@
+name: CI tests
+on:
+  - push
+jobs:
+
+  integration-tests:
+    runs-on: ubuntu-22.04
+    container: python:3.10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - run: pip install -r requirements-dev.txt
+      # install dependencies mentioned in pyproject.toml
+      # - run: pip install .
+      - name: Wait on keycloak to be up
+        run: curl -k --connect-timeout 60 --retry 60 --retry-delay 1 --retry-connrefused --retry-max-time 60 https://keycloak:8443 -v
+      # At least it should not crash
+      - run: ./main.py --url https://keycloak:8443 --username admin --password admin --datadir test/data/kcfetcher-0.0.2 --realm-name ci0-realm
+    env:
+      KEYCLOAK_API_CA_BUNDLE:
+    services:
+      keycloak:
+        image: quay.io/keycloak/keycloak:9.0.3
+        env:
+          KEYCLOAK_USER: admin
+          KEYCLOAK_PASSWORD: admin
+
+#  # check the package is at least importable
+#  check-import:
+#    runs-on: ubuntu-22.04
+#    container: python:3.10
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v3
+#      # install dependencies mentioned in pyproject.toml
+#      - run: pip install .
+#      # from source directory
+#      - run: python -c 'import kcfetcher; from kcfetcher.store import Store; '
+#      # from arbitrary directory
+#      - run: cd /tmp; python -c 'import kcfetcher; from kcfetcher.store import Store; '
