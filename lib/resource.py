@@ -176,6 +176,14 @@ class SingleCustomAuthenticationResource(SingleResource):
         self.publish_executors()
 
 
+class RoleResource(SingleResource):
+    def __init__(self, resource):
+        super().__init__({'name': 'role', 'id':'name', **resource})
+        if "composites" in self.body:
+            logger.error(f"Composite roles are not implemented yet, role={self.body['name']}")
+            self.body.pop("composites")
+
+
 '''
 Read all resource files in a folder and apply SingleResource
 '''

@@ -10,7 +10,7 @@ from kcapi import Keycloak, OpenID
 
 # lib is the keycloak-exporter-bot main source directory
 from lib.resource import Resource, ResourcePublisher, SingleResource, SingleCustomAuthenticationResource, \
-    SingleClientResource, ManyResources
+    SingleClientResource, ManyResources, RoleResource
 from lib.tools import bfs_folder, read_from_json
 
 _level = logging.INFO
@@ -144,7 +144,7 @@ def main(args):
         'realm': realm_name,
     }
     # TODO .composites needs to be computed
-    ManyResources(roles).publish()
+    ManyResources(roles, ResourceClass=RoleResource).publish()
 
 
 def main_try_sample_payloads(args):
