@@ -1,0 +1,11 @@
+{
+    "config": {
+        "priority": [
+            "100"
+        ]
+    },
+    "name": "aes-generated",
+    "parentId": "master",
+    "providerId": "aes-generated",
+    "providerType": "org.keycloak.keys.KeyProvider"
+}

@@ -1,0 +1,7 @@
+{
+    "attributes": {},
+    "clientRole": false,
+    "composite": false,
+    "description": "${role_create-realm}",
+    "name": "create-realm"
+}

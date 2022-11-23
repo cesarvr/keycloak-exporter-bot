@@ -1,0 +1,36 @@
+{
+    "attributes": {
+        "consent.screen.text": "consent-text-ci0-scope",
+        "display.on.consent.screen": "true",
+        "include.in.token.scope": "true"
+    },
+    "clientScopeMappings": {
+        "account": [
+            "view-profile"
+        ]
+    },
+    "description": "ci0 client scope",
+    "name": "ci0-client-scope",
+    "protocol": "openid-connect",
+    "protocolMappers": [
+        {
+            "config": {
+                "access.token.claim": "true",
+                "claim.name": "birthdate",
+                "id.token.claim": "true",
+                "jsonType.label": "String",
+                "user.attribute": "birthdate",
+                "userinfo.token.claim": "true"
+            },
+            "consentRequired": false,
+            "name": "birthdate",
+            "protocol": "openid-connect",
+            "protocolMapper": "oidc-usermodel-attribute-mapper"
+        }
+    ],
+    "scopeMappings": {
+        "roles": [
+            "ci0-role-0"
+        ]
+    }
+}
