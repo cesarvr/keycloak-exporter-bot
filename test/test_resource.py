@@ -1,9 +1,9 @@
 import unittest
 import os
 from .helper import TestBed, SAMPLES_PATH, SAMPLE_PAYLOADS_PATH
-from lib.resource import SingleResource, ManyResources, SingleClientResource, MultipleResourceInFolders, \
+from kcloader.resource import SingleResource, ManyResources, SingleClientResource, MultipleResourceInFolders, \
     SingleCustomAuthenticationResource
-from lib.tools import add_trailing_slash, read_from_json, get_json_docs_from_folder
+from kcloader.tools import add_trailing_slash, read_from_json, get_json_docs_from_folder
 
 
 def get_names(resources):

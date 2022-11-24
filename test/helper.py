@@ -1,7 +1,7 @@
 import json
 
 from kcapi import OpenID, Keycloak
-from lib.tools import read_from_json
+from kcloader.tools import read_from_json
 import os
 
 # We run unittest from top level directory
