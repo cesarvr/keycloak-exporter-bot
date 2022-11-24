@@ -5,6 +5,9 @@
       <sourceFolder url="file://$MODULE_DIR$" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/output" />
+      <excludeFolder url="file://$MODULE_DIR$/test/data" />
+      <excludeFolder url="file://$MODULE_DIR$/test/samples" />
+      <excludeFolder url="file://$MODULE_DIR$/test/sample_payloads" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.10 (.venv)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
