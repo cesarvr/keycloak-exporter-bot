@@ -1,32 +1,18 @@
 import logging
+import os
+from glob import glob
+
 import kcapi
 
 from kcloader.resource import SingleResource, ResourcePublisher, UpdatePolicy
-from kcloader.tools import lookup_child_resource, read_from_json, find_in_list
+from kcloader.resource.role_resource import find_sub_role
+from kcloader.tools import lookup_child_resource, read_from_json, find_in_list, get_path
 
 logger = logging.getLogger(__name__)
 
 
-# This can be used to find role assigned to client scope-mappings,
-# or a role assigned to be sub-role (of composite role).
-def find_sub_role(self, clients, realm_roles, clients_roles, sub_role):
-    clients_api = self.keycloak_api.build("clients", self.realm_name)
-    if sub_role["clientRole"]:
-        # client role
-        some_client = find_in_list(clients, clientId=sub_role["containerName"])
-        some_client_roles_api = clients_api.get_child(clients_api, some_client["id"], "roles")
-        some_client_roles = some_client_roles_api.all()  # TODO cache this response
-        role = find_in_list(some_client_roles, name=sub_role["name"])
-        # TODO create those roles first
-    else:
-        # realm role
-        assert self.realm_name == sub_role["containerName"]
-        role = find_in_list(realm_roles, name=sub_role["name"])
-    return role
-
-
 class SingleClientResource(SingleResource):
-    def publish_roles(self):
+    def _publish_roles_old(self):
         state = True
         [roles_path_exist, roles_path] = lookup_child_resource(self.resource_path, '/roles/roles.json')
         if roles_path_exist:
@@ -35,6 +21,26 @@ class SingleClientResource(SingleResource):
             roles_objects = read_from_json(roles_path)
             for object in roles_objects:
                 state = state and ResourcePublisher(key='name', body=object).publish(roles, update_policy=UpdatePolicy.DELETE)
+
+        return state
+
+    def publish_roles(self):
+        state = True
+        # [roles_path_exist, roles_path] = lookup_child_resource(self.resource_path, '/roles/roles.json')
+        role_filepaths = glob(os.path.join(get_path(self.resource_path), "roles/*.json"))
+
+        if not role_filepaths:
+            return
+        for role_filepath in role_filepaths:
+            id = ResourcePublisher(key='clientId', body=self.body).get_id(self.resource.api())
+            roles = self.resource.api().roles({'key': 'id', 'value': id})
+            role_object = read_from_json(role_filepath)
+            if "composites" in role_object:
+                logger.error(f"Client composite roles are not implemented yet, role={role_object['name']}")
+                # continue
+                composites = role_object.pop("composites")
+                
+            state = state and ResourcePublisher(key='name', body=role_object).publish(roles, update_policy=UpdatePolicy.DELETE)
 
         return state
 

@@ -2,17 +2,34 @@ import logging
 import kcapi
 
 from kcloader.resource import SingleResource
-from kcloader.resource.client_resource import find_sub_role
 from kcloader.tools import find_in_list
 
 logger = logging.getLogger(__name__)
+
+
+# This can be used to find role assigned to client scope-mappings,
+# or a role assigned to be sub-role (of composite role).
+def find_sub_role(self, clients, realm_roles, clients_roles, sub_role):
+    clients_api = self.keycloak_api.build("clients", self.realm_name)
+    if sub_role["clientRole"]:
+        # client role
+        some_client = find_in_list(clients, clientId=sub_role["containerName"])
+        some_client_roles_api = clients_api.get_child(clients_api, some_client["id"], "roles")
+        some_client_roles = some_client_roles_api.all()  # TODO cache this response
+        role = find_in_list(some_client_roles, name=sub_role["name"])
+        # TODO create those roles first
+    else:
+        # realm role
+        assert self.realm_name == sub_role["containerName"]
+        role = find_in_list(realm_roles, name=sub_role["name"])
+    return role
 
 
 class RoleResource(SingleResource):
     def __init__(self, resource):
         super().__init__({'name': 'role', 'id':'name', **resource})
         if "composites" in self.body:
-            logger.error(f"Composite roles are not implemented yet, role={self.body['name']}")
+            logger.error(f"Realm composite roles are not implemented yet, role={self.body['name']}")
             # self.body.pop("composites")
 
     def publish_simple(self):
