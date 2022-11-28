@@ -77,16 +77,16 @@ def load_client(realm_name, client_filepath, keycloak_api):
     creation_state = single_resource.publish()
 
 
-def load_role(realm_name, role_filepath, keycloak_api):
-    params = {
-        'path': role_filepath,
-        'name': 'roles',
-        'id': 'name',
-        'keycloak_api': keycloak_api,
-        'realm': realm_name,
-    }
-    single_resource = SingleResource(params)
-    creation_state = single_resource.publish()
+# def load_role(realm_name, role_filepath, keycloak_api):
+#     params = {
+#         'path': role_filepath,
+#         'name': 'roles',
+#         'id': 'name',
+#         'keycloak_api': keycloak_api,
+#         'realm': realm_name,
+#     }
+#     single_resource = SingleResource(params)
+#     creation_state = single_resource.publish()
 
 
 def main_4pl(args):
@@ -143,8 +143,30 @@ def main(args):
         'realm': realm_name,
     }
     # TODO .composites needs to be computed
-    ManyResources(roles, ResourceClass=RoleResource).publish()
-
+    # ManyResources(roles, ResourceClass=RoleResource).publish()
+    role_filepaths = glob(os.path.join(datadir, f"{realm_name}/roles/*.json"))
+    for role_filepath in role_filepaths:
+        params = {
+            'path': role_filepath,
+            'name': 'roles',
+            'id': 'name',
+            'keycloak_api': keycloak_api,
+            'realm': realm_name,
+        }
+        role_resource = RoleResource(params)
+        creation_state = role_resource.publish_simple()
+    # TODO realm role can contain client role.
+    # TODO client role can contain realm role.
+    for role_filepath in role_filepaths:
+        params = {
+            'path': role_filepath,
+            'name': 'roles',
+            'id': 'name',
+            'keycloak_api': keycloak_api,
+            'realm': realm_name,
+        }
+        role_resource = RoleResource(params)
+        creation_state = role_resource.publish_composite()
 
 def main_try_sample_payloads(args):
     # call like
