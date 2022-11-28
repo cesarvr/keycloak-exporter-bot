@@ -7,6 +7,24 @@ from kcloader.tools import lookup_child_resource, read_from_json, find_in_list
 logger = logging.getLogger(__name__)
 
 
+# This can be used to find role assigned to client scope-mappings,
+# or a role assigned to be sub-role (of composite role).
+def find_sub_role(self, clients, realm_roles, clients_roles, sub_role):
+    clients_api = self.keycloak_api.build("clients", self.realm_name)
+    if sub_role["clientRole"]:
+        # client role
+        some_client = find_in_list(clients, clientId=sub_role["containerName"])
+        some_client_roles_api = clients_api.get_child(clients_api, some_client["id"], "roles")
+        some_client_roles = some_client_roles_api.all()  # TODO cache this response
+        role = find_in_list(some_client_roles, name=sub_role["name"])
+        # TODO create those roles first
+    else:
+        # realm role
+        assert self.realm_name == sub_role["containerName"]
+        role = find_in_list(realm_roles, name=sub_role["name"])
+    return role
+
+
 class SingleClientResource(SingleResource):
     def publish_roles(self):
         state = True
@@ -46,18 +64,9 @@ class SingleClientResource(SingleResource):
         # self.keycloak_api.build('clients', self.realm)
 
         for scopes_object in scopes_objects:
-            role = None
-            if scopes_object["clientRole"]:
-                # client role
-                some_client = find_in_list(clients, clientId=scopes_object["containerName"])
-                some_client_roles_api = clients_api.get_child(clients_api, some_client["id"], "roles")
-                some_client_roles = some_client_roles_api.all()  # TODO cache this response
-                role = find_in_list(some_client_roles, name=scopes_object["name"])
-                # TODO create those roles first
-            else:
-                # realm role
-                assert self.realm_name == scopes_object["containerName"]
-                role = find_in_list(realm_roles, name=scopes_object["name"])
+            role = find_sub_role(self, clients, realm_roles, clients_roles=None, sub_role=scopes_object)
+            if not role:
+                logger.error(f"sub_role {scopes_object} not found")
             this_client_scope_mappings_realm_api.create([role])
 
         # TODO remove scope mappings that are assigned, but are not in json file
