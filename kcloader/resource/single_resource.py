@@ -9,6 +9,9 @@ class SingleResource:
         self.body = read_from_json(self.resource_path)
         self.body = remove_unnecessary_fields(self.body)
 
+        self.keycloak_api = resource['keycloak_api']
+        self.realm_name = resource['realm']
+
     def publish(self):
         return self.resource.publish(self.body)
 
