@@ -30,13 +30,22 @@ class ResourcePublisher:
         key = self.key
         if "realm" in obj:
             key = "realm"
-        if isinstance(resource, kcapi.rest.auth_flows.AuthenticationFlows):
+        elif isinstance(resource, kcapi.rest.auth_flows.AuthenticationFlows):
+            key = "id"
+        elif isinstance(resource, kcapi.rest.clients.Clients):
+            key = "id"
+        elif isinstance(resource, kcapi.rest.clients.Role):
+            # this can be client or realm role
+            key = "id"
+        elif isinstance(resource, kcapi.rest.crud.KeycloakCRUD):
+            # this should pickup realm roles
+            # But KeycloakCRUD is for everyting, so be careful
             key = "id"
         return obj[key]
 
     def publish(self, resource = {}, update_policy=UpdatePolicy.PUT):
         self.resource_id = self.get_id(resource)
-        logger.debug(f"Publishing id={self.resource_id}")
+        logger.debug(f"Publishing id={self.resource_id}  type=X {self.key}={self.body[self.key]}")
         state = False
         if self.resource_id:
             if update_policy == UpdatePolicy.PUT:
@@ -129,6 +138,14 @@ class SingleClientResource(SingleResource):
         return state
 
     def publish(self):
+        # Uncaught server error: java.lang.RuntimeException: Unable to resolve auth flow binding override for: browser
+        # TODO support auth flow override
+        # For now, just skip this
+        body = self.body
+        if body["authenticationFlowBindingOverrides"] != {}:
+            logger.error(f"Client clientId={body['clientId']} - authenticationFlowBindingOverrides will not be changed, current server value=?, desired value={body['authenticationFlowBindingOverrides']}")
+            body.pop("authenticationFlowBindingOverrides")
+
         state = self.resource.publish(self.body)
         return state and self.publish_roles()
 
@@ -157,6 +174,14 @@ class SingleCustomAuthenticationResource(SingleResource):
         # Likely, code switched to use Exceptions instead of return True/False.
         # return state and self.publish_executors()
         self.publish_executors()
+
+
+class RoleResource(SingleResource):
+    def __init__(self, resource):
+        super().__init__({'name': 'role', 'id':'name', **resource})
+        if "composites" in self.body:
+            logger.error(f"Composite roles are not implemented yet, role={self.body['name']}")
+            self.body.pop("composites")
 
 
 '''

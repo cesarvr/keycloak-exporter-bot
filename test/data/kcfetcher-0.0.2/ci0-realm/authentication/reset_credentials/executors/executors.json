@@ -1,0 +1,76 @@
+[
+    {
+        "configurable": false,
+        "displayName": "Choose User",
+        "index": 0,
+        "level": 0,
+        "providerId": "reset-credentials-choose-user",
+        "requirement": "REQUIRED",
+        "requirementChoices": [
+            "REQUIRED"
+        ]
+    },
+    {
+        "configurable": false,
+        "displayName": "Send Reset Email",
+        "index": 1,
+        "level": 0,
+        "providerId": "reset-credential-email",
+        "requirement": "REQUIRED",
+        "requirementChoices": [
+            "REQUIRED"
+        ]
+    },
+    {
+        "configurable": false,
+        "displayName": "Reset Password",
+        "index": 2,
+        "level": 0,
+        "providerId": "reset-password",
+        "requirement": "REQUIRED",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED"
+        ]
+    },
+    {
+        "authenticationFlow": true,
+        "configurable": false,
+        "displayName": "Reset - Conditional OTP",
+        "index": 3,
+        "level": 0,
+        "requirement": "CONDITIONAL",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED",
+            "CONDITIONAL"
+        ]
+    },
+    {
+        "configurable": false,
+        "displayName": "Condition - user configured",
+        "index": 0,
+        "level": 1,
+        "providerId": "conditional-user-configured",
+        "requirement": "REQUIRED",
+        "requirementChoices": [
+            "REQUIRED",
+            "DISABLED"
+        ]
+    },
+    {
+        "configurable": false,
+        "displayName": "Reset OTP",
+        "index": 1,
+        "level": 1,
+        "providerId": "reset-otp",
+        "requirement": "REQUIRED",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED"
+        ]
+    }
+]

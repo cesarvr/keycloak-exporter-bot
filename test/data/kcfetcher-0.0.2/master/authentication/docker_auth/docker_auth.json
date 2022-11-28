@@ -1,0 +1,16 @@
+{
+    "alias": "docker auth",
+    "authenticationExecutions": [
+        {
+            "authenticator": "docker-http-basic-authenticator",
+            "autheticatorFlow": false,
+            "priority": 10,
+            "requirement": "REQUIRED",
+            "userSetupAllowed": false
+        }
+    ],
+    "builtIn": true,
+    "description": "Used by Docker clients to authenticate against the IDP",
+    "providerId": "basic-flow",
+    "topLevel": true
+}

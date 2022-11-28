@@ -10,7 +10,7 @@ from kcapi import Keycloak, OpenID
 
 # lib is the keycloak-exporter-bot main source directory
 from lib.resource import Resource, ResourcePublisher, SingleResource, SingleCustomAuthenticationResource, \
-    SingleClientResource, ManyResources
+    SingleClientResource, ManyResources, RoleResource
 from lib.tools import bfs_folder, read_from_json
 
 _level = logging.INFO
@@ -125,7 +125,11 @@ def main(args):
 
     # load clients
     client_filepaths = glob(os.path.join(datadir, f"{realm_name}/clients/*/*.json"))
+    # TODO move scope-mappings.json into subdirecotry ?
     for client_filepath in client_filepaths:
+        # TODO move client-scopes into subdirecotry?
+        if client_filepath.endswith("scope-mappings.json"):
+            continue
         load_client(realm_name, client_filepath, keycloak_api)
 
     # load roles
@@ -139,7 +143,8 @@ def main(args):
         'keycloak_api': keycloak_api,
         'realm': realm_name,
     }
-    ManyResources(roles).publish()
+    # TODO .composites needs to be computed
+    ManyResources(roles, ResourceClass=RoleResource).publish()
 
 
 def main_try_sample_payloads(args):

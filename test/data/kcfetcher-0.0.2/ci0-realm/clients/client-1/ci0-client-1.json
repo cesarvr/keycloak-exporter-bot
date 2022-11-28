@@ -1,0 +1,46 @@
+{
+    "access": {
+        "configure": true,
+        "manage": true,
+        "view": true
+    },
+    "alwaysDisplayInConsole": false,
+    "attributes": {},
+    "authenticationFlowBindingOverrides": {},
+    "bearerOnly": false,
+    "clientAuthenticatorType": "client-secret",
+    "clientId": "ci0-client-1",
+    "consentRequired": false,
+    "defaultClientScopes": [
+        "email",
+        "profile",
+        "role_list",
+        "roles",
+        "web-origins"
+    ],
+    "description": "ci0-client-1-desc",
+    "directAccessGrantsEnabled": false,
+    "enabled": true,
+    "frontchannelLogout": false,
+    "fullScopeAllowed": true,
+    "implicitFlowEnabled": false,
+    "nodeReRegistrationTimeout": -1,
+    "notBefore": 0,
+    "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+    ],
+    "protocol": "openid-connect",
+    "publicClient": false,
+    "redirectUris": [
+        "https://ci0-client-1.example.com/redirect-url"
+    ],
+    "serviceAccountsEnabled": false,
+    "standardFlowEnabled": true,
+    "surrogateAuthRequired": false,
+    "webOrigins": [
+        "https://ci0-client-1.example.com"
+    ]
+}
