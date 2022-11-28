@@ -168,6 +168,22 @@ def main(args):
         role_resource = RoleResource(params)
         creation_state = role_resource.publish_composite()
 
+    # setup client composite roles
+    for client_filepath in client_filepaths:
+        # TODO move client-scopes into subdirecotry?
+        if client_filepath.endswith("scope-mappings.json"):
+            continue
+        params = {
+            'path': client_filepath,
+            'name': 'clients',
+            'id': 'clientId',
+            'keycloak_api': keycloak_api,
+            'realm': realm_name,
+        }
+        single_resource = SingleClientResource(params)
+        creation_state = single_resource.publish_roles(include_composite=True)
+
+
 def main_try_sample_payloads(args):
     # call like
     # python3 main.py --url https://172.17.0.2:8443 --username admin --password admin --datadir test/sample_payloads

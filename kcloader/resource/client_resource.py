@@ -24,23 +24,53 @@ class SingleClientResource(SingleResource):
 
         return state
 
-    def publish_roles(self):
+    def publish_roles(self, include_composite):
         state = True
         # [roles_path_exist, roles_path] = lookup_child_resource(self.resource_path, '/roles/roles.json')
         role_filepaths = glob(os.path.join(get_path(self.resource_path), "roles/*.json"))
 
         if not role_filepaths:
             return
+
+        clients_api = self.keycloak_api.build('clients', self.realm_name)
+        clients = clients_api.all()
+
+        #  roles_by_id_api.get_child(roles_by_id_api, ci0_default_roles['id'], "composites")
+        this_client = find_in_list(clients, clientId=self.body["clientId"])
+        this_client_roles_api = clients_api.get_child(clients_api, this_client["id"], "roles")
+        this_client_roles = this_client_roles_api.all()
+
+        # master_realm = self.keycloak_api.admin()
+        realm_roles_api = self.keycloak_api.build('roles', self.realm_name)
+        realm_roles = realm_roles_api.all()
+        roles_by_id_api = self.keycloak_api.build('roles-by-id', self.realm_name)
+
         for role_filepath in role_filepaths:
             id = ResourcePublisher(key='clientId', body=self.body).get_id(self.resource.api())
             roles = self.resource.api().roles({'key': 'id', 'value': id})
             role_object = read_from_json(role_filepath)
-            if "composites" in role_object:
-                logger.error(f"Client composite roles are not implemented yet, role={role_object['name']}")
-                # continue
-                composites = role_object.pop("composites")
-                
-            state = state and ResourcePublisher(key='name', body=role_object).publish(roles, update_policy=UpdatePolicy.DELETE)
+            if not include_composite:
+                # 1st pass, only simple roles
+                if "composites" in role_object:
+                    logger.error(f"Client composite roles are not implemented yet, role={role_object['name']}")
+                    assert role_object["composite"] is True
+                    role_object["composite"] = False
+                    role_object.pop("composites")
+                state = state and ResourcePublisher(key='name', body=role_object).publish(roles, update_policy=UpdatePolicy.DELETE)
+            else:
+                # 2nd pass, setup composites
+                if not "composites" in role_object:
+                    continue
+
+                this_role = find_in_list(this_client_roles, name=role_object["name"])
+                this_role_composites_api = roles_by_id_api.get_child(roles_by_id_api, this_role["id"], "composites")
+
+                for sub_role_object in role_object["composites"]:
+                    sub_role = find_sub_role(self, clients, realm_roles, clients_roles=None, sub_role=sub_role_object)
+                    if not sub_role:
+                        logger.error(f"sub_role {sub_role_object} not found")
+                    this_role_composites_api.create([sub_role])
+
 
         return state
 
@@ -88,4 +118,4 @@ class SingleClientResource(SingleResource):
             body.pop("authenticationFlowBindingOverrides")
 
         state = self.resource.publish(self.body)
-        return state and self.publish_roles() and self.publish_scopes()
+        return state and self.publish_roles(include_composite=False) and self.publish_scopes()
