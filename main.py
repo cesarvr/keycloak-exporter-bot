@@ -10,7 +10,7 @@ from kcapi import Keycloak, OpenID
 
 from kcloader.resource import ResourcePublisher, ManyResources, SingleResource, \
     SingleClientResource, SingleCustomAuthenticationResource, RoleResource, ClientScopeResource, \
-    IdentityProviderResource, IdentityProviderMapperResource
+    IdentityProviderResource, IdentityProviderMapperResource, UserFederationResource
 from kcloader.tools import read_from_json
 
 _level = logging.INFO
@@ -142,6 +142,19 @@ def main(args):
     idp_mappers = IdentityProviderMapperResource.create_from_realm_doc(realm_doc, keycloak_api, realm_name)
     for idp_mapper in idp_mappers:
         idp_mapper.publish()
+
+    # User federations
+    user_federation_filepaths = glob(os.path.join(datadir, f"{realm_name}/user-federations/*/*.json"))
+    for user_federation_filepath in user_federation_filepaths:
+        user_federation_param = {
+            'path': user_federation_filepath,
+            'name': 'components',
+            'id': 'name',
+            'keycloak_api': keycloak_api,
+            'realm': realm_name,
+        }
+        user_federation_resource = UserFederationResource(user_federation_param)
+        creation_state = user_federation_resource.publish()
 
     # load clients
     client_filepaths = glob(os.path.join(datadir, f"{realm_name}/clients/*/*.json"))
