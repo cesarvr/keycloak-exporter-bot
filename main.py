@@ -8,10 +8,9 @@ from glob import glob
 
 from kcapi import Keycloak, OpenID
 
-# lib is the keycloak-exporter-bot main source directory
-from lib.resource import Resource, ResourcePublisher, SingleResource, SingleCustomAuthenticationResource, \
-    SingleClientResource, ManyResources, RoleResource
-from lib.tools import bfs_folder, read_from_json
+from kcloader.resource import ResourcePublisher, ManyResources, SingleResource,\
+    SingleClientResource, SingleCustomAuthenticationResource, RoleResource
+
 
 _level = logging.INFO
 # _level = logging.DEBUG
@@ -78,16 +77,16 @@ def load_client(realm_name, client_filepath, keycloak_api):
     creation_state = single_resource.publish()
 
 
-def load_role(realm_name, role_filepath, keycloak_api):
-    params = {
-        'path': role_filepath,
-        'name': 'roles',
-        'id': 'name',
-        'keycloak_api': keycloak_api,
-        'realm': realm_name,
-    }
-    single_resource = SingleResource(params)
-    creation_state = single_resource.publish()
+# def load_role(realm_name, role_filepath, keycloak_api):
+#     params = {
+#         'path': role_filepath,
+#         'name': 'roles',
+#         'id': 'name',
+#         'keycloak_api': keycloak_api,
+#         'realm': realm_name,
+#     }
+#     single_resource = SingleResource(params)
+#     creation_state = single_resource.publish()
 
 
 def main_4pl(args):
@@ -144,7 +143,47 @@ def main(args):
         'realm': realm_name,
     }
     # TODO .composites needs to be computed
-    ManyResources(roles, ResourceClass=RoleResource).publish()
+    # ManyResources(roles, ResourceClass=RoleResource).publish()
+    role_filepaths = glob(os.path.join(datadir, f"{realm_name}/roles/*.json"))
+    for role_filepath in role_filepaths:
+        params = {
+            'path': role_filepath,
+            'name': 'roles',
+            'id': 'name',
+            'keycloak_api': keycloak_api,
+            'realm': realm_name,
+        }
+        role_resource = RoleResource(params)
+        creation_state = role_resource.publish_simple()
+    # TODO realm role can contain client role.
+    # TODO client role can contain realm role.
+    for role_filepath in role_filepaths:
+        params = {
+            'path': role_filepath,
+            'name': 'roles',
+            'id': 'name',
+            'keycloak_api': keycloak_api,
+            'realm': realm_name,
+        }
+        role_resource = RoleResource(params)
+        creation_state = role_resource.publish_composite()
+
+    # setup client composite roles
+    for client_filepath in client_filepaths:
+        # TODO move client-scopes into subdirecotry?
+        if client_filepath.endswith("scope-mappings.json"):
+            continue
+        params = {
+            'path': client_filepath,
+            'name': 'clients',
+            'id': 'clientId',
+            'keycloak_api': keycloak_api,
+            'realm': realm_name,
+        }
+        single_resource = SingleClientResource(params)
+        creation_state = single_resource.publish_roles(include_composite=True)
+        # also set defaultRoles
+        single_resource.publish_self()
 
 
 def main_try_sample_payloads(args):

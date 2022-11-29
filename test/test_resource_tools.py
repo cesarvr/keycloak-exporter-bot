@@ -3,7 +3,7 @@ import unittest
 import os
 
 from .helper import TestBed, SAMPLES_PATH, SAMPLE_PAYLOADS_PATH
-from lib.tools import traverse_and_remove_field, bfs_folder
+from kcloader.tools import traverse_and_remove_field, bfs_folder
 
 
 def load_file( fname):

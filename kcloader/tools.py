@@ -80,3 +80,24 @@ def traverse_and_remove_field(resource = {}, field='id'):
             del update[key]
 
     return update
+
+
+def remove_unnecessary_fields(resource):
+    updated_resource = traverse_and_remove_field(resource, 'id')
+    return updated_resource
+
+
+def lookup_child_resource(resource_path, child_path):
+    new_path = os.path.join(get_path(resource_path), child_path)
+    return [os.path.exists(new_path), new_path]
+
+
+# TODO import from kcfetcher
+def find_in_list(objects, **kwargs):
+    # objects - list of dict
+    # kwargs - key=value, used to find one object
+    key = list(kwargs.keys())[0]
+    value = kwargs[key]
+    for obj in objects:
+        if key in obj and obj[key] == value:
+            return obj
