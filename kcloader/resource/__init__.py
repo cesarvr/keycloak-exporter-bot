@@ -6,7 +6,7 @@ from .client_resource import SingleClientResource
 from .custom_authentication_resource import SingleCustomAuthenticationResource
 from .role_resource import RoleResource
 from .client_scope_resource import ClientScopeResource
-from .identity_provider_resource import IdentityProviderResource
+from .identity_provider_resource import IdentityProviderResource, IdentityProviderMapperResource
 
 from .many_resources import ManyResources, MultipleResourceInFolders
 
@@ -20,6 +20,8 @@ __all__ = [
     SingleClientResource,
     SingleCustomAuthenticationResource,
     RoleResource,
+    IdentityProviderResource,
+    IdentityProviderMapperResource,
 
     ManyResources,
     MultipleResourceInFolders,

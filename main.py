@@ -10,7 +10,8 @@ from kcapi import Keycloak, OpenID
 
 from kcloader.resource import ResourcePublisher, ManyResources, SingleResource, \
     SingleClientResource, SingleCustomAuthenticationResource, RoleResource, ClientScopeResource, \
-    IdentityProviderResource
+    IdentityProviderResource, IdentityProviderMapperResource
+from kcloader.tools import read_from_json
 
 _level = logging.INFO
 # _level = logging.DEBUG
@@ -135,6 +136,12 @@ def main(args):
         idp_resource = IdentityProviderResource(idp_params)
         creation_state = idp_resource.publish()
     # ManyResources(idp_params, ResourceClass=IdentityProviderResource).publish()
+
+    # load IdP mappers
+    realm_doc = read_from_json(realm_filepath)
+    idp_mappers = IdentityProviderMapperResource.create_from_realm_doc(realm_doc, keycloak_api, realm_name)
+    for idp_mapper in idp_mappers:
+        idp_mapper.publish()
 
     # load clients
     client_filepaths = glob(os.path.join(datadir, f"{realm_name}/clients/*/*.json"))
