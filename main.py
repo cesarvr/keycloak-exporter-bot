@@ -168,6 +168,20 @@ def main(args):
         role_resource = RoleResource(params)
         creation_state = role_resource.publish_composite()
 
+    # setup client-scopes
+    client_scope_filepaths = glob(os.path.join(datadir, f"{realm_name}/client-scopes/*.json"))
+    for client_scope_filepath in client_scope_filepaths:
+        params = {
+            'path': client_scope_filepath,
+            'name': 'client-scopes',
+            'id': 'name',
+            'keycloak_api': keycloak_api,
+            'realm': realm_name,
+        }
+        client_scope_resource = SingleResource(params)
+        creation_state = client_scope_resource.publish()
+        # TODO assign realm/client roles after they are created
+
     # setup client composite roles
     for client_filepath in client_filepaths:
         # TODO move client-scopes into subdirecotry?
