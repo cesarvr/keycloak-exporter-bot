@@ -41,6 +41,8 @@ class RoleResource(SingleResource):
             body_orig = self.body.pop("composites")
 
         super().publish()
+        # second publish for RTH SSO 7.4 to load also .attributes
+        super().publish()
 
         if body_orig:
                 self.body["composites"] = body_orig

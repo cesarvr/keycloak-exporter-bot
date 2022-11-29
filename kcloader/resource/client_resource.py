@@ -57,6 +57,12 @@ class SingleClientResource(SingleResource):
                     role_object["composite"] = False
                     role_object.pop("composites")
                 state = state and ResourcePublisher(key='name', body=role_object).publish(roles, update_policy=UpdatePolicy.DELETE)
+
+                # UpdatePolicy.PUT - RH SSO 7.4 will set .attributes only when updating existing object
+                # ResourcePublisher(key='id', body=this_role).publish(roles, update_policy=UpdatePolicy.PUT)
+                role = this_client_roles_api.findFirstByKV('name', role_object['name'])
+                state = roles_by_id_api.update( role['id'], role_object).isOk()
+
             else:
                 # 2nd pass, setup composites
                 if not "composites" in role_object:
@@ -70,7 +76,6 @@ class SingleClientResource(SingleResource):
                     if not sub_role:
                         logger.error(f"sub_role {sub_role_object} not found")
                     this_role_composites_api.create([sub_role])
-
 
         return state
 
