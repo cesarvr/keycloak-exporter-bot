@@ -64,8 +64,11 @@ class IdentityProviderMapperResource(SingleResource):
         can be .create/.update-ed, but this is not enough,
         type is sort-of-ignored.
         Do we need to create SAML user fedaration first, or something?
+
+        Update:
+        Seems saml-advanced-role-idp-mapper is something from RH SSO 7.5.
         """
-        logger.error("IdP provider mapper - not yet fully functional")
+        # logger.error("IdP provider mapper - not yet fully functional")
 
         if not idp_mapper:
             idp_mappers_api.create(self.body).isOk()
