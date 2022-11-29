@@ -8,12 +8,6 @@ logger = logging.getLogger(__name__)
 
 
 class ClientScopeResource(SingleResource):
-    def __init__(self, resource):
-        super().__init__({'name': 'role', 'id':'name', **resource})
-        if "composites" in self.body:
-            logger.error(f"Realm composite roles are not implemented yet, role={self.body['name']}")
-            # self.body.pop("composites")
-
     def publish_scope_mappings(self):
         state = self.publish_scope_mappings_realm()
         state = state and self.publish_scope_mappings_client()
