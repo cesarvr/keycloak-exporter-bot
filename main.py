@@ -182,6 +182,8 @@ def main(args):
         }
         single_resource = SingleClientResource(params)
         creation_state = single_resource.publish_roles(include_composite=True)
+        # also set defaultRoles
+        single_resource.publish_self()
 
 
 def main_try_sample_payloads(args):

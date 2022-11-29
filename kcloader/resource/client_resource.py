@@ -113,7 +113,7 @@ class SingleClientResource(SingleResource):
         # TODO remove scope mappings that are assigned, but are not in json file
         return state
 
-    def publish(self):
+    def publish_self(self):
         # Uncaught server error: java.lang.RuntimeException: Unable to resolve auth flow binding override for: browser
         # TODO support auth flow override
         # For now, just skip this
@@ -122,5 +122,8 @@ class SingleClientResource(SingleResource):
             logger.error(f"Client clientId={body['clientId']} - authenticationFlowBindingOverrides will not be changed, current server value=?, desired value={body['authenticationFlowBindingOverrides']}")
             body.pop("authenticationFlowBindingOverrides")
 
-        state = self.resource.publish(self.body)
+        return self.resource.publish(self.body)
+
+    def publish(self):
+        state = self.publish_self()
         return state and self.publish_roles(include_composite=False) and self.publish_scopes()
