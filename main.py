@@ -8,9 +8,8 @@ from glob import glob
 
 from kcapi import Keycloak, OpenID
 
-from kcloader.resource import ResourcePublisher, ManyResources, SingleResource,\
-    SingleClientResource, SingleCustomAuthenticationResource, RoleResource
-
+from kcloader.resource import ResourcePublisher, ManyResources, SingleResource, \
+    SingleClientResource, SingleCustomAuthenticationResource, RoleResource, ClientScopeResource
 
 _level = logging.INFO
 # _level = logging.DEBUG
@@ -178,9 +177,10 @@ def main(args):
             'keycloak_api': keycloak_api,
             'realm': realm_name,
         }
-        client_scope_resource = SingleResource(params)
+        client_scope_resource = ClientScopeResource(params)
         creation_state = client_scope_resource.publish()
         # TODO assign realm/client roles after they are created
+        creation_state = client_scope_resource.publish_scope_mappings()
 
     # setup client composite roles
     for client_filepath in client_filepaths:
