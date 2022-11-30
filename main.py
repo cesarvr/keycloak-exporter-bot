@@ -8,9 +8,10 @@ from glob import glob
 
 from kcapi import Keycloak, OpenID
 
-from kcloader.resource import ResourcePublisher, ManyResources, SingleResource,\
-    SingleClientResource, SingleCustomAuthenticationResource, RoleResource
-
+from kcloader.resource import ResourcePublisher, ManyResources, SingleResource, \
+    SingleClientResource, SingleCustomAuthenticationResource, RoleResource, ClientScopeResource, \
+    IdentityProviderResource, IdentityProviderMapperResource, UserFederationResource
+from kcloader.tools import read_from_json
 
 _level = logging.INFO
 # _level = logging.DEBUG
@@ -122,6 +123,39 @@ def main(args):
     for auth_flow_filepath in auth_flow_filepaths:
         load_authentication_flow(realm_name, auth_flow_filepath, keycloak_api)
 
+    # load identity providers
+    idp_filepaths = glob(os.path.join(datadir, f"{realm_name}/identity-provider/*.json"))
+    for idp_filepath in idp_filepaths:
+        idp_params = {
+            'path': idp_filepath,
+            'name': 'identity-provider/instances',
+            'id': 'alias',
+            'keycloak_api': keycloak_api,
+            'realm': realm_name,
+        }
+        idp_resource = IdentityProviderResource(idp_params)
+        creation_state = idp_resource.publish()
+    # ManyResources(idp_params, ResourceClass=IdentityProviderResource).publish()
+
+    # load IdP mappers
+    realm_doc = read_from_json(realm_filepath)
+    idp_mappers = IdentityProviderMapperResource.create_from_realm_doc(realm_doc, keycloak_api, realm_name)
+    for idp_mapper in idp_mappers:
+        idp_mapper.publish()
+
+    # User federations
+    user_federation_filepaths = glob(os.path.join(datadir, f"{realm_name}/user-federations/*/*.json"))
+    for user_federation_filepath in user_federation_filepaths:
+        user_federation_param = {
+            'path': user_federation_filepath,
+            'name': 'components',
+            'id': 'name',
+            'keycloak_api': keycloak_api,
+            'realm': realm_name,
+        }
+        user_federation_resource = UserFederationResource(user_federation_param)
+        creation_state = user_federation_resource.publish()
+
     # load clients
     client_filepaths = glob(os.path.join(datadir, f"{realm_name}/clients/*/*.json"))
     # TODO move scope-mappings.json into subdirecotry ?
@@ -167,6 +201,21 @@ def main(args):
         }
         role_resource = RoleResource(params)
         creation_state = role_resource.publish_composite()
+
+    # setup client-scopes
+    client_scope_filepaths = glob(os.path.join(datadir, f"{realm_name}/client-scopes/*.json"))
+    for client_scope_filepath in client_scope_filepaths:
+        params = {
+            'path': client_scope_filepath,
+            'name': 'client-scopes',
+            'id': 'name',
+            'keycloak_api': keycloak_api,
+            'realm': realm_name,
+        }
+        client_scope_resource = ClientScopeResource(params)
+        creation_state = client_scope_resource.publish()
+        # TODO assign realm/client roles after they are created
+        creation_state = client_scope_resource.publish_scope_mappings()
 
     # setup client composite roles
     for client_filepath in client_filepaths:

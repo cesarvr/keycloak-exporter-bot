@@ -35,7 +35,12 @@ class ResourcePublisher:
         elif isinstance(resource_api, kcapi.rest.crud.KeycloakCRUD):
             # this should pickup realm roles
             # But KeycloakCRUD is for everyting, so be careful
-            key = "id"
+            if "id" not in obj and "internalId" in obj:
+                # must be an identity-provider
+                assert "alias" in obj
+                key = "internalId"
+            else:
+                key = "id"
         return obj[key]
 
     def publish(self, resource_api, update_policy=UpdatePolicy.PUT):

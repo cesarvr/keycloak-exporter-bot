@@ -22,8 +22,8 @@
     "bruteForceProtected": false,
     "clientAuthenticationFlow": "clients",
     "defaultRoles": [
-        "offline_access",
-        "uma_authorization"
+        "uma_authorization",
+        "offline_access"
     ],
     "directGrantFlow": "direct grant",
     "displayName": "Keycloak",
