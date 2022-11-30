@@ -83,7 +83,7 @@
         ]
     },
     "name": "ci0-uf1-ldap",
-    "parentId": "ci0-realm-OLD",
+    "parentName": "ci0-realm",
     "providerId": "ldap",
     "providerType": "org.keycloak.storage.UserStorageProvider"
 }

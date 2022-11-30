@@ -1,7 +1,7 @@
 [
     {
         "alias": "review profile config",
-        "authenticationConfig": "85a408a8-a971-46a7-8b64-7333153245bc",
+        "authenticationConfig": "76ce1689-16da-45b1-ae22-b99bab99c0c8",
         "configurable": true,
         "displayName": "Review Profile",
         "index": 0,
@@ -30,7 +30,7 @@
     },
     {
         "alias": "create unique user config",
-        "authenticationConfig": "74c8a133-03b8-4e1a-ab7f-a22e7eca4402",
+        "authenticationConfig": "fbcc9ff6-b1cb-48fb-be18-df85637808af",
         "configurable": true,
         "displayName": "Create User If Unique",
         "index": 0,

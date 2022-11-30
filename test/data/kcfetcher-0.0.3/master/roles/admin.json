@@ -5,12 +5,12 @@
     "composites": [
         {
             "clientRole": true,
-            "containerName": "ci0-realm-realm",
+            "containerName": "master-realm",
             "name": "create-client"
         },
         {
             "clientRole": true,
-            "containerName": "master-realm",
+            "containerName": "ci0-realm-realm",
             "name": "create-client"
         },
         {
@@ -30,22 +30,22 @@
         },
         {
             "clientRole": true,
-            "containerName": "ci0-realm-realm",
-            "name": "manage-authorization"
-        },
-        {
-            "clientRole": true,
             "containerName": "master-realm",
             "name": "manage-authorization"
         },
         {
             "clientRole": true,
             "containerName": "ci0-realm-realm",
+            "name": "manage-authorization"
+        },
+        {
+            "clientRole": true,
+            "containerName": "master-realm",
             "name": "manage-clients"
         },
         {
             "clientRole": true,
-            "containerName": "master-realm",
+            "containerName": "ci0-realm-realm",
             "name": "manage-clients"
         },
         {
@@ -100,22 +100,22 @@
         },
         {
             "clientRole": true,
+            "containerName": "master-realm",
+            "name": "query-groups"
+        },
+        {
+            "clientRole": true,
             "containerName": "ci0-realm-realm",
             "name": "query-groups"
         },
         {
             "clientRole": true,
-            "containerName": "master-realm",
-            "name": "query-groups"
-        },
-        {
-            "clientRole": true,
-            "containerName": "master-realm",
+            "containerName": "ci0-realm-realm",
             "name": "query-realms"
         },
         {
             "clientRole": true,
-            "containerName": "ci0-realm-realm",
+            "containerName": "master-realm",
             "name": "query-realms"
         },
         {
