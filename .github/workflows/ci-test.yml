@@ -3,6 +3,32 @@ on:
   - push
 jobs:
 
+  unittest:
+    runs-on: ubuntu-22.04
+    container: python:3.10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - run: pip install -r requirements-dev.txt
+      # install dependencies mentioned in pyproject.toml
+      # - run: pip install .
+      - name: Wait on keycloak to be up
+        run: curl -k --connect-timeout 60 --retry 60 --retry-delay 1 --retry-connrefused --retry-max-time 60 https://keycloak:8443 -v
+      # At least it should not crash
+      - run: python -m unittest
+    env:
+      KEYCLOAK_API_CA_BUNDLE:
+      KC_ENDPOINT: https://keycloak:8443
+      KC_USER: admin
+      KC_PASSWORD: admin
+      KC_REALM: testing
+    services:
+      keycloak:
+        image: quay.io/keycloak/keycloak:9.0.3
+        env:
+          KEYCLOAK_USER: admin
+          KEYCLOAK_PASSWORD: admin
+
   integration-tests:
     runs-on: ubuntu-22.04
     container: python:3.10
