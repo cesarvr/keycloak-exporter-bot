@@ -119,7 +119,7 @@ def main(args):
     load_realm(realm_filepath, keycloak_api)
 
     # load all auth flows
-    auth_flow_filepaths = glob(os.path.join(datadir, f"{realm_name}/authentication/*/*.json"))
+    auth_flow_filepaths = glob(os.path.join(datadir, f"{realm_name}/authentication/flows/*/*.json"))
     for auth_flow_filepath in auth_flow_filepaths:
         load_authentication_flow(realm_name, auth_flow_filepath, keycloak_api)
 

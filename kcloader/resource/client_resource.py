@@ -30,7 +30,7 @@ class SingleClientResource(SingleResource):
         role_filepaths = glob(os.path.join(get_path(self.resource_path), "roles/*.json"))
 
         if not role_filepaths:
-            return
+            return state
 
         clients_api = self.keycloak_api.build('clients', self.realm_name)
         clients = clients_api.all()
