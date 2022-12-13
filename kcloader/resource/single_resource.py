@@ -6,8 +6,11 @@ class SingleResource:
     def __init__(self, resource):
         self.resource = Resource(resource)
         self.resource_path = resource['path']
-        self.body = read_from_json(self.resource_path)
-        self.body = remove_unnecessary_fields(self.body)
+        if 'body' in resource:
+            body = resource['body']
+        else:
+            body = read_from_json(self.resource_path)
+        self.body = remove_unnecessary_fields(body)
 
         self.keycloak_api = resource['keycloak_api']
         self.realm_name = resource['realm']
