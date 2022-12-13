@@ -1,0 +1,89 @@
+{
+    "config": {
+        "allowKerberosAuthentication": [
+            "false"
+        ],
+        "authType": [
+            "simple"
+        ],
+        "batchSizeForSync": [
+            "1000"
+        ],
+        "bindCredential": [
+            "**********"
+        ],
+        "bindDn": [
+            "admin"
+        ],
+        "cachePolicy": [
+            "DEFAULT"
+        ],
+        "changedSyncPeriod": [
+            "-1"
+        ],
+        "connectionPooling": [
+            "true"
+        ],
+        "connectionUrl": [
+            "ldaps://172.17.0.4:636"
+        ],
+        "debug": [
+            "false"
+        ],
+        "enabled": [
+            "true"
+        ],
+        "fullSyncPeriod": [
+            "-1"
+        ],
+        "importEnabled": [
+            "true"
+        ],
+        "pagination": [
+            "true"
+        ],
+        "priority": [
+            "0"
+        ],
+        "rdnLDAPAttribute": [
+            "uid"
+        ],
+        "searchScope": [
+            "1"
+        ],
+        "syncRegistrations": [
+            "false"
+        ],
+        "trustEmail": [
+            "false"
+        ],
+        "useKerberosForPasswordAuthentication": [
+            "false"
+        ],
+        "useTruststoreSpi": [
+            "ldapsOnly"
+        ],
+        "userObjectClasses": [
+            "inetOrgPerson, organizationalPerson"
+        ],
+        "usernameLDAPAttribute": [
+            "uid"
+        ],
+        "usersDn": [
+            "uid"
+        ],
+        "uuidLDAPAttribute": [
+            "nsuniqueid"
+        ],
+        "validatePasswordPolicy": [
+            "false"
+        ],
+        "vendor": [
+            "rhds"
+        ]
+    },
+    "name": "ci0-uf0-ldap",
+    "parentName": "ci0-realm",
+    "providerId": "ldap",
+    "providerType": "org.keycloak.storage.UserStorageProvider"
+}

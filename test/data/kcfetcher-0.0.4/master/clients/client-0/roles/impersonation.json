@@ -1,0 +1,7 @@
+{
+    "attributes": {},
+    "clientRole": true,
+    "composite": false,
+    "description": "${role_impersonation}",
+    "name": "impersonation"
+}

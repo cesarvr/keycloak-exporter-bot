@@ -1,0 +1,194 @@
+{
+    "attributes": {},
+    "clientRole": false,
+    "composite": true,
+    "composites": [
+        {
+            "clientRole": true,
+            "containerName": "ci0-realm-realm",
+            "name": "create-client"
+        },
+        {
+            "clientRole": true,
+            "containerName": "master-realm",
+            "name": "create-client"
+        },
+        {
+            "clientRole": false,
+            "containerName": "master",
+            "name": "create-realm"
+        },
+        {
+            "clientRole": true,
+            "containerName": "ci0-realm-realm",
+            "name": "impersonation"
+        },
+        {
+            "clientRole": true,
+            "containerName": "master-realm",
+            "name": "impersonation"
+        },
+        {
+            "clientRole": true,
+            "containerName": "ci0-realm-realm",
+            "name": "manage-authorization"
+        },
+        {
+            "clientRole": true,
+            "containerName": "master-realm",
+            "name": "manage-authorization"
+        },
+        {
+            "clientRole": true,
+            "containerName": "ci0-realm-realm",
+            "name": "manage-clients"
+        },
+        {
+            "clientRole": true,
+            "containerName": "master-realm",
+            "name": "manage-clients"
+        },
+        {
+            "clientRole": true,
+            "containerName": "ci0-realm-realm",
+            "name": "manage-events"
+        },
+        {
+            "clientRole": true,
+            "containerName": "master-realm",
+            "name": "manage-events"
+        },
+        {
+            "clientRole": true,
+            "containerName": "ci0-realm-realm",
+            "name": "manage-identity-providers"
+        },
+        {
+            "clientRole": true,
+            "containerName": "master-realm",
+            "name": "manage-identity-providers"
+        },
+        {
+            "clientRole": true,
+            "containerName": "ci0-realm-realm",
+            "name": "manage-realm"
+        },
+        {
+            "clientRole": true,
+            "containerName": "master-realm",
+            "name": "manage-realm"
+        },
+        {
+            "clientRole": true,
+            "containerName": "ci0-realm-realm",
+            "name": "manage-users"
+        },
+        {
+            "clientRole": true,
+            "containerName": "master-realm",
+            "name": "manage-users"
+        },
+        {
+            "clientRole": true,
+            "containerName": "ci0-realm-realm",
+            "name": "query-clients"
+        },
+        {
+            "clientRole": true,
+            "containerName": "master-realm",
+            "name": "query-clients"
+        },
+        {
+            "clientRole": true,
+            "containerName": "ci0-realm-realm",
+            "name": "query-groups"
+        },
+        {
+            "clientRole": true,
+            "containerName": "master-realm",
+            "name": "query-groups"
+        },
+        {
+            "clientRole": true,
+            "containerName": "ci0-realm-realm",
+            "name": "query-realms"
+        },
+        {
+            "clientRole": true,
+            "containerName": "master-realm",
+            "name": "query-realms"
+        },
+        {
+            "clientRole": true,
+            "containerName": "ci0-realm-realm",
+            "name": "query-users"
+        },
+        {
+            "clientRole": true,
+            "containerName": "master-realm",
+            "name": "query-users"
+        },
+        {
+            "clientRole": true,
+            "containerName": "ci0-realm-realm",
+            "name": "view-authorization"
+        },
+        {
+            "clientRole": true,
+            "containerName": "master-realm",
+            "name": "view-authorization"
+        },
+        {
+            "clientRole": true,
+            "containerName": "ci0-realm-realm",
+            "name": "view-clients"
+        },
+        {
+            "clientRole": true,
+            "containerName": "master-realm",
+            "name": "view-clients"
+        },
+        {
+            "clientRole": true,
+            "containerName": "ci0-realm-realm",
+            "name": "view-events"
+        },
+        {
+            "clientRole": true,
+            "containerName": "master-realm",
+            "name": "view-events"
+        },
+        {
+            "clientRole": true,
+            "containerName": "ci0-realm-realm",
+            "name": "view-identity-providers"
+        },
+        {
+            "clientRole": true,
+            "containerName": "master-realm",
+            "name": "view-identity-providers"
+        },
+        {
+            "clientRole": true,
+            "containerName": "ci0-realm-realm",
+            "name": "view-realm"
+        },
+        {
+            "clientRole": true,
+            "containerName": "master-realm",
+            "name": "view-realm"
+        },
+        {
+            "clientRole": true,
+            "containerName": "ci0-realm-realm",
+            "name": "view-users"
+        },
+        {
+            "clientRole": true,
+            "containerName": "master-realm",
+            "name": "view-users"
+        }
+    ],
+    "description": "${role_admin}",
+    "name": "admin"
+}

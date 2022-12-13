@@ -1,0 +1,9 @@
+{
+    "alias": "update_user_locale",
+    "config": {},
+    "defaultAction": false,
+    "enabled": true,
+    "name": "Update User Locale",
+    "priority": 1000,
+    "providerId": "update_user_locale"
+}

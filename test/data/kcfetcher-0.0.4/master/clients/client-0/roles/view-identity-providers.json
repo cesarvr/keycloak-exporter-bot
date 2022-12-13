@@ -1,0 +1,7 @@
+{
+    "attributes": {},
+    "clientRole": true,
+    "composite": false,
+    "description": "${role_view-identity-providers}",
+    "name": "view-identity-providers"
+}

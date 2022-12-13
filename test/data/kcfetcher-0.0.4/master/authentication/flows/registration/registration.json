@@ -1,0 +1,17 @@
+{
+    "alias": "registration",
+    "authenticationExecutions": [
+        {
+            "authenticator": "registration-page-form",
+            "autheticatorFlow": true,
+            "flowAlias": "registration form",
+            "priority": 10,
+            "requirement": "REQUIRED",
+            "userSetupAllowed": false
+        }
+    ],
+    "builtIn": true,
+    "description": "registration flow",
+    "providerId": "basic-flow",
+    "topLevel": true
+}

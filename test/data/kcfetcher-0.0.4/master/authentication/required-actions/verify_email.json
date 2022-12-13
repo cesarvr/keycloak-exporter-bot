@@ -1,0 +1,9 @@
+{
+    "alias": "VERIFY_EMAIL",
+    "config": {},
+    "defaultAction": false,
+    "enabled": true,
+    "name": "Verify Email",
+    "priority": 50,
+    "providerId": "VERIFY_EMAIL"
+}

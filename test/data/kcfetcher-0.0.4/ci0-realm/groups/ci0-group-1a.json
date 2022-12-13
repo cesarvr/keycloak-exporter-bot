@@ -1,0 +1,35 @@
+{
+    "access": {
+        "manage": true,
+        "manageMembership": true,
+        "view": true
+    },
+    "attributes": {
+        "ci0-group-1a-key0": [
+            "ci0-group-1a-value0"
+        ]
+    },
+    "clientRoles": {},
+    "name": "ci0-group-1a",
+    "path": "/ci0-group-1a",
+    "realmRoles": [],
+    "subGroups": [
+        {
+            "attributes": {},
+            "clientRoles": {},
+            "name": "ci0-group-1b",
+            "path": "/ci0-group-1a/ci0-group-1b",
+            "realmRoles": [],
+            "subGroups": [
+                {
+                    "attributes": {},
+                    "clientRoles": {},
+                    "name": "ci0-group-1c",
+                    "path": "/ci0-group-1a/ci0-group-1b/ci0-group-1c",
+                    "realmRoles": [],
+                    "subGroups": []
+                }
+            ]
+        }
+    ]
+}
