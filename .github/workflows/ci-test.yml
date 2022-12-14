@@ -11,7 +11,7 @@ jobs:
         uses: actions/checkout@v3
       - run: pip install -r requirements-dev.txt
       # install dependencies mentioned in pyproject.toml
-      # - run: pip install .
+      - run: pip install .
       - name: Wait on keycloak to be up
         run: curl -k --connect-timeout 60 --retry 60 --retry-delay 1 --retry-connrefused --retry-max-time 60 https://keycloak:8443 -v
       # At least it should not crash
@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v3
       - run: pip install -r requirements-dev.txt
       # install dependencies mentioned in pyproject.toml
-      # - run: pip install .
+      - run: pip install .
       - name: Wait on keycloak to be up
         run: curl -k --connect-timeout 60 --retry 60 --retry-delay 1 --retry-connrefused --retry-max-time 60 https://keycloak:8443 -v
       # At least it should not crash
@@ -51,16 +51,45 @@ jobs:
           KEYCLOAK_USER: admin
           KEYCLOAK_PASSWORD: admin
 
-#  # check the package is at least importable
-#  check-import:
-#    runs-on: ubuntu-22.04
-#    container: python:3.10
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v3
-#      # install dependencies mentioned in pyproject.toml
-#      - run: pip install .
-#      # from source directory
-#      - run: python -c 'import kcfetcher; from kcfetcher.store import Store; '
-#      # from arbitrary directory
-#      - run: cd /tmp; python -c 'import kcfetcher; from kcfetcher.store import Store; '
+  # check the package is at least importable
+  check-import:
+    runs-on: ubuntu-22.04
+    container: python:3.10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      # install dependencies mentioned in pyproject.toml
+      - run: pip install .
+      # from source directory
+      - run: python -c 'import kcloader; from kcloader.resource import RealmResource; '
+      # from arbitrary directory
+      - run: cd /tmp; python -c 'import kcloader; from kcloader.resource import RealmResource; '
+
+  # build whl and upload to pypi.org
+  build_whl:
+    if: github.ref_type == 'tag'
+    needs:
+      - unittest
+      - integration-tests
+      - check-import
+    runs-on: ubuntu-22.04
+    container: python:3.10
+    env:
+      TWINE_USERNAME: __token__
+      TWINE_PASSWORD: ${{ secrets.PYPI_TWINE_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - run: echo ref_name=${{ github.ref_name }}
+      - run: pip install -r requirements-dev.txt
+      - run: python -m build
+      #- run: python3 -m twine upload --repository testpypi dist/*
+
+      - run: |-
+          PYPROJECT_VERSION=$(grep '^version = ' pyproject.toml | awk '{print $3}' | sed 's/"//g');
+          if [ "$PYPROJECT_VERSION" != "${{ github.ref_name }}" ]
+          then
+            echo "Git tag=${{ github.ref_name }} does not match pyproject.toml version=$PYPROJECT_VERSION" 1>&2
+            exit 1
+          fi
+      - run: python3 -m twine upload dist/*

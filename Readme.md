@@ -8,7 +8,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements-dev.txt
-# pip install .
+pip install -e .
 
 # run test keycloak instance
 # use local container or run it in cloud
@@ -22,7 +22,8 @@ export KC_PASSWORD=admin
 export KC_REALM=myrealm
 
 # run code
-python3 main.py
+alias kcload='./main.py --url=https://172.17.0.2:8443 --username=admin --password=admin'
+kcload --datadir test/data/kcfetcher-0.0.4 --realm-name ci0-realm
 
 # run tests
 python -m unittest

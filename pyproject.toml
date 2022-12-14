@@ -1,0 +1,45 @@
+[project]
+name = "keycloak-exporter-bot"
+version = "0.0.1"
+authors = [
+    {name = "Cesar Valdez"}
+]
+description = "Import data into KeyCloak server"
+keywords = [
+    "KeyCloak"
+]
+requires-python = ">=3.8"
+
+dependencies = [
+    "kcapi>=1.0.33",
+]
+
+[project.urls]
+repository = "https://github.com/justinc1/keycloak-exporter-bot"
+
+# [project.scripts]
+# kcfetcher = "kcfetcher.main:main_cli"
+
+[build-system]
+requires = [
+    "setuptools>=42",
+    "wheel"
+]   # PEP 508 specifications.
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = []
+packages = [
+    "kcloader",
+    "kcloader.resource",
+]
+
+[tool.black]
+line-length = 160
+target_version = ['py38']
+
+[tool.pytest.ini_options]
+# minversion = "2.0"
+pythonpath = [
+  "."
+]
