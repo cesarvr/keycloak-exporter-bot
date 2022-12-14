@@ -11,7 +11,8 @@ from kcapi import Keycloak, OpenID
 
 from kcloader.resource import ResourcePublisher, ManyResources, SingleResource, \
     SingleClientResource, SingleCustomAuthenticationResource, RoleResource, ClientScopeResource, \
-    IdentityProviderResource, IdentityProviderMapperResource, UserFederationResource
+    IdentityProviderResource, IdentityProviderMapperResource, UserFederationResource, \
+    RealmResource
 from kcloader.tools import read_from_json
 
 _level = logging.INFO
@@ -136,7 +137,15 @@ def main(args):
     # load_authentication_flow("4pl", "adidas_first_broker_login", keycloak_api, datadir)
     realm_filepath = os.path.join(datadir, f"{realm_name}/{realm_name}.json")  # often correct
     # minimal_representation, flows are missing
-    load_realm(realm_filepath, keycloak_api, minimal_representation=True)
+    # load_realm(realm_filepath, keycloak_api, minimal_representation=True)
+    realm_res = RealmResource({
+        'path': realm_filepath,
+        # 'name': '',
+        # 'id': 'realm',
+        'keycloak_api': keycloak_api,
+        'realm': realm_name,
+    })
+    realm_res.publish(minimal_representation=True)
 
     # load all auth flows
     auth_flow_filepaths = glob(os.path.join(datadir, f"{realm_name}/authentication/flows/*/*.json"))
@@ -223,7 +232,7 @@ def main(args):
         creation_state = role_resource.publish_composite()
 
     # Load realm a second time - setup flows, default roles.
-    load_realm(realm_filepath, keycloak_api)
+    realm_res.publish()
 
     # setup client-scopes
     client_scope_filepaths = glob(os.path.join(datadir, f"{realm_name}/client-scopes/*.json"))

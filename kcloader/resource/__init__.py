@@ -8,6 +8,7 @@ from .role_resource import RoleResource
 from .client_scope_resource import ClientScopeResource
 from .identity_provider_resource import IdentityProviderResource, IdentityProviderMapperResource
 from .user_federation_resource import UserFederationResource
+from .realm_resource import RealmResource
 
 from .many_resources import ManyResources, MultipleResourceInFolders
 
@@ -18,6 +19,7 @@ __all__ = [
     UpdatePolicy,
 
     SingleResource,
+    RealmResource,
     SingleClientResource,
     SingleCustomAuthenticationResource,
     RoleResource,

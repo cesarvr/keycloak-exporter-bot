@@ -15,8 +15,10 @@ class SingleResource:
         self.keycloak_api = resource['keycloak_api']
         self.realm_name = resource['realm']
 
-    def publish(self):
-        return self.resource.publish(self.body)
+    def publish(self, body=None):
+        if body is None:
+            body = self.body
+        return self.resource.publish(body)
 
     def name(self):
         return self.resource.name
