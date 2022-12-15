@@ -46,8 +46,9 @@ class SingleClientResource(SingleResource):
         roles_by_id_api = self.keycloak_api.build('roles-by-id', self.realm_name)
 
         for role_filepath in role_filepaths:
-            id = ResourcePublisher(key='clientId', body=self.body).get_id(self.resource.api())
-            roles = self.resource.api().roles({'key': 'id', 'value': id})
+            # self.resource.resource_api == clients_api (?)
+            id = ResourcePublisher(key='clientId', body=self.body).get_id(self.resource.resource_api)
+            roles = self.resource.resource_api.roles({'key': 'id', 'value': id})
             role_object = read_from_json(role_filepath)
             if not include_composite:
                 # 1st pass, only simple roles
@@ -91,7 +92,7 @@ class SingleClientResource(SingleResource):
             return state
         assert isinstance(scopes_objects[0], dict)
 
-        clients_api = self.resource.api()
+        clients_api = self.resource.resource_api
         clients = clients_api.all()
 
         #  roles_by_id_api.get_child(roles_by_id_api, ci0_default_roles['id'], "composites")
