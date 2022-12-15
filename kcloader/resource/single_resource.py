@@ -18,6 +18,7 @@ class SingleResource:
     def publish(self, body=None):
         if body is None:
             body = self.body
+        # create or update
         return self.resource.publish(body)
 
     def name(self):
