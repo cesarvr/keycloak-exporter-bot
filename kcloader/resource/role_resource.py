@@ -14,6 +14,11 @@ def find_sub_role(self, clients, realm_roles, clients_roles, sub_role):
     if sub_role["clientRole"]:
         # client role
         some_client = find_in_list(clients, clientId=sub_role["containerName"])
+        if not some_client:
+            # https://github.com/justinc1/keycloak-exporter-bot/actions/runs/3699240874/jobs/6266392682
+            # I'm not able to reproduce locally.
+            logger.error(f"client clientId={sub_role['containerName']} not found")
+            return None
         some_client_roles_api = clients_api.get_child(clients_api, some_client["id"], "roles")
         some_client_roles = some_client_roles_api.all()  # TODO cache this response
         role = find_in_list(some_client_roles, name=sub_role["name"])

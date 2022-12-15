@@ -41,7 +41,6 @@
                 "userinfo.token.claim": "true"
             },
             "consentRequired": false,
-            "id": "f64ef892-5c19-4761-80ea-5ecbcee433af",
             "name": "realm.roles",
             "protocol": "openid-connect",
             "protocolMapper": "oidc-usermodel-realm-role-mapper"

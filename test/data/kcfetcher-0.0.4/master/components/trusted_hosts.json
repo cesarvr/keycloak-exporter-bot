@@ -1,0 +1,15 @@
+{
+    "config": {
+        "client-uris-must-match": [
+            "true"
+        ],
+        "host-sending-registration-request-must-match": [
+            "true"
+        ]
+    },
+    "name": "Trusted Hosts",
+    "parentId": "master",
+    "providerId": "trusted-hosts",
+    "providerType": "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy",
+    "subType": "anonymous"
+}

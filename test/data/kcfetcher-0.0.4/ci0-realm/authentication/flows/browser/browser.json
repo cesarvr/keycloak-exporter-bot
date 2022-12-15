@@ -1,0 +1,37 @@
+{
+    "alias": "browser",
+    "authenticationExecutions": [
+        {
+            "authenticator": "auth-cookie",
+            "autheticatorFlow": false,
+            "priority": 10,
+            "requirement": "ALTERNATIVE",
+            "userSetupAllowed": false
+        },
+        {
+            "authenticator": "auth-spnego",
+            "autheticatorFlow": false,
+            "priority": 20,
+            "requirement": "DISABLED",
+            "userSetupAllowed": false
+        },
+        {
+            "authenticator": "identity-provider-redirector",
+            "autheticatorFlow": false,
+            "priority": 25,
+            "requirement": "ALTERNATIVE",
+            "userSetupAllowed": false
+        },
+        {
+            "autheticatorFlow": true,
+            "flowAlias": "forms",
+            "priority": 30,
+            "requirement": "ALTERNATIVE",
+            "userSetupAllowed": false
+        }
+    ],
+    "builtIn": true,
+    "description": "browser based authentication",
+    "providerId": "basic-flow",
+    "topLevel": true
+}

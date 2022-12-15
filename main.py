@@ -4,13 +4,15 @@ import logging
 import argparse
 import sys
 import os
+from copy import copy
 from glob import glob
 
 from kcapi import Keycloak, OpenID
 
 from kcloader.resource import ResourcePublisher, ManyResources, SingleResource, \
     SingleClientResource, SingleCustomAuthenticationResource, RoleResource, ClientScopeResource, \
-    IdentityProviderResource, IdentityProviderMapperResource, UserFederationResource
+    IdentityProviderResource, IdentityProviderMapperResource, UserFederationResource, \
+    RealmResource
 from kcloader.tools import read_from_json
 
 _level = logging.INFO
@@ -22,20 +24,19 @@ logger = logging.getLogger(__name__)
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 
 
-def load_realm_empty(realm_name, keycloak_api, master_realm):
-    # Just create an empty realm
-    body = {
-        'id': 'realm',
-        'realm': realm_name,
-    }
-    return ResourcePublisher('realm', body).publish(master_realm)
+# def load_realm_empty(realm_name, keycloak_api, master_realm):
+#     # Just create an empty realm
+#     body = {
+#         'id': 'realm',
+#         'realm': realm_name,
+#     }
+#     return ResourcePublisher('realm', body).publish(master_realm)
 
 
-def load_realm(realm_filepath, keycloak_api):
+def load_realm(realm_filepath, keycloak_api, minimal_representation=False):
     # See testing_single_resource_class_creation
     # files = bfs_folder(datadir)
     # realm_filename = os.path.join(datadir, f'{realm_name}/{realm_name}.json')
-
     params = {
         'path': realm_filepath,
         'name': 'realm',
@@ -43,6 +44,25 @@ def load_realm(realm_filepath, keycloak_api):
         'keycloak_api': keycloak_api,
         'realm': None,
     }
+    if minimal_representation:
+        # Create/Update realm with minimal content - it cannot referee to objects that are not yet created.
+        body = read_from_json(realm_filepath)
+        body_min = copy(body)
+        # Those attrs will keep current value, and will be updated in second pass.
+        unsafe_attrs = [
+            "defaultRoles",
+            "identityProviderMappers",
+            # every configured flow might not be present yet
+            "browserFlow",
+            "clientAuthenticationFlow",
+            "directGrantFlow",
+            "dockerAuthenticationFlow",
+            "registrationFlow",
+            "resetCredentialsFlow",
+        ]
+        for unsafe_attr in unsafe_attrs:
+            body_min.pop(unsafe_attr)
+        params.update({'body': body_min})
     # document = read_from_json(realm_payload)
 
     single_resource = SingleResource(params)
@@ -113,13 +133,22 @@ def main(args):
     keycloak_api = Keycloak(token, args.url)
     master_realm = keycloak_api.admin()
 
-    load_realm_empty(realm_name, keycloak_api, master_realm)
+    #load_realm_empty(realm_name, keycloak_api, master_realm)
     # load_authentication_flow("4pl", "adidas_first_broker_login", keycloak_api, datadir)
     realm_filepath = os.path.join(datadir, f"{realm_name}/{realm_name}.json")  # often correct
-    load_realm(realm_filepath, keycloak_api)
+    # minimal_representation, flows are missing
+    # load_realm(realm_filepath, keycloak_api, minimal_representation=True)
+    realm_res = RealmResource({
+        'path': realm_filepath,
+        # 'name': '',
+        # 'id': 'realm',
+        'keycloak_api': keycloak_api,
+        'realm': realm_name,
+    })
+    realm_res.publish(minimal_representation=True)
 
     # load all auth flows
-    auth_flow_filepaths = glob(os.path.join(datadir, f"{realm_name}/authentication/*/*.json"))
+    auth_flow_filepaths = glob(os.path.join(datadir, f"{realm_name}/authentication/flows/*/*.json"))
     for auth_flow_filepath in auth_flow_filepaths:
         load_authentication_flow(realm_name, auth_flow_filepath, keycloak_api)
 
@@ -201,6 +230,9 @@ def main(args):
         }
         role_resource = RoleResource(params)
         creation_state = role_resource.publish_composite()
+
+    # Load realm a second time - setup flows, default roles.
+    realm_res.publish()
 
     # setup client-scopes
     client_scope_filepaths = glob(os.path.join(datadir, f"{realm_name}/client-scopes/*.json"))

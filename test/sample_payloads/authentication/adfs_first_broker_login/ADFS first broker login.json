@@ -24,7 +24,6 @@
     ],
     "builtIn": false,
     "description": "Actions taken after first broker login with identity provider account, which is not yet linked to any Keycloak account",
-    "id": "b0dd5e37-bc00-4939-9ef6-dcbc9bde08dc",
     "providerId": "basic-flow",
     "topLevel": true
 }

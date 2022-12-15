@@ -1,1 +1,2 @@
-kcapi>=1.0.31
+build
+twine

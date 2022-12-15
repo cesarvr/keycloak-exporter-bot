@@ -77,11 +77,13 @@ def traverse_and_remove_field(resource = {}, field='id'):
         update[key] = process_dict(val, field)
 
         if key == field:
+            assert 0  # input data should be already cleaned up
             del update[key]
 
     return update
 
 
+# TODO remove_unnecessary_fields is not needed any more, remove it
 def remove_unnecessary_fields(resource):
     updated_resource = traverse_and_remove_field(resource, 'id')
     return updated_resource

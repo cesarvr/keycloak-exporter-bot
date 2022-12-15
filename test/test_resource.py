@@ -86,16 +86,17 @@ class RHSSOExporterMain(unittest.TestCase):
 
         self.assertIsNotNone(created, "The realm should be created.")
 
-        roles_file = os.path.join(SAMPLE_PAYLOADS_PATH, 'clients/client-0/roles/roles.json')
-        roles_file_json = self.testbed.load_file(roles_file)
-        r = list( map(lambda n: n['name'], roles_file_json) )
+        #roles_file = os.path.join(SAMPLE_PAYLOADS_PATH, 'clients/client-0/roles/roles.json')
+        #roles_file_json = self.testbed.load_file(roles_file)
+        #r = list( map(lambda n: n['name'], roles_file_json) )  # r == expected_role_names
+        expected_role_names = ['hero', 'villain']
 
         client_roles = clients.roles({'key':'clientId', 'value':client_tmpl['clientId']})
         roles = client_roles.findAll().verify().resp().json()
         r2 = list( map(lambda n: n['name'], roles) )
 
         self.assertTrue(len(roles) > 0, "No mapped roles found in this client dc/roles")
-        self.assertListEqual(sorted(r), sorted(r2), "Cloud and Local should have the same roles")
+        self.assertListEqual(sorted(expected_role_names), sorted(r2), "Cloud and Local should have the same roles")
 
     def testing_publishing_multiple_nodes(self):
         params = {
