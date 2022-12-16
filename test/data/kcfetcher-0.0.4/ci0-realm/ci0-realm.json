@@ -11,13 +11,13 @@
     "attributes": {},
     "browserFlow": "browser",
     "browserSecurityHeaders": {
-        "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
-        "contentSecurityPolicyReportOnly": "asdf",
-        "strictTransportSecurity": "max-age=31536000; includeSubDomains",
-        "xContentTypeOptions": "nosniff",
-        "xFrameOptions": "SAMEORIGIN",
-        "xRobotsTag": "none",
-        "xXSSProtection": "1; mode=block"
+        "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self'; object-src 'none-b';",
+        "contentSecurityPolicyReportOnly": "c",
+        "strictTransportSecurity": "max-age=31536000; includeSubDomains-g",
+        "xContentTypeOptions": "nosniff-d",
+        "xFrameOptions": "SAMEORIGIN-a",
+        "xRobotsTag": "none-e",
+        "xXSSProtection": "1; mode=block-f"
     },
     "bruteForceProtected": true,
     "clientAuthenticationFlow": "clients",
@@ -107,7 +107,7 @@
         "jboss-logging",
         "email"
     ],
-    "failureFactor": 30,
+    "failureFactor": 31,
     "identityProviderMappers": [
         {
             "config": {
@@ -134,9 +134,9 @@
     ],
     "internationalizationEnabled": false,
     "loginWithEmailAllowed": true,
-    "maxDeltaTimeSeconds": 43200,
-    "maxFailureWaitSeconds": 900,
-    "minimumQuickLoginWaitSeconds": 60,
+    "maxDeltaTimeSeconds": 61200,
+    "maxFailureWaitSeconds": 960,
+    "minimumQuickLoginWaitSeconds": 240,
     "notBefore": 0,
     "offlineSessionIdleTimeout": 2592000,
     "offlineSessionMaxLifespan": 5184000,
@@ -152,7 +152,7 @@
     ],
     "passwordPolicy": "forceExpiredPasswordChange(365) and upperCase(2)",
     "permanentLockout": false,
-    "quickLoginCheckMilliSeconds": 1001,
+    "quickLoginCheckMilliSeconds": 1003,
     "realm": "ci0-realm",
     "refreshTokenMaxReuse": 0,
     "registrationAllowed": false,
@@ -174,7 +174,7 @@
     "supportedLocales": [],
     "userManagedAccessAllowed": false,
     "verifyEmail": false,
-    "waitIncrementSeconds": 60,
+    "waitIncrementSeconds": 120,
     "webAuthnPolicyAcceptableAaguids": [
         "ci0-aaguid-0"
     ],

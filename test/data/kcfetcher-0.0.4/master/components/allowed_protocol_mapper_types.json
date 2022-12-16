@@ -15,5 +15,5 @@
     "parentId": "master",
     "providerId": "allowed-protocol-mappers",
     "providerType": "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy",
-    "subType": "anonymous"
+    "subType": "authenticated"
 }

@@ -8,5 +8,5 @@
     "parentId": "master",
     "providerId": "allowed-client-templates",
     "providerType": "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy",
-    "subType": "anonymous"
+    "subType": "authenticated"
 }

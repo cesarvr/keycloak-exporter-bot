@@ -15,5 +15,5 @@
     "parentId": "ci0-realm-OLD",
     "providerId": "allowed-protocol-mappers",
     "providerType": "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy",
-    "subType": "authenticated"
+    "subType": "anonymous"
 }
