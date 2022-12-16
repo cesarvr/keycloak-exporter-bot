@@ -49,6 +49,7 @@ class ResourcePublisher:
         state = False
         if resource_id:
             if update_policy == UpdatePolicy.PUT:
+                # update_rmw - would include 'id' for auth flow PUT
                 state = resource_api.update(resource_id, self.body).isOk()
 
             if update_policy == UpdatePolicy.DELETE:

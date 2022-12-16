@@ -8,6 +8,7 @@ from copy import copy
 from glob import glob
 
 from kcapi import Keycloak, OpenID
+from kcapi.ie import AuthenticationFlowsImporter
 
 from kcloader.resource import ResourcePublisher, ManyResources, SingleResource, \
     SingleClientResource, SingleCustomAuthenticationResource, RoleResource, ClientScopeResource, \
@@ -16,7 +17,7 @@ from kcloader.resource import ResourcePublisher, ManyResources, SingleResource, 
 from kcloader.tools import read_from_json
 
 _level = logging.INFO
-# _level = logging.DEBUG
+_level = logging.DEBUG
 logging.basicConfig(level=_level)
 logger = logging.getLogger(__name__)
 
@@ -77,8 +78,8 @@ def load_realm(realm_filepath, keycloak_api, minimal_representation=False):
 def load_authentication_flow(realm_name, auth_flow_filepath, keycloak_api):
     params = {
         'path': auth_flow_filepath,
-        'name': 'authentication',
-        'id': 'alias',
+        # 'name': 'authentication',
+        # 'id': 'alias',
         'keycloak_api': keycloak_api,
         'realm': realm_name,
     }
@@ -150,7 +151,17 @@ def main(args):
     # load all auth flows
     auth_flow_filepaths = glob(os.path.join(datadir, f"{realm_name}/authentication/flows/*/*.json"))
     for auth_flow_filepath in auth_flow_filepaths:
-        load_authentication_flow(realm_name, auth_flow_filepath, keycloak_api)
+        auth_flow_res = SingleCustomAuthenticationResource({
+            'path': auth_flow_filepath,
+            # 'name': 'authentication',
+            # 'id': 'alias',
+            'keycloak_api': keycloak_api,
+            'realm': realm_name,
+        })
+        creation_state = auth_flow_res.publish()
+
+    # realm_res.publish()
+#    return
 
     # load identity providers
     idp_filepaths = glob(os.path.join(datadir, f"{realm_name}/identity-provider/*.json"))

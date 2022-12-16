@@ -13,7 +13,7 @@ class Resource:
     '''
     def __init__(self, params={}):
         self.name = params['name']
-        self.resource = self.instantiate_api(params)
+        self._resource_api = self.instantiate_api(params)
         self.key = params['id']
 
     def instantiate_api(self, params):
@@ -25,11 +25,14 @@ class Resource:
         else:
             return kc.build(realm=realm, resource_name=self.name)
 
-    def api(self):
-        return self.resource
+    # def api(self):
+    #     return self._resource_api
+    @property
+    def resource_api(self):
+        return self._resource_api
 
     def publish(self, body):
-        return ResourcePublisher(self.key, body).publish(self.resource)
+        return ResourcePublisher(self.key, body).publish(self._resource_api)
 
     def remove(self, body):
         id = self.get_resource_id(body)

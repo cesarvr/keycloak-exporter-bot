@@ -55,7 +55,7 @@ class IdentityProviderMapperResource(SingleResource):
     def publish(self):
         # super().publish()
         # POST https://172.17.0.2:8443/auth/admin/realms/ci0-realm/identity-provider/instances/ci0-idp-saml-0/mappers
-        idp_mappers_api = self.resource.resource
+        idp_mappers_api = self.resource.resource_api
         idp_mappers = idp_mappers_api.all()
         idp_mapper = find_in_list(idp_mappers, name=self.body["name"])
 
