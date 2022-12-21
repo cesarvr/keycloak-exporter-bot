@@ -166,16 +166,15 @@ def main(args):
     # load identity providers
     idp_filepaths = glob(os.path.join(datadir, f"{realm_name}/identity-provider/*.json"))
     for idp_filepath in idp_filepaths:
-        idp_params = {
+        resource = IdentityProviderResource({
             'path': idp_filepath,
-            'name': 'identity-provider/instances',
-            'id': 'alias',
+            # 'name': 'identity-provider/instances',
+            # 'id': 'alias',
             'keycloak_api': keycloak_api,
             'realm': realm_name,
-        }
-        idp_resource = IdentityProviderResource(idp_params)
+        })
+        idp_resource = resource
         creation_state = idp_resource.publish()
-    # ManyResources(idp_params, ResourceClass=IdentityProviderResource).publish()
 
     # load IdP mappers
     realm_doc = read_from_json(realm_filepath)

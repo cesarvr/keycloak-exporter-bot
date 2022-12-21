@@ -13,7 +13,12 @@ logger = logging.getLogger(__name__)
 
 
 class IdentityProviderResource(SingleResource):
-    pass
+    def __init__(self, resource):
+        super().__init__({
+            'name': 'identity-provider/instances',
+            'id': 'alias',
+            **resource,
+        })
 
 
 class IdentityProviderMapperResource(SingleResource):
