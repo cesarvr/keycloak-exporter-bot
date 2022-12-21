@@ -14,8 +14,9 @@ class TestBed:
 
         self.USER = os.getenv('KC_USER')
         self.PASSWORD = os.environ.get('KC_PASSWORD')
-        self.REALM = os.environ.get('KC_REALM')
+        self.REALM = realm or os.environ.get('KC_REALM')
         self.ENDPOINT = os.environ.get('KC_ENDPOINT')
+        self.DATADIR = 'test/data/kcfetcher-0.0.5' or os.environ.get('KC_DATADIR')
 
         self.groupName = 'DC'
         self.roleNames = ['level-1', 'level-2', 'level-3'] 
