@@ -1,0 +1,11 @@
+{
+    "attributes": {
+        "ci0-client2-role0-key0": [
+            "ci0-client2-role0-value0"
+        ]
+    },
+    "clientRole": true,
+    "composite": false,
+    "description": "ci0-client2-role0-desc",
+    "name": "ci0-client2-role0"
+}

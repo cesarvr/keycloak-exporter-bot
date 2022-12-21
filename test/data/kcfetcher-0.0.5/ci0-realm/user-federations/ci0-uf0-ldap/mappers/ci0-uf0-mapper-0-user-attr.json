@@ -1,0 +1,25 @@
+{
+    "config": {
+        "always.read.value.from.ldap": [
+            "true"
+        ],
+        "is.binary.attribute": [
+            "true"
+        ],
+        "is.mandatory.in.ldap": [
+            "false"
+        ],
+        "ldap.attribute": [
+            "ci-ldap-attr"
+        ],
+        "read.only": [
+            "true"
+        ],
+        "user.model.attribute": [
+            "ci-user-model-attr"
+        ]
+    },
+    "name": "ci0-uf0-mapper-0-user-attr",
+    "providerId": "user-attribute-ldap-mapper",
+    "providerType": "org.keycloak.storage.ldap.mappers.LDAPStorageMapper"
+}

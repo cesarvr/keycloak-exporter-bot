@@ -1,0 +1,14 @@
+{
+    "attributes": {
+        "consent.screen.text": "ci0-client-scope-1-saml-consent-text",
+        "display.on.consent.screen": "true",
+        "include.in.token.scope": "true"
+    },
+    "clientScopeMappings": {},
+    "description": "ci0-client-scope-1-saml-desc",
+    "name": "ci0-client-scope-1-saml",
+    "protocol": "saml",
+    "scopeMappings": {
+        "roles": []
+    }
+}

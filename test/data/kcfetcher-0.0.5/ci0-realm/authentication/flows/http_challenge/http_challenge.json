@@ -1,0 +1,23 @@
+{
+    "alias": "http challenge",
+    "authenticationExecutions": [
+        {
+            "authenticator": "no-cookie-redirect",
+            "autheticatorFlow": false,
+            "priority": 10,
+            "requirement": "REQUIRED",
+            "userSetupAllowed": false
+        },
+        {
+            "autheticatorFlow": true,
+            "flowAlias": "Authentication Options",
+            "priority": 20,
+            "requirement": "REQUIRED",
+            "userSetupAllowed": false
+        }
+    ],
+    "builtIn": true,
+    "description": "An authentication flow based on challenge-response HTTP Authentication Schemes",
+    "providerId": "basic-flow",
+    "topLevel": true
+}

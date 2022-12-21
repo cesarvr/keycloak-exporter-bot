@@ -1,0 +1,8 @@
+{
+    "config": {},
+    "name": "Consent Required",
+    "parentId": "master",
+    "providerId": "consent-required",
+    "providerType": "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy",
+    "subType": "anonymous"
+}

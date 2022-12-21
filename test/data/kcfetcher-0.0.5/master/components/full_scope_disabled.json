@@ -1,0 +1,8 @@
+{
+    "config": {},
+    "name": "Full Scope Disabled",
+    "parentId": "master",
+    "providerId": "scope",
+    "providerType": "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy",
+    "subType": "anonymous"
+}
