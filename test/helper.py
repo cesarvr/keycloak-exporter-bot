@@ -92,3 +92,9 @@ class TestBed:
         f.close()
 
         return data
+
+
+def remove_field_id(obj):
+    assert isinstance(obj, dict)
+    obj.pop("id", None)
+    return obj
