@@ -166,7 +166,7 @@ class TestIdentityProviderMapperResource(unittest.TestCase):
         self.assertUnorderedListOfDictEqual(expected_idp_mappers, idp_mappers_a__no_id, "name")
 
         # recreate mappers
-        idp_mappers = IdentityProviderMapperResource.create_from_realm_doc(testbed.DATADIR, testbed.kc, testbed.REALM)
+        # idp_mappers = IdentityProviderMapperResource.create_from_realm_doc(testbed.DATADIR, testbed.kc, testbed.REALM)
         for idp_mapper in idp_mappers:
             status = idp_mapper.publish()
             self.assertTrue(status)  # TODO should be status==False
@@ -185,8 +185,9 @@ class TestIdentityProviderMapperResource(unittest.TestCase):
         idp_mappers_api.update(idp_mapper_1["id"], idp_mapper_1_new)
         self.assertEqual("attr-friendly-name-NEW", idp_mappers_api.findFirstByKV("name", "idp-mapper-1")["config"]["attribute.friendly.name"])
         # publish same data again
-        creation_state = idp_resource.publish_self()
-        self.assertTrue(creation_state)
+        for idp_mapper in idp_mappers:
+            status = idp_mapper.publish()
+            self.assertTrue(status)  # TODO should be one True, other False
         self.assertEqual("attr-friendly-name", idp_mappers_api.findFirstByKV("name", "idp-mapper-1")["config"]["attribute.friendly.name"])
         # check object were not re-created
         idp_mappers_c = idp_mappers_api.all()
