@@ -1,0 +1,51 @@
+{
+    "access": {
+        "configure": true,
+        "manage": true,
+        "view": true
+    },
+    "adminUrl": "http://ci0-client-3-saml-admin-url.example.com",
+    "alwaysDisplayInConsole": false,
+    "attributes": {
+        "saml.authnstatement": "true",
+        "saml.client.signature": "true",
+        "saml.force.post.binding": "true",
+        "saml.server.signature": "true",
+        "saml.signature.algorithm": "RSA_SHA256",
+        "saml_force_name_id_format": "false",
+        "saml_name_id_format": "username",
+        "saml_signature_canonicalization_method": "http://www.w3.org/2001/10/xml-exc-c14n#"
+    },
+    "authenticationFlowBindingOverrides": {},
+    "bearerOnly": false,
+    "clientAuthenticatorType": "client-secret",
+    "clientId": "ci0-client-3-saml",
+    "consentRequired": false,
+    "defaultClientScopes": [
+        "email",
+        "profile",
+        "role_list",
+        "roles",
+        "web-origins"
+    ],
+    "directAccessGrantsEnabled": false,
+    "enabled": true,
+    "frontchannelLogout": true,
+    "fullScopeAllowed": true,
+    "implicitFlowEnabled": false,
+    "nodeReRegistrationTimeout": -1,
+    "notBefore": 0,
+    "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+    ],
+    "protocol": "saml",
+    "publicClient": false,
+    "redirectUris": [],
+    "serviceAccountsEnabled": false,
+    "standardFlowEnabled": true,
+    "surrogateAuthRequired": false,
+    "webOrigins": []
+}

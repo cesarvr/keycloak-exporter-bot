@@ -1,0 +1,41 @@
+{
+    "access": {
+        "configure": true,
+        "manage": true,
+        "view": true
+    },
+    "alwaysDisplayInConsole": false,
+    "attributes": {},
+    "authenticationFlowBindingOverrides": {},
+    "bearerOnly": true,
+    "clientAuthenticatorType": "client-secret",
+    "clientId": "ci0-realm-realm",
+    "consentRequired": false,
+    "defaultClientScopes": [
+        "email",
+        "profile",
+        "role_list",
+        "roles",
+        "web-origins"
+    ],
+    "directAccessGrantsEnabled": false,
+    "enabled": true,
+    "frontchannelLogout": false,
+    "fullScopeAllowed": true,
+    "implicitFlowEnabled": false,
+    "name": "ci0-realm-OLD Realm",
+    "nodeReRegistrationTimeout": 0,
+    "notBefore": 0,
+    "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+    ],
+    "publicClient": false,
+    "redirectUris": [],
+    "serviceAccountsEnabled": false,
+    "standardFlowEnabled": true,
+    "surrogateAuthRequired": false,
+    "webOrigins": []
+}

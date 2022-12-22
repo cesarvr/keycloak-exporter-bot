@@ -1,0 +1,16 @@
+{
+    "addReadTokenRoleOnCreate": false,
+    "alias": "ci0-idp-saml-1",
+    "authenticateByDefault": false,
+    "config": {
+        "singleSignOnServiceUrl": "https://172.17.0.6:8443/signon"
+    },
+    "displayName": "ci0-idp-saml-1-displayName",
+    "enabled": true,
+    "firstBrokerLoginFlowAlias": "first broker login",
+    "linkOnly": false,
+    "providerId": "saml",
+    "storeToken": false,
+    "trustEmail": false,
+    "updateProfileFirstLoginMode": "on"
+}

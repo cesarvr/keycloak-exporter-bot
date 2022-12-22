@@ -1,0 +1,100 @@
+[
+    {
+        "configurable": false,
+        "displayName": "Username Validation",
+        "index": 0,
+        "level": 0,
+        "providerId": "direct-grant-validate-username",
+        "requirement": "REQUIRED",
+        "requirementChoices": [
+            "REQUIRED"
+        ]
+    },
+    {
+        "alias": "ci0-auth-flow-generic-exec-20-alias",
+        "authenticationConfigData": {
+            "alias": "ci0-auth-flow-generic-exec-20-alias",
+            "config": {
+                "defaultOtpOutcome": "skip",
+                "forceOtpForHeaderPattern": "ci0-force-header",
+                "forceOtpRole": "ci0-client-0.ci0-client0-role0",
+                "noOtpRequiredForHeaderPattern": "ci0-skip-header",
+                "otpControlAttribute": "user-attr",
+                "skipOtpRole": "ci0-role-1"
+            }
+        },
+        "configurable": true,
+        "displayName": "Conditional OTP Form",
+        "index": 1,
+        "level": 0,
+        "providerId": "auth-conditional-otp-form",
+        "requirement": "ALTERNATIVE",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED"
+        ]
+    },
+    {
+        "authenticationFlow": true,
+        "configurable": false,
+        "displayName": "ci0-auth-flow-generic-exec-3-generic-alias",
+        "index": 2,
+        "level": 0,
+        "requirement": "CONDITIONAL",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED",
+            "CONDITIONAL"
+        ]
+    },
+    {
+        "authenticationFlow": true,
+        "configurable": false,
+        "displayName": "ci0-auth-flow-generic-exec-3-1-flow-alias",
+        "index": 0,
+        "level": 1,
+        "requirement": "ALTERNATIVE",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED",
+            "CONDITIONAL"
+        ]
+    },
+    {
+        "authenticationFlow": true,
+        "configurable": false,
+        "displayName": "ci0-auth-flow-generic-exec-4-flow-alias",
+        "index": 3,
+        "level": 0,
+        "providerId": "registration-page-form",
+        "requirement": "REQUIRED",
+        "requirementChoices": [
+            "REQUIRED",
+            "DISABLED"
+        ]
+    },
+    {
+        "alias": "ci0-auth-flow-generic-exec-6-alias",
+        "authenticationConfigData": {
+            "alias": "ci0-auth-flow-generic-exec-6-alias",
+            "config": {
+                "secret": "ci0-recaptcha-secret",
+                "site.key": "ci0-recaptcha-site-key",
+                "useRecaptchaNet": "true"
+            }
+        },
+        "configurable": true,
+        "displayName": "Recaptcha",
+        "index": 0,
+        "level": 1,
+        "providerId": "registration-recaptcha-action",
+        "requirement": "DISABLED",
+        "requirementChoices": [
+            "REQUIRED",
+            "DISABLED"
+        ]
+    }
+]

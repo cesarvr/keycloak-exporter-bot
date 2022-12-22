@@ -1,0 +1,174 @@
+[
+    {
+        "alias": "review profile config",
+        "authenticationConfigData": {
+            "alias": "review profile config",
+            "config": {
+                "update.profile.on.first.login": "missing"
+            }
+        },
+        "configurable": true,
+        "displayName": "Review Profile",
+        "index": 0,
+        "level": 0,
+        "providerId": "idp-review-profile",
+        "requirement": "REQUIRED",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED"
+        ]
+    },
+    {
+        "authenticationFlow": true,
+        "configurable": false,
+        "displayName": "User creation or linking",
+        "index": 1,
+        "level": 0,
+        "requirement": "REQUIRED",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED",
+            "CONDITIONAL"
+        ]
+    },
+    {
+        "alias": "create unique user config",
+        "authenticationConfigData": {
+            "alias": "create unique user config",
+            "config": {
+                "require.password.update.after.registration": "false"
+            }
+        },
+        "configurable": true,
+        "displayName": "Create User If Unique",
+        "index": 0,
+        "level": 1,
+        "providerId": "idp-create-user-if-unique",
+        "requirement": "ALTERNATIVE",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED"
+        ]
+    },
+    {
+        "authenticationFlow": true,
+        "configurable": false,
+        "displayName": "Handle Existing Account",
+        "index": 1,
+        "level": 1,
+        "requirement": "ALTERNATIVE",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED",
+            "CONDITIONAL"
+        ]
+    },
+    {
+        "configurable": false,
+        "displayName": "Confirm link existing account",
+        "index": 0,
+        "level": 2,
+        "providerId": "idp-confirm-link",
+        "requirement": "REQUIRED",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED"
+        ]
+    },
+    {
+        "authenticationFlow": true,
+        "configurable": false,
+        "displayName": "Account verification options",
+        "index": 1,
+        "level": 2,
+        "requirement": "REQUIRED",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED",
+            "CONDITIONAL"
+        ]
+    },
+    {
+        "configurable": false,
+        "displayName": "Verify existing account by Email",
+        "index": 0,
+        "level": 3,
+        "providerId": "idp-email-verification",
+        "requirement": "ALTERNATIVE",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED"
+        ]
+    },
+    {
+        "authenticationFlow": true,
+        "configurable": false,
+        "displayName": "Verify Existing Account by Re-authentication",
+        "index": 1,
+        "level": 3,
+        "requirement": "ALTERNATIVE",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED",
+            "CONDITIONAL"
+        ]
+    },
+    {
+        "configurable": false,
+        "displayName": "Username Password Form for identity provider reauthentication",
+        "index": 0,
+        "level": 4,
+        "providerId": "idp-username-password-form",
+        "requirement": "REQUIRED",
+        "requirementChoices": [
+            "REQUIRED"
+        ]
+    },
+    {
+        "authenticationFlow": true,
+        "configurable": false,
+        "displayName": "First broker login - Conditional OTP",
+        "index": 1,
+        "level": 4,
+        "requirement": "CONDITIONAL",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED",
+            "CONDITIONAL"
+        ]
+    },
+    {
+        "configurable": false,
+        "displayName": "Condition - user configured",
+        "index": 0,
+        "level": 5,
+        "providerId": "conditional-user-configured",
+        "requirement": "REQUIRED",
+        "requirementChoices": [
+            "REQUIRED",
+            "DISABLED"
+        ]
+    },
+    {
+        "configurable": false,
+        "displayName": "OTP Form",
+        "index": 1,
+        "level": 5,
+        "providerId": "auth-otp-form",
+        "requirement": "REQUIRED",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED"
+        ]
+    }
+]

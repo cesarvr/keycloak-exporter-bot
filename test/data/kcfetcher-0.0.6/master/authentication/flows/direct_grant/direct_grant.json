@@ -1,0 +1,30 @@
+{
+    "alias": "direct grant",
+    "authenticationExecutions": [
+        {
+            "authenticator": "direct-grant-validate-username",
+            "autheticatorFlow": false,
+            "priority": 10,
+            "requirement": "REQUIRED",
+            "userSetupAllowed": false
+        },
+        {
+            "authenticator": "direct-grant-validate-password",
+            "autheticatorFlow": false,
+            "priority": 20,
+            "requirement": "REQUIRED",
+            "userSetupAllowed": false
+        },
+        {
+            "autheticatorFlow": true,
+            "flowAlias": "Direct Grant - Conditional OTP",
+            "priority": 30,
+            "requirement": "CONDITIONAL",
+            "userSetupAllowed": false
+        }
+    ],
+    "builtIn": true,
+    "description": "OpenID Connect Resource Owner Grant",
+    "providerId": "basic-flow",
+    "topLevel": true
+}
