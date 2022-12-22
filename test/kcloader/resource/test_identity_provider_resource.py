@@ -17,32 +17,32 @@ from ...helper import TestBed, remove_field_id
 
 
 class TestIdentityProviderBase(unittest.TestCase):
-    # def setUp(self):
-    #     pass
-    #
-    # def tearDown(self):
-    #     pass
 
-    @classmethod
-    def setUpClass(cls):
-        cls.idp_alias = "ci0-idp-saml-0"
-        cls.testbed = TestBed(realm='ci0-realm')
-        testbed = cls.testbed
+    # @classmethod
+    # def setUpClass(cls):
+
+    # def setUp(self):
+
+    def setUp(self):
+        self.idp_alias = "ci0-idp-saml-0"
+        self.testbed = TestBed(realm='ci0-realm')
+        testbed = self.testbed
         idp_filepath = os.path.join(testbed.DATADIR, f"{testbed.REALM}/identity-provider/ci0-idp-saml-0.json")
-        cls.idp_resource = IdentityProviderResource({
+        self.idp_resource = IdentityProviderResource({
             'path': idp_filepath,
             'keycloak_api': testbed.kc,
             'realm': testbed.REALM,
             'datadir': testbed.DATADIR,
         })
-        cls.idp_api = testbed.kc.build("identity-provider", testbed.REALM)
+        self.idp_api = testbed.kc.build("identity-provider", testbed.REALM)
+        self.idp_mappers_api = testbed.kc.build(f"identity-provider/instances/{self.idp_alias}/mappers", testbed.REALM)
 
         # create min realm first, ensure clean start
         testbed.kc.admin().remove(testbed.REALM)
         testbed.kc.admin().create({"realm": testbed.REALM})
 
         # check clean start
-        assert cls.idp_api.all() == []
+        assert self.idp_api.all() == []
 
     @classmethod
     def tearDownClass(cls):
@@ -122,6 +122,46 @@ class TestIdentityProviderResource(TestIdentityProviderBase):
         idp_c = idp_all[0]
         self.assertEqual(idp_c, idp_c | expected_idp)
         self.assertEqual('ci0-idp-saml-0-displayName', idp_api.findFirstByKV("alias", idp_alias)['displayName'])
+
+    def test_publish(self):
+        idp_resource = self.idp_resource
+        idp_api = self.idp_api
+        idp_alias = self.idp_alias
+        expected_idp = self.expected_idp
+        idp_mappers_api = self.idp_mappers_api
+
+        # create IdP and mappers
+        creation_state = idp_resource.publish()
+        self.assertTrue(creation_state)
+        # check objects are created
+        idp_all = idp_api.all()
+        self.assertEqual(len(idp_all), 1)
+        idp_a = idp_all[0]
+        self.assertEqual(idp_a, idp_a | expected_idp)
+        # check mapper objects are created
+        idp_mappers = idp_mappers_api.all()
+        self.assertEqual(len(idp_mappers), 2)
+        idp_mapper_names = [obj["name"] for obj in idp_mappers]
+        self.assertListEqual(sorted(["idp-mapper-0b", "idp-mapper-1"]), sorted(idp_mapper_names))
+        idp_mapper_a_ids = [obj["id"] for obj in idp_mappers]
+
+        # publish same data again
+        creation_state = idp_resource.publish()
+        self.assertTrue(creation_state)  # todo created should be False
+        # check content is not modified
+        idp_all = idp_api.all()
+        self.assertEqual(len(idp_all), 1)
+        idp_b = idp_all[0]
+        # check objects are not recreated without reason.
+        self.assertEqual(idp_a["internalId"], idp_b["internalId"])
+        self.assertEqual(idp_a, idp_b)
+        # check mapper objects are not recreated without reason
+        idp_mappers = idp_mappers_api.all()
+        self.assertEqual(len(idp_mappers), 2)
+        idp_mapper_names = [obj["name"] for obj in idp_mappers]
+        self.assertListEqual(sorted(["idp-mapper-0b", "idp-mapper-1"]), sorted(idp_mapper_names))
+        idp_mapper_b_ids = [obj["id"] for obj in idp_mappers]
+        self.assertListEqual(idp_mapper_a_ids, idp_mapper_b_ids)
 
 
 class TestIdentityProviderManager(TestIdentityProviderBase):
