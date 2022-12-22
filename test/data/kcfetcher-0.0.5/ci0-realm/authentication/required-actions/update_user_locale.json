@@ -4,6 +4,6 @@
     "defaultAction": false,
     "enabled": true,
     "name": "Update User Locale",
-    "priority": 1001,
+    "priority": 1000,
     "providerId": "update_user_locale"
 }

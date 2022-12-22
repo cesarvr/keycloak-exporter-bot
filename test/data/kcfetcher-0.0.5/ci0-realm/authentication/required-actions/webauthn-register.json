@@ -1,9 +1,0 @@
-{
-    "alias": "webauthn-register",
-    "config": {},
-    "defaultAction": false,
-    "enabled": true,
-    "name": "Webauthn Register",
-    "priority": 1000,
-    "providerId": "webauthn-register"
-}
