@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from copy import copy
 
 import kcapi
@@ -13,7 +14,28 @@ logger = logging.getLogger(__name__)
 
 
 class IdentityProviderResource(SingleResource):
-    pass
+    def __init__(self, resource):
+        super().__init__({
+            'name': 'identity-provider/instances',
+            'id': 'alias',
+            **resource,
+        })
+        self.datadir = resource['datadir']
+
+    def publish_self(self):
+        return super().publish()
+
+    def publish_mappers(self):
+        status = True
+        idp_mappers = IdentityProviderMapperResource.create_from_realm_doc(self.datadir, self.keycloak_api, self.realm_name)
+        for idp_mapper in idp_mappers:
+            status = status and idp_mapper.publish()
+        return status
+
+    def publish(self):
+        status = self.publish_self()
+        status = status and self.publish_mappers()
+        return status
 
 
 class IdentityProviderMapperResource(SingleResource):
@@ -32,7 +54,9 @@ class IdentityProviderMapperResource(SingleResource):
     Set them after realm and IdP are created.
     """
     @classmethod
-    def create_from_realm_doc(cls, realm_doc, keycloak_api, realm_name):
+    def create_from_realm_doc(cls, datadir, keycloak_api, realm_name):
+        realm_filepath = os.path.join(datadir, f"{realm_name}/{realm_name}.json")  # often correct
+        realm_doc = read_from_json(realm_filepath)
         if "identityProviderMappers" not in realm_doc:
             return []
         assert isinstance(realm_doc["identityProviderMappers"], list)
