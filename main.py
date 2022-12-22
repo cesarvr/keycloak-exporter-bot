@@ -161,7 +161,6 @@ def main(args):
         creation_state = auth_flow_res.publish()
 
     # realm_res.publish()
-#    return
 
     # load identity providers
     idp_filepaths = glob(os.path.join(datadir, f"{realm_name}/identity-provider/*.json"))
@@ -176,11 +175,7 @@ def main(args):
         })
         creation_state = idp_resource.publish()
 
-    # load IdP mappers
-    realm_doc = read_from_json(realm_filepath)
-    idp_mappers = IdentityProviderMapperResource.create_from_realm_doc(realm_doc, keycloak_api, realm_name)
-    for idp_mapper in idp_mappers:
-        idp_mapper.publish()
+    return
 
     # User federations
     user_federation_filepaths = glob(os.path.join(datadir, f"{realm_name}/user-federations/*/*.json"))
