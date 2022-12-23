@@ -66,6 +66,7 @@ class TestIdentityProviderBase(unittest.TestCase):
             msg=msg,
         )
 
+
 class TestIdentityProviderResource(TestIdentityProviderBase):
     expected_idp = {
         'addReadTokenRoleOnCreate': False,
@@ -118,7 +119,7 @@ class TestIdentityProviderResource(TestIdentityProviderBase):
 
         # publish same data again
         creation_state = idp0_resource.publish_self()
-        self.assertTrue(creation_state)  # todo created should be False
+        self.assertFalse(creation_state)
         # check content is not modified
         idp_all = idp_api.all()
         self.assertEqual(len(idp_all), 1)

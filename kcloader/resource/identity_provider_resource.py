@@ -39,19 +39,16 @@ class IdentityProviderResource(SingleResource):
 
     def publish_self(self):
         # self._ids_to_delete()
-        return super().publish()
+        return super().publish() #
 
     def publish_mappers(self):
-        status = True
-        for idp_mapper in self.idp_mappers:
-            status = status and idp_mapper.publish()
-        return status
+        status_all = [idp_mapper.publish() for idp_mapper in self.idp_mappers]
+        return any(status_all)
 
     def publish(self):
-        status = self.publish_self()
-        status = status and self.publish_mappers()
-        # self._ids_to_delete()
-        return status
+        status_self = self.publish_self()
+        status_mappers = self.publish_mappers()
+        return any([status_self, status_mappers])
 
 
 class IdentityProviderManager:
@@ -77,13 +74,12 @@ class IdentityProviderManager:
 
     def publish(self):
         create_ids, delete_ids = self._difference_ids()
-        status = True
-        for resource in self.resources:
-            status = status and resource.publish()
+        status_resources = [resource.publish() for resource in self.resources]
+        status_deleted = False
         for obj_id in delete_ids:
             self.resource_api.remove(obj_id)
-            status = True
-        return status
+            status_deleted = True
+        return any(status_resources + [status_deleted])
 
     def _difference_ids(self):
         """
