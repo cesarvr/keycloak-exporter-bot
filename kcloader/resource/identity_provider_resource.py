@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 class IdentityProviderResource(SingleResource):
     _resource_name = 'identity-provider/instances'
     _resource_id = 'alias'
+
     def __init__(self, resource):
         super().__init__({
             'name': self._resource_name,
@@ -25,29 +26,15 @@ class IdentityProviderResource(SingleResource):
         })
         self.datadir = resource['datadir']
 
-        idp_dirname = os.path.dirname(self.resource_path)
-        idp_mapper_filepaths = glob(os.path.join(idp_dirname, "mappers/*.json"))
-        self.idp_mappers = [
-            IdentityProviderMapperResource({
-                'path': idp_mapper_filepath,
-                'keycloak_api': self.keycloak_api,
-                'realm': self.realm_name,
-                'datadir': self.datadir,
-            })
-            for idp_mapper_filepath in idp_mapper_filepaths
-        ]
+        idp_alias = self.body["alias"]
+        self.idp_mapper_manager = IdentityProviderMapperManager(self.keycloak_api, self.realm_name, self.datadir, idp_alias=idp_alias)
 
     def publish_self(self):
-        # self._ids_to_delete()
-        return super().publish() #
-
-    def publish_mappers(self):
-        status_all = [idp_mapper.publish() for idp_mapper in self.idp_mappers]
-        return any(status_all)
+        return super().publish()
 
     def publish(self):
         status_self = self.publish_self()
-        status_mappers = self.publish_mappers()
+        status_mappers = self.idp_mapper_manager.publish()
         return any([status_self, status_mappers])
 
 
