@@ -3,7 +3,8 @@ import unittest
 from glob import glob
 from copy import copy
 
-from kcloader.resource import IdentityProviderResource, IdentityProviderMapperResource, IdentityProviderManager
+from kcloader.resource import IdentityProviderResource, IdentityProviderMapperResource, \
+    IdentityProviderManager, IdentityProviderMapperManager
 from kcloader.tools import read_from_json, find_in_list
 from ...helper import TestBed, remove_field_id
 
@@ -310,3 +311,74 @@ class TestIdentityProviderMapperResource(TestIdentityProviderBase):
         idp_mappers_c = idp0_mappers_api.all()
         idp_mappers_c__ids = [obj["id"] for obj in idp_mappers_c]
         self.assertEqual(idp_mappers_a__ids, idp_mappers_c__ids)
+
+class TestIdentityProviderManager(TestIdentityProviderBase):
+    def test_publish(self):
+        # also test helper methods
+        idp_api = self.idp_api
+        idp0_mappers_api = self.idp0_mappers_api
+        idp0_alias = self.idp0_alias
+
+        # create IdP, without any mapper
+        # create IdP
+        creation_state = self.idp0_resource.publish_self()
+        self.assertTrue(creation_state)
+        # check objects are created
+        idp_all = idp_api.all()
+        self.assertEqual(len(idp_all), 1)
+
+        # END prepare
+        # =============================================================================================
+
+        manager = IdentityProviderMapperManager(self.testbed.kc, self.testbed.REALM, self.testbed.DATADIR, idp_alias=idp0_alias)
+
+        create_ids, delete_ids, delete_ids_for_api = manager._difference_ids()
+        self.assertEqual(['ci0-saml-template-mapper', 'idp-mapper-1'], sorted(create_ids))
+        self.assertEqual([], delete_ids)
+        self.assertEqual([], delete_ids_for_api)
+
+        creation_state = manager.publish()
+        self.assertTrue(creation_state)
+        idp_mappers = idp0_mappers_api.all()
+        idp_mappers_names = sorted([obj["name"] for obj in idp_mappers])
+        self.assertEqual(["ci0-saml-template-mapper", "idp-mapper-1"], idp_mappers_names)
+
+        create_ids, delete_ids, delete_ids_for_api = manager._difference_ids()
+        self.assertEqual([], create_ids)
+        self.assertEqual([], delete_ids)
+        self.assertEqual([], delete_ids_for_api)
+
+        creation_state = manager.publish()
+        self.assertFalse(creation_state)
+        idp_mappers = idp0_mappers_api.all()
+        idp_mappers_names = sorted([obj["name"] for obj in idp_mappers])
+        self.assertEqual(["ci0-saml-template-mapper", "idp-mapper-1"], idp_mappers_names)
+
+        # ------------------------------------------------------------------------------
+        # create an additional IdP mapper
+        idp0_mappers_api.create({
+            "config": {
+                "attribute.friendly.name": "attr-friendly-name-TO-BE-DELETED",
+                "attribute.name": "attr-name-TO-BE-DELETED",
+                "attribute.value": "attr-value-TO-BE-DELETED",
+                "role": "ci0-client-0-TO-BE-DELETED.ci0-client0-role0-TO-BE-DELETED"
+            },
+            "identityProviderAlias": "ci0-idp-saml-0",
+            "identityProviderMapper": "saml-role-idp-mapper",
+            "name": "idp-mapper-1-TO-BE-DELETED",
+        }).isOk()
+        idp_mappers = idp0_mappers_api.all()
+        idp_mappers_names = sorted([obj["name"] for obj in idp_mappers])
+        self.assertEqual(["ci0-saml-template-mapper", "idp-mapper-1", "idp-mapper-1-TO-BE-DELETED"], idp_mappers_names)
+
+        create_ids, delete_ids, delete_ids_for_api = manager._difference_ids()
+        self.assertEqual([], create_ids)
+        self.assertEqual(['idp-mapper-1-TO-BE-DELETED'], delete_ids)
+        self.assertEqual(1, len(delete_ids_for_api))
+
+        # check extra IdP is deleted
+        creation_state = manager.publish()
+        self.assertTrue(creation_state)
+        idp_mappers = idp0_mappers_api.all()
+        idp_mappers_names = sorted([obj["name"] for obj in idp_mappers])
+        self.assertEqual(["ci0-saml-template-mapper", "idp-mapper-1"], idp_mappers_names)
