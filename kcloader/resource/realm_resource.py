@@ -25,7 +25,7 @@ class RealmResource(SingleResource):
             # But for today, be stupid.
             unsafe_attrs = [
                 "defaultRoles",
-                "identityProviderMappers",
+                # "identityProviderMappers",
                 # every configured flow might not be present yet
                 "browserFlow",
                 "clientAuthenticationFlow",

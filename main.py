@@ -14,6 +14,7 @@ from kcloader.resource import ResourcePublisher, ManyResources, SingleResource, 
     SingleClientResource, SingleCustomAuthenticationResource, RoleResource, ClientScopeResource, \
     IdentityProviderResource, IdentityProviderMapperResource, UserFederationResource, \
     RealmResource
+from kcloader.resource import IdentityProviderManager
 from kcloader.tools import read_from_json
 
 _level = logging.INFO
@@ -163,17 +164,8 @@ def main(args):
     # realm_res.publish()
 
     # load identity providers
-    idp_filepaths = glob(os.path.join(datadir, f"{realm_name}/identity-provider/*.json"))
-    for idp_filepath in idp_filepaths:
-        idp_resource = IdentityProviderResource({
-            'path': idp_filepath,
-            # 'name': 'identity-provider/instances',
-            # 'id': 'alias',
-            'keycloak_api': keycloak_api,
-            'realm': realm_name,
-            'datadir': datadir,
-        })
-        creation_state = idp_resource.publish()
+    idp_manager = IdentityProviderManager(keycloak_api, realm_name, datadir)
+    creation_state = idp_manager.publish()
 
     return
 

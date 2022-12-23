@@ -44,19 +44,28 @@ class ResourcePublisher:
         return obj[key]
 
     def publish(self, resource_api, update_policy=UpdatePolicy.PUT):
+        # return value: state==creation_state - True if object was created or updated.
         resource_id = self.get_id(resource_api)
         logger.debug(f"Publishing id={resource_id}  type=X {self.key}={self.body[self.key]}")
-        state = False
         if resource_id:
             if update_policy == UpdatePolicy.PUT:
                 # update_rmw - would include 'id' for auth flow PUT
-                state = resource_api.update(resource_id, self.body).isOk()
-
+                old_data = resource_api.get_one(resource_id)
+                # TODO per-class clenaup is required
+                for blacklisted_attr in ["internalId"]:
+                    old_data.pop(blacklisted_attr, None)
+                # Is in new data anything different from old_data?
+                # Corner case: whole attributes added/removed in new_data - what behaviour do we want in this case?
+                if self.body == old_data:
+                    # Nothing to change
+                    return False
+                http_ok = resource_api.update(resource_id, self.body).isOk()
+                return True
             if update_policy == UpdatePolicy.DELETE:
-                state = resource_api.remove(resource_id).isOk()
-                state = state and resource_api.create(self.body).isOk()
-
+                http_ok = resource_api.remove(resource_id).isOk()
+                assert http_ok  # it not, exceptiopn should be raised by .isOk()
+                http_ok = resource_api.create(self.body).isOk()
+                return True
         else:
-            state = resource_api.create(self.body).isOk()
-
-        return state
+            http_ok = resource_api.create(self.body).isOk() # X
+            return True
