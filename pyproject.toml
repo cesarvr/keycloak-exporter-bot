@@ -14,6 +14,11 @@ dependencies = [
     "kcapi>=1.0.34",
 ]
 
+[project.optional-dependencies]
+devel = [
+  "keycloak-fetch-bot == 0.0.6",
+]
+
 [project.urls]
 repository = "https://github.com/justinc1/keycloak-exporter-bot"
 
