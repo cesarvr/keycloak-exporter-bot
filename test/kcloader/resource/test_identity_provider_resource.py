@@ -184,6 +184,7 @@ class TestIdentityProviderManager(TestIdentityProviderBase):
     def test_publish(self):
         # also test helper methods
         idp_api = self.idp_api
+        idp0_mappers_api = self.idp0_mappers_api
         # idp0_alias = self.idp0_alias
         manager = IdentityProviderManager(self.testbed.kc, self.testbed.REALM, self.testbed.DATADIR)
 
@@ -195,6 +196,9 @@ class TestIdentityProviderManager(TestIdentityProviderBase):
         self.assertTrue(creation_state)
         idp_all = idp_api.all()
         self.assertEqual(['ci0-idp-saml-0', 'ci0-idp-saml-1'], sorted([obj["alias"] for obj in idp_all]))
+        idp_mappers = idp0_mappers_api.all()
+        idp_mappers_names = sorted([obj["name"] for obj in idp_mappers])
+        self.assertEqual(["ci0-saml-template-mapper", "idp-mapper-1"], idp_mappers_names)
 
         create_ids, delete_ids = manager._difference_ids()
         self.assertEqual([], create_ids)
@@ -204,6 +208,9 @@ class TestIdentityProviderManager(TestIdentityProviderBase):
         self.assertFalse(creation_state)
         idp_all = idp_api.all()
         self.assertEqual(['ci0-idp-saml-0', 'ci0-idp-saml-1'], sorted([obj["alias"] for obj in idp_all]))
+        idp_mappers = idp0_mappers_api.all()
+        idp_mappers_names = sorted([obj["name"] for obj in idp_mappers])
+        self.assertEqual(["ci0-saml-template-mapper", "idp-mapper-1"], idp_mappers_names)
 
         # ------------------------------------------------------------------------------
         # create an additional IdP
@@ -231,6 +238,9 @@ class TestIdentityProviderManager(TestIdentityProviderBase):
         self.assertTrue(creation_state)
         idp_all = idp_api.all()
         self.assertEqual(["ci0-idp-saml-0", "ci0-idp-saml-1"], sorted([obj["alias"] for obj in idp_all]))
+        idp_mappers = idp0_mappers_api.all()
+        idp_mappers_names = sorted([obj["name"] for obj in idp_mappers])
+        self.assertEqual(["ci0-saml-template-mapper", "idp-mapper-1"], idp_mappers_names)
 
 
 class TestIdentityProviderMapperResource(TestIdentityProviderBase):
