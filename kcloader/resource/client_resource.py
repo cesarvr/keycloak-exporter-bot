@@ -1,6 +1,8 @@
 import logging
 import os
+import json
 from glob import glob
+from copy import copy
 
 import kcapi
 
@@ -129,7 +131,8 @@ class SingleClientResource(SingleResource):
         # TODO support auth flow override
         # For now, just skip this
         body = self.body
-        if body["authenticationFlowBindingOverrides"] != {}:
+        if "authenticationFlowBindingOverrides" in body and \
+                body["authenticationFlowBindingOverrides"] != {}:
             logger.error(
                 f"Client clientId={body['clientId']}"
                 " - authenticationFlowBindingOverrides will not be changed"
@@ -137,11 +140,47 @@ class SingleClientResource(SingleResource):
                 ", desired value={body['authenticationFlowBindingOverrides']}")
             body.pop("authenticationFlowBindingOverrides")
 
-        return self.resource.publish(self.body)
+        return self.resource.publish_object(self)
 
     def publish(self):
         state = self.publish_self()
         return state and self.publish_roles(include_composite=False) and self.publish_scopes()
+
+    def is_equal(self, obj):
+        """
+        :param obj: dict returned by API
+        :return: True if content in self.body is same as in obj
+        """
+        # self.body is already sorted
+        obj1 = copy(self.body)
+        obj2 = copy(obj)
+        for oo in [obj1, obj2]:
+            oo.pop("id", None)
+            # authenticationFlowBindingOverrides is not implemented yet, ignore it
+            oo["authenticationFlowBindingOverrides"] = {}
+            # sort scopes
+            oo["defaultClientScopes"] = sorted(oo["defaultClientScopes"])
+            oo["optionalClientScopes"] = sorted(oo["optionalClientScopes"])
+            if "protocolMappers" in oo:
+                # remove id from protocolMappers
+                for protocol_mapper in oo["protocolMappers"]:
+                    protocol_mapper.pop("id", None)
+                # sort protocolMappers by name
+                oo["protocolMappers"] = sorted(oo["protocolMappers"], key=lambda pm: pm["name"])
+
+        # sort obj2 - it is return by API
+        obj2 = json.loads(json.dumps(obj2, sort_keys=True))
+        # obj1 - we added and remove authenticationFlowBindingOverrides
+        # sort is needed too
+        obj1 = json.loads(json.dumps(obj1, sort_keys=True))
+
+        # debug
+        # with open("a", "w") as ff:
+        #     json.dump(obj1, ff, indent=True)
+        # with open("b", "w") as ff:
+        #     json.dump(obj2, ff, indent=True)
+
+        return obj1 == obj2
 
 
 class ClientManager:

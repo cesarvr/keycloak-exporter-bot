@@ -10,9 +10,11 @@ class UpdatePolicy:
 
 
 class ResourcePublisher:
-    def __init__(self, key='key', body=''):
+    def __init__(self, key='key', body='', single_resource=None):
+        # assert isinstance(single_resource, (SingleResource, None))
         self.key = key
         self.body = body
+        self.single_resource = single_resource
 
     def get_id(self, resource_api):
         # TODO resource should know what is the 'key'
@@ -52,13 +54,24 @@ class ResourcePublisher:
                 # update_rmw - would include 'id' for auth flow PUT
                 # old_data = resource_api.get_one(resource_id)
                 # TODO per-class clenaup is required
-                for blacklisted_attr in ["internalId"]:
+                for blacklisted_attr in [
+                    "internalId",  # identity-provider
+                    "id",  # clients, and others
+                    # "authenticationFlowBindingOverrides",  # clients - this is not implemented yet
+                ]:
                     old_data.pop(blacklisted_attr, None)
                 # Is in new data anything different from old_data?
                 # Corner case: whole attributes added/removed in new_data - what behaviour do we want in this case?
-                if self.body == old_data:
-                    # Nothing to change
-                    return False
+                if self.single_resource:
+                    assert self.body == self.single_resource.body
+                    if self.single_resource.is_equal(old_data):
+                        # no change needed
+                        return False
+                else:
+                    # old code, when there was no self.single_resource.
+                    if self.body == old_data:
+                        # Nothing to change
+                        return False
                 http_ok = resource_api.update(resource_id, self.body).isOk()
                 return True
             if update_policy == UpdatePolicy.DELETE:

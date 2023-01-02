@@ -34,6 +34,9 @@ class Resource:
     def publish(self, body):
         return ResourcePublisher(self.key, body).publish(self._resource_api)
 
+    def publish_object(self, single_resource):
+        return ResourcePublisher(self.key, single_resource.body, single_resource).publish(self._resource_api)
+
     def remove(self, body):
         id = self.get_resource_id(body)
         if id:
