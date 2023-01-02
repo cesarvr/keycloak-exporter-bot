@@ -14,7 +14,7 @@ from kcloader.resource import ResourcePublisher, ManyResources, SingleResource, 
     SingleClientResource, SingleCustomAuthenticationResource, RoleResource, ClientScopeResource, \
     IdentityProviderResource, IdentityProviderMapperResource, UserFederationResource, \
     RealmResource
-from kcloader.resource import IdentityProviderManager
+from kcloader.resource import IdentityProviderManager, ClientManager
 from kcloader.tools import read_from_json
 
 _level = logging.INFO
@@ -166,6 +166,10 @@ def main(args):
     # load identity providers
     idp_manager = IdentityProviderManager(keycloak_api, realm_name, datadir)
     creation_state = idp_manager.publish()
+
+    # load clients
+    client_manager = ClientManager(keycloak_api, realm_name, datadir)
+    creation_state = client_manager.publish()
 
     return
 

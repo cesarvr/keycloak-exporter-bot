@@ -12,6 +12,16 @@ logger = logging.getLogger(__name__)
 
 
 class SingleClientResource(SingleResource):
+    _resource_name = "clients"
+    _resource_id = "clientId"
+    def __init__(self, resource):
+        super().__init__({
+            'name': self._resource_name,
+            'id': self._resource_id,
+            **resource,
+        })
+        self.datadir = resource['datadir']
+
     # def _publish_roles_old(self):
     #     state = True
     #     [roles_path_exist, roles_path] = lookup_child_resource(self.resource_path, '/roles/roles.json')
@@ -132,3 +142,69 @@ class SingleClientResource(SingleResource):
     def publish(self):
         state = self.publish_self()
         return state and self.publish_roles(include_composite=False) and self.publish_scopes()
+
+
+class ClientManager:
+    _resource_name = "clients"
+    _resource_id = "clientId"
+    _resource_id_blacklist = [
+        "account",
+        "account-console",
+        "admin-cli",
+        "broker",
+        "realm-management",
+        "security-admin-console",
+    ]
+
+    def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str):
+        self.keycloak_api = keycloak_api
+        self.realm = realm
+        self.datadir = datadir
+        self.resource_api = self.keycloak_api.build(self._resource_name, self.realm)
+
+        object_filepaths = self._object_filepaths()
+
+        self.resources = [
+            SingleClientResource({
+                'path': object_filepath,
+                'keycloak_api': keycloak_api,
+                'realm': realm,
+                'datadir': datadir,
+            })
+            for object_filepath in object_filepaths
+        ]
+
+    def _object_filepaths(self):
+        object_filepaths = glob(os.path.join(self.datadir, f"{self.realm}/clients/*/*.json"))
+        # remove scope-mappings.json
+        object_filepaths = [fp for fp in object_filepaths if not fp.endswith("/scope-mappings.json")]
+        return object_filepaths
+
+    def publish(self):
+        create_ids, delete_ids = self._difference_ids()
+        status_resources = [resource.publish() for resource in self.resources]
+        status_deleted = False
+        for obj_id in delete_ids:
+            # TODO clients are delete by UUID
+            self.resource_api.remove(obj_id).isOk()
+            status_deleted = True
+        return any(status_resources + [status_deleted])
+
+    def _difference_ids(self):
+        """
+        If object is present on server but missing in datadir, then it needs to be removed.
+        This function will return list of ids (alias-es, clientId-s, etc.) that needs to be removed.
+        """
+        # idp_filepaths = glob(os.path.join(self.datadir, f"{self.realm}/identity-provider/*/*.json"))
+        object_filepaths = self._object_filepaths()
+
+        file_docs = [read_from_json(object_filepath) for object_filepath in object_filepaths]
+        file_ids = [doc[self._resource_id] for doc in file_docs]
+        server_objs = self.resource_api.all()
+        server_ids = [obj[self._resource_id] for obj in server_objs]
+        server_ids = [sid for sid in server_ids if sid not in self._resource_id_blacklist]
+        # remove objects that are on server, but missing in datadir
+        delete_ids = list(set(server_ids).difference(file_ids))
+        # create objects that are in datdir, but missing on server
+        create_ids = list(set(file_ids).difference(server_ids))
+        return create_ids, delete_ids
