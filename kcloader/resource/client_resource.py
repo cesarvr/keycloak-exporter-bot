@@ -12,17 +12,17 @@ logger = logging.getLogger(__name__)
 
 
 class SingleClientResource(SingleResource):
-    def _publish_roles_old(self):
-        state = True
-        [roles_path_exist, roles_path] = lookup_child_resource(self.resource_path, '/roles/roles.json')
-        if roles_path_exist:
-            id = ResourcePublisher(key='clientId', body=self.body).get_id(self.resource.api())
-            roles = self.resource.api().roles({'key': 'id', 'value': id})
-            roles_objects = read_from_json(roles_path)
-            for object in roles_objects:
-                state = state and ResourcePublisher(key='name', body=object).publish(roles, update_policy=UpdatePolicy.DELETE)
-
-        return state
+    # def _publish_roles_old(self):
+    #     state = True
+    #     [roles_path_exist, roles_path] = lookup_child_resource(self.resource_path, '/roles/roles.json')
+    #     if roles_path_exist:
+    #         id = ResourcePublisher(key='clientId', body=self.body).get_id(self.resource.api())
+    #         roles = self.resource.api().roles({'key': 'id', 'value': id})
+    #         roles_objects = read_from_json(roles_path)
+    #         for object in roles_objects:
+    #             state = state and ResourcePublisher(key='name', body=object).publish(roles, update_policy=UpdatePolicy.DELETE)
+    #
+    #     return state
 
     def publish_roles(self, include_composite):
         state = True
@@ -66,7 +66,7 @@ class SingleClientResource(SingleResource):
 
             else:
                 # 2nd pass, setup composites
-                if not "composites" in role_object:
+                if "composites" not in role_object:
                     continue
 
                 this_role = find_in_list(this_client_roles, name=role_object["name"])
@@ -120,7 +120,11 @@ class SingleClientResource(SingleResource):
         # For now, just skip this
         body = self.body
         if body["authenticationFlowBindingOverrides"] != {}:
-            logger.error(f"Client clientId={body['clientId']} - authenticationFlowBindingOverrides will not be changed, current server value=?, desired value={body['authenticationFlowBindingOverrides']}")
+            logger.error(
+                f"Client clientId={body['clientId']}"
+                " - authenticationFlowBindingOverrides will not be changed"
+                ", current server value=?"
+                ", desired value={body['authenticationFlowBindingOverrides']}")
             body.pop("authenticationFlowBindingOverrides")
 
         return self.resource.publish(self.body)
