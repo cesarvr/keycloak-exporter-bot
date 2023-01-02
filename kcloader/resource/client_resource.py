@@ -147,6 +147,7 @@ class SingleClientResource(SingleResource):
 class ClientManager:
     _resource_name = "clients"
     _resource_id = "clientId"
+    _resource_delete_id = "id"
     _resource_id_blacklist = [
         "account",
         "account-console",
@@ -181,12 +182,12 @@ class ClientManager:
         return object_filepaths
 
     def publish(self):
-        create_ids, delete_ids = self._difference_ids()
+        create_ids, delete_objs = self._difference_ids()
         status_resources = [resource.publish() for resource in self.resources]
         status_deleted = False
-        for obj_id in delete_ids:
-            # TODO clients are delete by UUID
-            self.resource_api.remove(obj_id).isOk()
+        for delete_obj in delete_objs:
+            delete_id = delete_obj[self._resource_delete_id]
+            self.resource_api.remove(delete_id).isOk()
             status_deleted = True
         return any(status_resources + [status_deleted])
 
@@ -207,4 +208,5 @@ class ClientManager:
         delete_ids = list(set(server_ids).difference(file_ids))
         # create objects that are in datdir, but missing on server
         create_ids = list(set(file_ids).difference(server_ids))
-        return create_ids, delete_ids
+        delete_objs = [obj for obj in server_objs if obj[self._resource_id] in delete_ids]
+        return create_ids, delete_objs
