@@ -64,7 +64,7 @@ class IdentityProviderManager:
         status_resources = [resource.publish() for resource in self.resources]
         status_deleted = False
         for obj_id in delete_ids:
-            self.resource_api.remove(obj_id)
+            self.resource_api.remove(obj_id).isOk()
             status_deleted = True
         return any(status_resources + [status_deleted])
 
