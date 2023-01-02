@@ -51,6 +51,7 @@ class RHSSOExporterMain(unittest.TestCase):
             'id': 'name',
             'keycloak_api': self.keycloak_api,
             'realm': self.testbed.REALM,
+            'datadir': SAMPLE_PAYLOADS_PATH,
         }
 
         ManyResources(roles).publish()
@@ -77,6 +78,7 @@ class RHSSOExporterMain(unittest.TestCase):
             'id': 'clientId',
             'keycloak_api': self.keycloak_api,
             'realm': self.testbed.realm,
+            'datadir': SAMPLE_PAYLOADS_PATH,
         }
 
         client = SingleClientResource(params)
@@ -104,6 +106,7 @@ class RHSSOExporterMain(unittest.TestCase):
             'id': 'clientId',
             'keycloak_api': self.keycloak_api,
             'realm': self.testbed.realm,
+            'datadir': SAMPLE_PAYLOADS_PATH,
         }
         clients_path = os.path.join(SAMPLE_PAYLOADS_PATH, 'clients/')
 

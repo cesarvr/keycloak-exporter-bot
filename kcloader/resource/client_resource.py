@@ -57,7 +57,7 @@ class SingleClientResource(SingleResource):
 
         for role_filepath in role_filepaths:
             # self.resource.resource_api == clients_api (?)
-            id = ResourcePublisher(key='clientId', body=self.body).get_id(self.resource.resource_api)
+            id, obj = ResourcePublisher(key='clientId', body=self.body).get_id(self.resource.resource_api)
             roles = self.resource.resource_api.roles({'key': 'id', 'value': id})
             role_object = read_from_json(role_filepath)
             if not include_composite:
