@@ -4,8 +4,7 @@ from glob import glob
 from copy import copy
 
 from kcloader.resource import SingleClientResource, \
-    IdentityProviderResource, IdentityProviderMapperResource, \
-    IdentityProviderManager, IdentityProviderMapperManager
+    ClientManager
 from kcloader.tools import read_from_json, find_in_list
 from ...helper import TestBed, remove_field_id, TestCaseBase
 
@@ -206,7 +205,7 @@ class TestClientResource(TestCaseBase):
             # TEMP - .publish_roles() is broken, and destroys defaultRoles
             expected_client0_b.pop("defaultRoles")
 
-        # publish same data again
+        # publish same data again - idempotence
         creation_state = client0_resource.publish()
         self.assertTrue(creation_state)  # TODO - should be False if defaultClientScopes would contain ci0-client-scope
         # check content is not modified
@@ -223,3 +222,88 @@ class TestClientResource(TestCaseBase):
         self.assertEqual(roles_b_names, expected_role_names)
 
         # modify something
+
+
+class TestClientResourceManager(TestCaseBase):
+    def setUp(self):
+        super().setUp()
+        testbed = self.testbed
+        self.clients_api = testbed.kc.build("clients", testbed.REALM)
+        # check clean start
+        assert len(self.clients_api.all()) == 6  # 6 default clients
+
+    def test_publish(self):
+        default_client_clientIds = [
+            'account',
+            'account-console',
+            'admin-cli',
+            'broker',
+            'realm-management',
+            'security-admin-console',
+        ]
+        our_client_clientIds = [
+            'ci0-client-0',
+            'ci0-client-1',
+            'ci0-client-2-saml',
+            'ci0-client-3-saml',
+        ]
+        testbed = self.testbed
+        clients_api = self.clients_api
+        manager = ClientManager(self.testbed.kc, self.testbed.REALM, self.testbed.DATADIR)
+
+        # check initial state
+        create_ids, delete_objs = manager._difference_ids()
+        delete_ids = sorted([obj["clientId"] for obj in delete_objs])
+        self.assertEqual(our_client_clientIds, sorted(create_ids))
+        self.assertEqual([], delete_ids)
+
+        # publish data - 1st time
+        creation_state = manager.publish()
+        self.assertTrue(creation_state)
+        clients_all = clients_api.all()
+        self.assertEqual(
+            sorted(default_client_clientIds + our_client_clientIds),
+            sorted([obj["clientId"] for obj in clients_all])
+        )
+
+        create_ids, delete_objs = manager._difference_ids()
+        self.assertEqual([], create_ids)
+        self.assertEqual([], delete_objs)
+
+        # publish same data again - idempotence
+        creation_state = manager.publish()
+        self.assertTrue(creation_state)  # TODO should be false
+        clients_all = clients_api.all()
+        self.assertEqual(
+            sorted(default_client_clientIds + our_client_clientIds),
+            sorted([obj["clientId"] for obj in clients_all])
+        )
+
+        # ------------------------------------------------------------------------------
+        # create an additional client
+        self.clients_api.create({
+            "clientId": "ci0-client-x-to-be-deleted",
+            "description": "ci0-client-x-to-be-DELETED",
+            "protocol": "openid-connect",
+            "enabled": True,
+        }).isOk()
+        clients_all = clients_api.all()
+        self.assertEqual(len(clients_all), 6 + 4 + 1)
+        self.assertEqual(
+            sorted(default_client_clientIds + our_client_clientIds + ["ci0-client-x-to-be-deleted"]),
+            sorted([obj["clientId"] for obj in clients_all])
+        )
+
+        create_ids, delete_objs = manager._difference_ids()
+        delete_ids = sorted([obj["clientId"] for obj in delete_objs])
+        self.assertEqual([], create_ids)
+        self.assertEqual(['ci0-client-x-to-be-deleted'], delete_ids)
+
+        # check extra IdP is deleted
+        creation_state = manager.publish()
+        self.assertTrue(creation_state)
+        clients_all = clients_api.all()
+        self.assertEqual(
+            sorted(default_client_clientIds + our_client_clientIds),
+            sorted([obj["clientId"] for obj in clients_all])
+        )
