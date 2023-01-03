@@ -53,10 +53,12 @@ class ResourcePublisher:
             if update_policy == UpdatePolicy.PUT:
                 # update_rmw - would include 'id' for auth flow PUT
                 # old_data = resource_api.get_one(resource_id)
-                # TODO per-class clenaup is required
+                # TODO implement is_equal() for all classes - IdentityProviderResource is missing it.
+                # Then blacklisted_attr will not be needed anymore.
                 for blacklisted_attr in [
                     "internalId",  # identity-provider
-                    "id",  # clients, and others
+                    # "id",  # clients, and others
+                    # "id" - no need to remove, .is_equal() will ignore id, internalId and other attributes
                     # "authenticationFlowBindingOverrides",  # clients - this is not implemented yet
                 ]:
                     old_data.pop(blacklisted_attr, None)
@@ -69,6 +71,7 @@ class ResourcePublisher:
                         return False
                 else:
                     # old code, when there was no self.single_resource.
+                    # TODO remove when it is not used anymore
                     if self.body == old_data:
                         # Nothing to change
                         return False
