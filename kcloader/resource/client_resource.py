@@ -144,7 +144,7 @@ class SingleClientResource(SingleResource):
 
     def publish(self):
         state = self.publish_self()
-        return state and self.publish_roles(include_composite=False) and self.publish_scopes()
+        return state or self.publish_roles(include_composite=False) or self.publish_scopes()
 
     def is_equal(self, obj):
         """
