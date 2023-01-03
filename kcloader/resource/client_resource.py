@@ -54,7 +54,7 @@ class SingleClientResource(SingleResource):
         clients_api = self.resource.resource_api
         client = clients_api.findFirstByKV('clientId', self.body["clientId"])
         client_roles_api = self.resource.resource_api.roles({'key': 'id', 'value': client["id"]})
-        clientId = self.body["clientId"]
+        # clientId = self.body["clientId"]
 
         # TODO - move to ._object_filepaths()
         # Grrr - clients are in directories like client-0, client-1, etc
@@ -182,6 +182,12 @@ class SingleClientResource(SingleResource):
         return state
 
     def publish_self(self):
+        """
+        If client has configured "defaultRoles", then client role with such name will be
+        magically created by server. All other role attributes will be wrong.
+        We will update such client role a bit later, when client roles are updated.
+        """
+
         # Uncaught server error: java.lang.RuntimeException: Unable to resolve auth flow binding override for: browser
         # TODO support auth flow override
         # For now, just skip this

@@ -75,7 +75,10 @@ class ResourcePublisher:
                     if self.body == old_data:
                         # Nothing to change
                         return False
-                http_ok = resource_api.update(resource_id, self.body).isOk()
+
+                # TODO BUG here - update URL is https://172.17.0.2:8443/auth/admin/realms/ci0-realm/roles-by-id/d8d61af4-186f-4293-b618-093b45db27c8
+                http_ok = resource_api.update(resource_id, self.body).isOk() # this ?
+
                 return True
             if update_policy == UpdatePolicy.DELETE:
                 http_ok = resource_api.remove(resource_id).isOk()
