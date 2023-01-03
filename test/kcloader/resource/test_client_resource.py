@@ -11,6 +11,66 @@ from ...helper import TestBed, remove_field_id, TestCaseBase
 
 
 class TestClientResource(TestCaseBase):
+    expected_client0 = {
+        "access": {
+            "configure": True,
+            "manage": True,
+            "view": True
+        },
+        "alwaysDisplayInConsole": False,
+        "attributes": {
+            "access.token.lifespan": "600",
+            "access.token.signed.response.alg": "ES256",
+            "backchannel.logout.revoke.offline.tokens": "false",
+            "backchannel.logout.session.required": "false",
+            "client_credentials.use_refresh_token": "false",
+            "display.on.consent.screen": "false",
+            "exclude.session.state.from.auth.response": "true",
+            "id.token.as.detached.signature": "false",
+            "oauth2.device.authorization.grant.enabled": "false",
+            "oidc.ciba.grant.enabled": "false",
+            "require.pushed.authorization.requests": "false",
+            "saml.artifact.binding": "false",
+            "saml.assertion.signature": "false",
+            "saml.authnstatement": "false",
+            "saml.client.signature": "false",
+            "saml.encrypt": "false",
+            "saml.force.post.binding": "false",
+            "saml.multivalued.roles": "false",
+            "saml.onetimeuse.condition": "false",
+            "saml.server.signature": "false",
+            "saml.server.signature.keyinfo.ext": "false",
+            "saml_force_name_id_format": "false",
+            "tls.client.certificate.bound.access.tokens": "false",
+            "use.refresh.tokens": "true"
+        },
+        "authenticationFlowBindingOverrides": {
+            # "browser": "browser"  #
+        },
+        "bearerOnly": False,
+        "clientAuthenticatorType": "client-secret",
+        "clientId": "ci0-client-0",
+        "consentRequired": False,
+        "defaultClientScopes": [
+            # "ci0-client-scope",
+            "email",
+            "profile",
+            "role_list",
+            "roles",
+            "web-origins"
+        ],
+        "defaultRoles": [
+            "ci0-client0-role0"
+        ],
+        "description": "ci0-client-0-desc",
+        "directAccessGrantsEnabled": False,
+        "enabled": True,
+        "frontchannelLogout": False,
+        "fullScopeAllowed": False,
+        "implicitFlowEnabled": False,
+        "name": "ci0-client-0-name",
+    }
+
     def setUp(self):
         super().setUp()
         testbed = self.testbed
@@ -40,65 +100,9 @@ class TestClientResource(TestCaseBase):
         clients_api = self.clients_api
         client0_clientId = self.client0_clientId
 
-        expected_client0 = {
-            "access": {
-                "configure": True,
-                "manage": True,
-                "view": True
-            },
-            "alwaysDisplayInConsole": False,
-            "attributes": {
-                "access.token.lifespan": "600",
-                "access.token.signed.response.alg": "ES256",
-                "backchannel.logout.revoke.offline.tokens": "false",
-                "backchannel.logout.session.required": "false",
-                "client_credentials.use_refresh_token": "false",
-                "display.on.consent.screen": "false",
-                "exclude.session.state.from.auth.response": "true",
-                "id.token.as.detached.signature": "false",
-                "oauth2.device.authorization.grant.enabled": "false",
-                "oidc.ciba.grant.enabled": "false",
-                "require.pushed.authorization.requests": "false",
-                "saml.artifact.binding": "false",
-                "saml.assertion.signature": "false",
-                "saml.authnstatement": "false",
-                "saml.client.signature": "false",
-                "saml.encrypt": "false",
-                "saml.force.post.binding": "false",
-                "saml.multivalued.roles": "false",
-                "saml.onetimeuse.condition": "false",
-                "saml.server.signature": "false",
-                "saml.server.signature.keyinfo.ext": "false",
-                "saml_force_name_id_format": "false",
-                "tls.client.certificate.bound.access.tokens": "false",
-                "use.refresh.tokens": "true"
-            },
-            "authenticationFlowBindingOverrides": {
-                # "browser": "browser"  #
-            },
-            "bearerOnly": False,
-            "clientAuthenticatorType": "client-secret",
-            "clientId": "ci0-client-0",
-            "consentRequired": False,
-            "defaultClientScopes": [
-                # "ci0-client-scope",
-                "email",
-                "profile",
-                "role_list",
-                "roles",
-                "web-origins"
-            ],
-            "defaultRoles": [
-                "ci0-client0-role0"
-            ],
-            "description": "ci0-client-0-desc",
-            "directAccessGrantsEnabled": False,
-            "enabled": True,
-            "frontchannelLogout": False,
-            "fullScopeAllowed": False,
-            "implicitFlowEnabled": False,
-            "name": "ci0-client-0-name",
-        }
+        # initial state
+        clients_all = clients_api.all()
+        self.assertEqual(len(clients_all), default_client_count)
 
         # create client
         creation_state = client0_resource.publish_self()
@@ -108,7 +112,7 @@ class TestClientResource(TestCaseBase):
         self.assertEqual(len(clients_all), default_client_count + 1)
         client_a = clients_api.findFirstByKV("clientId", client0_clientId)
         self._sort_object(client_a)
-        self.assertEqual(client_a, client_a | expected_client0)
+        self.assertEqual(client_a, client_a | self.expected_client0)
 
         # publish same data again
         creation_state = client0_resource.publish_self()
@@ -139,3 +143,64 @@ class TestClientResource(TestCaseBase):
             # is not sorted...
             self.assertEqual(client_c, client_c | expected_client0)
         self.assertEqual('ci0-client-0-desc', clients_api.get_one(client_a["id"])['description'])
+
+    def test_publish(self):
+        self.maxDiff = None
+        expected_client0_a = copy(self.expected_client0)
+        # none of those roles is present, API will drop whole defaultRoles attribute
+        expected_client0_a.pop("defaultRoles")
+        expected_client0_b = copy(self.expected_client0)
+        # only one client role is present
+        expected_client0_b["defaultRoles"] = ["ci0-client0-role0"]
+
+        default_client_count = 6  # newly created realm has 6 clients
+        client0_resource = self.client0_resource
+        clients_api = self.clients_api
+        client0_clientId = self.client0_clientId
+
+        # initial state
+        clients_all = clients_api.all()
+        self.assertEqual(len(clients_all), default_client_count)
+
+        # create client
+        creation_state = client0_resource.publish()
+        self.assertTrue(creation_state)
+        # check objects are created
+        clients_all = clients_api.all()
+        self.assertEqual(len(clients_all), default_client_count + 1)
+        client_a = clients_api.findFirstByKV("clientId", client0_clientId)
+        self._sort_object(client_a)
+        self.assertEqual(client_a, client_a | expected_client0_a)
+
+        # TODO temporary test -
+        # .publish() will not set defaultRoles (guess - roles are not updated, but removed/created).
+        # So we test .publish_self(), this one should configure defaultRoles.
+        # TODO - try not to use UpdatePolicy.DELETE - just avoid it.
+        if 1:
+            creation_state = client0_resource.publish_self()
+            self.assertTrue(creation_state)  # is True, because of defaultClientScopes and defaultRoles
+            # check content is not modified
+            clients_all = clients_api.all()
+            self.assertEqual(len(clients_all), default_client_count + 1)
+            client_b = clients_api.findFirstByKV("clientId", client0_clientId)
+            self._sort_object(client_b)
+            # check objects are not recreated without reason.
+            self.assertEqual(client_a["id"], client_b["id"])
+            self.assertEqual(client_b, client_b | expected_client0_b)
+
+            # TEMP - .publish_roles() is broken, and destroys defaultRoles
+            expected_client0_b.pop("defaultRoles")
+
+        # publish same data again
+        creation_state = client0_resource.publish()
+        self.assertTrue(creation_state)  # TODO - should be False if defaultClientScopes would contain ci0-client-scope
+        # check content is not modified
+        clients_all = clients_api.all()
+        self.assertEqual(len(clients_all), default_client_count + 1)
+        client_b = clients_api.findFirstByKV("clientId", client0_clientId)
+        self._sort_object(client_b)
+        # check objects are not recreated without reason.
+        self.assertEqual(client_a["id"], client_b["id"])
+        self.assertEqual(client_b, client_b | expected_client0_b)
+
+        # modify something
