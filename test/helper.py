@@ -1,5 +1,6 @@
 import json
 import unittest
+import logging
 
 from kcapi import OpenID, Keycloak
 from kcloader.tools import read_from_json
@@ -8,6 +9,9 @@ import os
 # We run unittest from top level directory
 SAMPLES_PATH = "test/samples"
 SAMPLE_PAYLOADS_PATH = "test/sample_payloads"
+
+_level = logging.DEBUG
+logging.basicConfig(level=_level)
 
 
 class TestBed:
