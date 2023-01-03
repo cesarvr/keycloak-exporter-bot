@@ -146,6 +146,12 @@ class TestClientResource(TestCaseBase):
 
     def test_publish(self):
         self.maxDiff = None
+        expected_role_names = [
+            'ci0-client0-role0',
+            'ci0-client0-role1',
+            'ci0-client0-role1a',
+            'ci0-client0-role1b',
+        ]
         expected_client0_a = copy(self.expected_client0)
         # none of those roles is present, API will drop whole defaultRoles attribute
         expected_client0_a.pop("defaultRoles")
@@ -171,6 +177,11 @@ class TestClientResource(TestCaseBase):
         client_a = clients_api.findFirstByKV("clientId", client0_clientId)
         self._sort_object(client_a)
         self.assertEqual(client_a, client_a | expected_client0_a)
+        # check roles
+        roles_api = client0_resource.resource.resource_api.roles({'key': 'id', 'value': client_a["id"]})
+        roles_a = roles_api.all()
+        roles_a_names = sorted([role["name"] for role in roles_a])
+        self.assertEqual(roles_a_names, expected_role_names)
 
         # TODO temporary test -
         # .publish() will not set defaultRoles (guess - roles are not updated, but removed/created).
@@ -187,6 +198,10 @@ class TestClientResource(TestCaseBase):
             # check objects are not recreated without reason.
             self.assertEqual(client_a["id"], client_b["id"])
             self.assertEqual(client_b, client_b | expected_client0_b)
+            # check roles
+            roles_b = roles_api.all()
+            roles_b_names = sorted([role["name"] for role in roles_a])
+            self.assertEqual(roles_b_names, expected_role_names)
 
             # TEMP - .publish_roles() is broken, and destroys defaultRoles
             expected_client0_b.pop("defaultRoles")
@@ -202,5 +217,9 @@ class TestClientResource(TestCaseBase):
         # check objects are not recreated without reason.
         self.assertEqual(client_a["id"], client_b["id"])
         self.assertEqual(client_b, client_b | expected_client0_b)
+        # check roles
+        roles_b = roles_api.all()
+        roles_b_names = sorted([role["name"] for role in roles_a])
+        self.assertEqual(roles_b_names, expected_role_names)
 
         # modify something
