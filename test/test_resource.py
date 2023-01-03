@@ -161,3 +161,8 @@ class RHSSOExporterMain(unittest.TestCase):
     def tearDownClass(self):
         #self.testbed.cleanup()
         True
+
+    def setUp(self):
+        # also "reset" realm for each test
+        self.testbed.kc.admin().remove(self.testbed.REALM)
+        self.testbed.kc.admin().create({"realm": self.testbed.REALM})
