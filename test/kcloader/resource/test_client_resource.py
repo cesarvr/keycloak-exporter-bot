@@ -475,7 +475,7 @@ class TestClientRoleResource(TestCaseBase):
 
         # publish data - 2nd time, idempotence
         creation_state = role_resource.publish(include_composite=False)  # TODO extend CI test also with include_composite=True case
-        # self.assertFalse(creation_state)   # TODO briefRepresentation=False is needed
+        # self.assertFalse(creation_state)   # TODO briefRepresentation=False is needed. Fix kcapi?
         roles_b = client0_roles_api.all(params=dict(briefRepresentation=False))
         self.assertEqual(
             ['ci0-client0-role0', 'ci0-client0-role1b'],
