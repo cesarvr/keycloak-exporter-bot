@@ -29,8 +29,14 @@ class ClientRole(SingleResource):
             **resource,
         })
 
-    def publish(self, body=None):
+    def publish(self, *, include_composite=True):
         body = copy(self.body)
+        if not include_composite:
+            if body["composite"]:
+                logger.error("Client role composites are not published.")
+                # TODO skip composites only if they are missing on server side.
+                body["composite"] = False
+                body.pop("composites")
         creation_state = super().publish(body)
         return creation_state
 
@@ -86,9 +92,9 @@ class SingleClientResource(SingleResource):
     #
     #     return state
 
-    def publish_roles(self, include_composite):
+    def publish_roles(self, *, include_composite=True):
         for role in self._client_role_resources:
-            status = role.publish()
+            status = role.publish(include_composite=include_composite)
 
     def _publish_roles_old_2(self, include_composite):
         state = True
