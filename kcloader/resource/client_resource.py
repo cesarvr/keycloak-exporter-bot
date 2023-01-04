@@ -38,6 +38,10 @@ class ClientRoleResource(SingleResource):
                 body["composite"] = False
                 body.pop("composites")
         creation_state = super().publish(body)
+        if creation_state:
+            # KC 9.0 - if (client) role was just created, attributes were ignored
+            # publish role a second time, to set also attributes
+            creation_state2 = super().publish(body)
         return creation_state
 
 
