@@ -4,7 +4,7 @@ from glob import glob
 from copy import copy
 
 from kcloader.resource import SingleClientResource, \
-    ClientManager
+    ClientManager, ClientRoleManager
 from kcloader.tools import read_from_json, find_in_list
 from ...helper import TestBed, remove_field_id, TestCaseBase
 
@@ -308,6 +308,104 @@ class TestClientResourceManager(TestCaseBase):
             sorted([obj["clientId"] for obj in clients_all])
         )
 
+
+class TestClientRoleResourceManager(TestCaseBase):
+    def setUp(self):
+        super().setUp()
+        testbed = self.testbed
+
+        self.client0_clientId = "ci0-client-0"
+        client0_filepath = os.path.join(testbed.DATADIR, f"{testbed.REALM}/clients/client-0/ci0-client-0.json")
+        self.client0_resource = SingleClientResource({
+            'path': client0_filepath,
+            'keycloak_api': testbed.kc,
+            'realm': testbed.REALM,
+            'datadir': testbed.DATADIR,
+        })
+
+        self.clients_api = testbed.kc.build("clients", testbed.REALM)
+        # check clean start
+        assert len(self.clients_api.all()) == 6  # 6 default clients
+
+        self.client0_resource.publish_self()
+
+    def test_publish(self):
+        our_roles_names = sorted([
+            "ci0-client0-role0",
+            "ci0-client0-role1",
+            "ci0-client0-role1a",
+            "ci0-client0-role1b",
+        ])
+        # testbed = self.testbed
+        # client0 = self.clients_api.findFirstByKV("clientId", self.client0_clientId)
+        client_query = {'key': 'clientId', 'value': self.client0_clientId}
+        client0_roles_api = self.clients_api.roles(client_query)
+
+        manager = ClientRoleManager(
+            self.testbed.kc, self.testbed.REALM, self.testbed.DATADIR,
+            clientId=self.client0_clientId, client_filepath=os.path.join(self.testbed.DATADIR, "ci0-realm/clients/client-0/ci0-client-0.json"),
+        )
+
+        # check initial state
+        # "empty" ci0-client0-role0 is created when we import ci0-client-0.json
+        roles = client0_roles_api.all()
+        self.assertEqual(["ci0-client0-role0"], [role["name"] for role in roles])
+        create_ids, delete_objs = manager._difference_ids()
+        delete_ids = sorted([obj["name"] for obj in delete_objs])
+        expected_create_role_names = copy(our_roles_names)
+        expected_create_role_names.remove("ci0-client0-role0")
+        self.assertEqual(expected_create_role_names, sorted(create_ids))
+        self.assertEqual([], delete_objs)
+
+        # publish data - 1st time
+        creation_state = manager.publish(include_composite=False)  # TODO extend CI test also with include_composite=True case
+        self.assertTrue(creation_state)
+        roles = client0_roles_api.all()
+        self.assertEqual(
+            our_roles_names,
+            sorted([role["name"] for role in roles])
+        )
+
+        create_ids, delete_objs = manager._difference_ids()
+        self.assertEqual([], create_ids)
+        self.assertEqual([], delete_objs)
+
+        # publish same data again - idempotence
+        creation_state = manager.publish(include_composite=False)  # TODO extend CI test also with include_composite=True case
+        self.assertTrue(creation_state)  # TODO should be false; but composites are missing
+        roles = client0_roles_api.all()
+        self.assertEqual(
+            our_roles_names,
+            sorted([role["name"] for role in roles])
+        )
+
+        # ------------------------------------------------------------------------------
+        # create an additional role
+        client0_roles_api.create({
+            "name": "ci0-client0-role-x-to-be-deleted",
+            "description": "ci0-client0-role-x-to-be-DELETED",
+        }).isOk()
+        roles = client0_roles_api.all()
+        self.assertEqual(4 + 1, len(roles))
+        self.assertEqual(
+            sorted(our_roles_names + ["ci0-client0-role-x-to-be-deleted"]),
+            sorted([role["name"] for role in roles])
+        )
+
+        create_ids, delete_objs = manager._difference_ids()
+        delete_ids = sorted([obj["name"] for obj in delete_objs])
+        self.assertEqual([], create_ids)
+        self.assertEqual(['ci0-client0-role-x-to-be-deleted'], delete_ids)
+
+        # check extra role is deleted
+        creation_state = manager.publish(include_composite=False)  # TODO extend CI test also with include_composite=True case
+        self.assertTrue(creation_state)
+        roles = client0_roles_api.all()
+        self.assertEqual(4, len(roles))
+        self.assertEqual(
+            our_roles_names,
+            sorted([role["name"] for role in roles])
+        )
 
 # class TestIdentityProviderManager(TestIdentityProviderBase):
 #     def test_publish(self):

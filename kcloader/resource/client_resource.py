@@ -83,6 +83,8 @@ class ClientRoleManager:
 
     def publish(self, *, include_composite=True):
         create_ids, delete_objs = self._difference_ids()
+        # TODO publish simple roles first, then composites;
+        # group per client, or per all-clients; group also per realm-roles?
         status_resources = [resource.publish(include_composite=include_composite) for resource in self.resources]
         status_deleted = False
         for delete_obj in delete_objs:
@@ -154,7 +156,8 @@ class SingleClientResource(SingleResource):
             for role_path in roles_paths
         ]
 
-    def _publish_roles_old_2(self, include_composite):
+    def RM_publish_roles_old_2(self, include_composite):
+        # TODO rm
         state = True
         # [roles_path_exist, roles_path] = lookup_child_resource(self.resource_path, '/roles/roles.json')
         role_filepaths = glob(os.path.join(get_path(self.resource_path), "roles/*.json"))
