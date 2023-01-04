@@ -13,7 +13,7 @@ from kcloader.tools import lookup_child_resource, read_from_json, find_in_list, 
 logger = logging.getLogger(__name__)
 
 
-class ClientRole(SingleResource):
+class ClientRoleResource(SingleResource):
     def __init__(self, resource):
         """
         client_roles_api needs to be provided in resource dict,
@@ -56,7 +56,7 @@ class SingleClientResource(SingleResource):
         self._client_role_resources = None  # we do not have client id yet...
 
     def __init_client_role_resources(self):
-        # TODO if this works, move it to ClientRoleManager class
+        # TODO if this works, move it to ClientRoleResourceManager class
         clients_api = self.resource.resource_api
         client = clients_api.findFirstByKV('clientId', self.body["clientId"])
         client_roles_api = self.resource.resource_api.roles({'key': 'id', 'value': client["id"]})
@@ -69,7 +69,7 @@ class SingleClientResource(SingleResource):
         roles_paths = glob(os.path.join(client_resource_dirname, "roles/*.json"))
 
         self._client_role_resources = [
-            ClientRole({
+            ClientRoleResource({
                 'path': role_path,
                 'keycloak_api': self.keycloak_api,
                 'realm': self.realm_name,
