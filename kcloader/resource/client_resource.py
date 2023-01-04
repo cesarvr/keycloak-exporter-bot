@@ -41,6 +41,80 @@ class ClientRoleResource(SingleResource):
         return creation_state
 
 
+class ClientRoleManager:
+    # _resource_name = "clients/TODO-client_id/roles"
+    # _resource_name_template = "clients/{client_id}/roles"
+    # _resource_name_template will not work - 2 of 4 URLs need to be changed to use "/roles-by-id/<role_id>".
+    _resource_id = "name"
+    _resource_delete_id = "id"
+    _resource_id_blacklist = []
+
+    def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
+                 *, clientId: str, client_filepath: str):
+        self.keycloak_api = keycloak_api
+        self.realm = realm
+        self.datadir = datadir
+        self._client_filepath = client_filepath
+
+        # will not work
+        # self.resource_api = self.keycloak_api.build(self._resource_name, self.realm)
+        clients_api = self.keycloak_api.build("clients", self.realm)
+        client_query = {'key': 'clientId', 'value': clientId}
+        client_roles_api = clients_api.roles(client_query)
+        self.resource_api = client_roles_api
+
+        object_filepaths = self._object_filepaths()
+
+        self.resources = [
+            ClientRoleResource({
+                'path': object_filepath,
+                'keycloak_api': keycloak_api,
+                'realm': realm,
+                'datadir': datadir,
+                'client_roles_api': client_roles_api,
+            })
+            for object_filepath in object_filepaths
+        ]
+
+    def _object_filepaths(self):
+        client_dirname = os.path.dirname(self._client_filepath)
+        object_filepaths = glob(os.path.join(client_dirname, "roles/*.json"))
+        return object_filepaths
+
+    def publish(self, *, include_composite=True):
+        create_ids, delete_objs = self._difference_ids()
+        status_resources = [resource.publish(include_composite=include_composite) for resource in self.resources]
+        status_deleted = False
+        for delete_obj in delete_objs:
+            delete_id = delete_obj[self._resource_delete_id]
+            self.resource_api.remove(delete_id).isOk()
+            status_deleted = True
+        return any(status_resources + [status_deleted])
+
+    def _difference_ids(self):
+        """
+        If object is present on server but missing in datadir, then it needs to be removed.
+        This function will return list of ids (alias-es, clientId-s, etc.) that needs to be removed.
+        """
+        # idp_filepaths = glob(os.path.join(self.datadir, f"{self.realm}/identity-provider/*/*.json"))
+        object_filepaths = self._object_filepaths()
+
+        file_docs = [read_from_json(object_filepath) for object_filepath in object_filepaths]
+        file_ids = [doc[self._resource_id] for doc in file_docs]
+        server_objs = self.resource_api.all()
+        server_ids = [obj[self._resource_id] for obj in server_objs]
+
+        # do not try to create/remove/modify blacklisted objects
+        server_ids = [sid for sid in server_ids if sid not in self._resource_id_blacklist]
+
+        # remove objects that are on server, but missing in datadir
+        delete_ids = list(set(server_ids).difference(file_ids))
+        # create objects that are in datdir, but missing on server
+        create_ids = list(set(file_ids).difference(server_ids))
+        delete_objs = [obj for obj in server_objs if obj[self._resource_id] in delete_ids]
+        return create_ids, delete_objs
+
+
 class SingleClientResource(SingleResource):
     _resource_name = "clients"
     _resource_id = "clientId"
@@ -53,9 +127,10 @@ class SingleClientResource(SingleResource):
         })
         self.datadir = resource['datadir']
 
-        self._client_role_resources = None  # we do not have client id yet...
+        self.client_role_manager = None  # we do not have client id yet...
 
     def __init_client_role_resources(self):
+        assert 0
         # TODO if this works, move it to ClientRoleResourceManager class
         clients_api = self.resource.resource_api
         client = clients_api.findFirstByKV('clientId', self.body["clientId"])
@@ -78,23 +153,6 @@ class SingleClientResource(SingleResource):
             })
             for role_path in roles_paths
         ]
-
-
-    # def _publish_roles_old(self):
-    #     state = True
-    #     [roles_path_exist, roles_path] = lookup_child_resource(self.resource_path, '/roles/roles.json')
-    #     if roles_path_exist:
-    #         id = ResourcePublisher(key='clientId', body=self.body).get_id(self.resource.api())
-    #         roles = self.resource.api().roles({'key': 'id', 'value': id})
-    #         roles_objects = read_from_json(roles_path)
-    #         for object in roles_objects:
-    #             state = state and ResourcePublisher(key='name', body=object).publish(roles, update_policy=UpdatePolicy.DELETE)
-    #
-    #     return state
-
-    def publish_roles(self, *, include_composite=True):
-        for role in self._client_role_resources:
-            status = role.publish(include_composite=include_composite)
 
     def _publish_roles_old_2(self, include_composite):
         state = True
@@ -208,13 +266,17 @@ class SingleClientResource(SingleResource):
             body.pop("authenticationFlowBindingOverrides")
 
         state = self.resource.publish_object(self)
-        # Now we have client id, and can get URL for client roles
-        self.__init_client_role_resources()
+        # Now we have client id, and can get URL to client roles
+        self.client_role_manager = ClientRoleManager(
+            self.keycloak_api, self.realm_name, self.datadir,
+            clientId=self.body["clientId"], client_filepath=self.resource_path,
+        )
+
         return state
 
     def publish(self):
         state = self.publish_self()
-        state_roles = self.publish_roles(include_composite=False)
+        state_roles = self.client_role_manager.publish(include_composite=False)
         state_scopes = self.publish_scopes()
         return any([state, state_roles, state_scopes])
 
