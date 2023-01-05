@@ -11,7 +11,7 @@ keywords = [
 requires-python = ">=3.8"
 
 dependencies = [
-    "kcapi>=1.0.36",
+    "kcapi>=1.0.37",
 ]
 
 [project.optional-dependencies]
