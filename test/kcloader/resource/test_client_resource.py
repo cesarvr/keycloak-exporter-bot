@@ -373,7 +373,9 @@ class TestClientRoleResourceManager(TestCaseBase):
 
         # publish same data again - idempotence
         creation_state = manager.publish(include_composite=False)  # TODO extend CI test also with include_composite=True case
-        self.assertTrue(creation_state)  # TODO should be false; but composites are missing
+        # TODO should be false; but composites are missing
+        # As ClientRoleResource just throws away .composites, we get idempotence, but data on server is WRONG!!!
+        self.assertFalse(creation_state)
         roles = client0_roles_api.all()
         self.assertEqual(
             our_roles_names,

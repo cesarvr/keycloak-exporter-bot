@@ -1,6 +1,5 @@
 import logging
 import os
-import json
 from glob import glob
 from copy import copy
 from sortedcontainers import SortedDict
