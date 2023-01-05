@@ -76,7 +76,6 @@ class ResourcePublisher:
                         # Nothing to change
                         return False
 
-                # TODO BUG here - update URL is https://172.17.0.2:8443/auth/admin/realms/ci0-realm/roles-by-id/d8d61af4-186f-4293-b618-093b45db27c8
                 http_ok = resource_api.update(resource_id, self.body).isOk() # this ?
 
                 return True

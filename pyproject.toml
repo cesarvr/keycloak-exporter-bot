@@ -12,6 +12,7 @@ requires-python = ">=3.8"
 
 dependencies = [
     "kcapi>=1.0.37",
+    "sortedcontainers>=2.4.0",
 ]
 
 [project.optional-dependencies]

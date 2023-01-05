@@ -3,6 +3,7 @@ import os
 import json
 from glob import glob
 from copy import copy
+from sortedcontainers import SortedDict
 
 import kcapi
 
@@ -30,19 +31,28 @@ class ClientRoleResource(SingleResource):
         })
 
     def publish(self, *, include_composite=True):
-        body = copy(self.body)
+        # body = copy(self.body)
         if not include_composite:
-            if body["composite"]:
+            if self.body["composite"]:
                 logger.error("Client role composites are not published.")
                 # TODO skip composites only if they are missing on server side.
-                body["composite"] = False
-                body.pop("composites")
-        creation_state = super().publish(body)
+                self.body["composite"] = False
+                self.body.pop("composites")
+        creation_state = self.resource.publish_object(self)
         if creation_state:
+            # This is now handled by kcapi.ClientRoleCRUD.create()
             # KC 9.0 - if (client) role was just created, attributes were ignored
             # publish role a second time, to set also attributes
-            creation_state2 = super().publish(body)
+            creation_state2 = self.resource.publish_object(self)
         return creation_state
+
+    def is_equal(self, obj):
+        obj1 = SortedDict(self.body)
+        obj2 = SortedDict(obj)
+        for oo in [obj1, obj2]:
+            oo.pop("id", None)
+            oo.pop("containerId", None)
+        return obj1 == obj2
 
 
 class ClientRoleManager:
