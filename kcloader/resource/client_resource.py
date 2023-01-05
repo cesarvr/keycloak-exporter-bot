@@ -320,10 +320,11 @@ class SingleClientResource(SingleResource):
                 oo["protocolMappers"] = sorted(oo["protocolMappers"], key=lambda pm: pm["name"])
 
         # sort obj2 - it is return by API
-        obj2 = json.loads(json.dumps(obj2, sort_keys=True))
-        # obj1 - we added and remove authenticationFlowBindingOverrides
-        # sort is needed too
-        obj1 = json.loads(json.dumps(obj1, sort_keys=True))
+        # obj2 = json.loads(json.dumps(obj2, sort_keys=True))
+        # obj1 - we added and remove authenticationFlowBindingOverrides, sort is needed too
+        # obj1 = json.loads(json.dumps(obj1, sort_keys=True))
+        obj1 = SortedDict(obj1)
+        obj2 = SortedDict(obj2)
 
         # debug
         # with open("a", "w") as ff:
