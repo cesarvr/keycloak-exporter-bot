@@ -373,7 +373,9 @@ class TestClientRoleResourceManager(TestCaseBase):
 
         # publish same data again - idempotence
         creation_state = manager.publish(include_composite=False)  # TODO extend CI test also with include_composite=True case
-        self.assertTrue(creation_state)  # TODO should be false; but composites are missing
+        # TODO should be false; but composites are missing
+        # As ClientRoleResource just throws away .composites, we get idempotence, but data on server is WRONG!!!
+        self.assertFalse(creation_state)
         roles = client0_roles_api.all()
         self.assertEqual(
             our_roles_names,
@@ -444,6 +446,8 @@ class TestClientRoleResource(TestCaseBase):
         # TODO test with simple ci0-client-0.json and with some composite role
         role_filepath = os.path.join(self.testbed.DATADIR, "ci0-realm/clients/client-0/roles/ci0-client0-role1b.json")
         expected_role = json.load(open(role_filepath))
+        # make sure we do test "attributes". They are just easy to miss.
+        self.assertEqual({'ci0-client0-role1b-key0': ['ci0-client0-role1b-value0']}, expected_role["attributes"])
 
         role_resource = ClientRoleResource({
             'path': role_filepath,
@@ -475,13 +479,15 @@ class TestClientRoleResource(TestCaseBase):
 
         # publish data - 2nd time, idempotence
         creation_state = role_resource.publish(include_composite=False)  # TODO extend CI test also with include_composite=True case
-        # self.assertFalse(creation_state)   # TODO briefRepresentation=False is needed. Fix kcapi?
+        self.assertFalse(creation_state)
         roles_b = client0_roles_api.all(params=dict(briefRepresentation=False))
         self.assertEqual(
             ['ci0-client0-role0', 'ci0-client0-role1b'],
             sorted([role["name"] for role in roles_b])
         )
         role_b = find_in_list(roles_b, name='ci0-client0-role1b')
+        # role should not be re-created
+        self.assertEqual(role_a["id"], role_b["id"])
         # role attributes
         role_min = copy(role_b)
         role_min.pop("id")
@@ -489,3 +495,28 @@ class TestClientRoleResource(TestCaseBase):
         self.assertEqual(expected_role, role_min)
 
         # modify something
+        #
+        # hahaha, list endpoint cannot be used to get exactly one objects
+        # client0_roles_api.update_rmw(role_a["id"], {"description": 'ci0-client0-role1b-desc-NEW'})
+        #
+        data = client0_roles_api.findFirstByKV("name", 'ci0-client0-role1b')
+        data.update({"description": 'ci0-client0-role1b-desc-NEW'})
+        client0_roles_api.update(role_a["id"], data)
+        role_c = client0_roles_api.findFirstByKV("name", 'ci0-client0-role1b')
+        self.assertEqual(role_a["id"], role_c["id"])
+        self.assertEqual("ci0-client0-role1b-desc-NEW", role_c["description"])
+        # .publish must revert change
+        creation_state = role_resource.publish(include_composite=False)  # TODO extend CI test also with include_composite=True case
+        roles_d = client0_roles_api.all(params=dict(briefRepresentation=False))
+        self.assertEqual(
+            ['ci0-client0-role0', 'ci0-client0-role1b'],
+            sorted([role["name"] for role in roles_d])
+        )
+        role_d = find_in_list(roles_d, name='ci0-client0-role1b')
+        # role should not be re-created
+        self.assertEqual(role_a["id"], role_d["id"])
+        # role attributes
+        role_min = copy(role_d)
+        role_min.pop("id")
+        role_min.pop("containerId")
+        self.assertEqual(expected_role, role_min)

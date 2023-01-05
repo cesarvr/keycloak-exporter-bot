@@ -1,8 +1,8 @@
 import logging
 import os
-import json
 from glob import glob
 from copy import copy
+from sortedcontainers import SortedDict
 
 import kcapi
 
@@ -30,19 +30,23 @@ class ClientRoleResource(SingleResource):
         })
 
     def publish(self, *, include_composite=True):
-        body = copy(self.body)
+        # body = copy(self.body)
         if not include_composite:
-            if body["composite"]:
+            if self.body["composite"]:
                 logger.error("Client role composites are not published.")
                 # TODO skip composites only if they are missing on server side.
-                body["composite"] = False
-                body.pop("composites")
-        creation_state = super().publish(body)
-        if creation_state:
-            # KC 9.0 - if (client) role was just created, attributes were ignored
-            # publish role a second time, to set also attributes
-            creation_state2 = super().publish(body)
+                self.body["composite"] = False
+                self.body.pop("composites")
+        creation_state = self.resource.publish_object(self)
         return creation_state
+
+    def is_equal(self, obj):
+        obj1 = SortedDict(self.body)
+        obj2 = SortedDict(obj)
+        for oo in [obj1, obj2]:
+            oo.pop("id", None)
+            oo.pop("containerId", None)
+        return obj1 == obj2
 
 
 class ClientRoleManager:
@@ -310,10 +314,11 @@ class SingleClientResource(SingleResource):
                 oo["protocolMappers"] = sorted(oo["protocolMappers"], key=lambda pm: pm["name"])
 
         # sort obj2 - it is return by API
-        obj2 = json.loads(json.dumps(obj2, sort_keys=True))
-        # obj1 - we added and remove authenticationFlowBindingOverrides
-        # sort is needed too
-        obj1 = json.loads(json.dumps(obj1, sort_keys=True))
+        # obj2 = json.loads(json.dumps(obj2, sort_keys=True))
+        # obj1 - we added and remove authenticationFlowBindingOverrides, sort is needed too
+        # obj1 = json.loads(json.dumps(obj1, sort_keys=True))
+        obj1 = SortedDict(obj1)
+        obj2 = SortedDict(obj2)
 
         # debug
         # with open("a", "w") as ff:
