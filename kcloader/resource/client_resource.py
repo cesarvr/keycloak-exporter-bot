@@ -38,11 +38,6 @@ class ClientRoleResource(SingleResource):
                 self.body["composite"] = False
                 self.body.pop("composites")
         creation_state = self.resource.publish_object(self)
-        if creation_state:
-            # This is now handled by kcapi.ClientRoleCRUD.create()
-            # KC 9.0 - if (client) role was just created, attributes were ignored
-            # publish role a second time, to set also attributes
-            creation_state2 = self.resource.publish_object(self)
         return creation_state
 
     def is_equal(self, obj):
