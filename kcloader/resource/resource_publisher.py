@@ -10,9 +10,11 @@ class UpdatePolicy:
 
 
 class ResourcePublisher:
-    def __init__(self, key='key', body=''):
+    def __init__(self, key='key', body='', single_resource=None):
+        # assert isinstance(single_resource, (SingleResource, None))
         self.key = key
         self.body = body
+        self.single_resource = single_resource
 
     def get_id(self, resource_api):
         # TODO resource should know what is the 'key'
@@ -21,7 +23,7 @@ class ResourcePublisher:
         assert self.body
         obj = resource_api.findFirstByKV(self.key, self.body[self.key])
         if not obj:
-            return None
+            return None, None
         key = self.key
         if "realm" in obj:
             key = "realm"
@@ -41,29 +43,46 @@ class ResourcePublisher:
                 key = "internalId"
             else:
                 key = "id"
-        return obj[key]
+        return obj[key], obj
 
     def publish(self, resource_api, update_policy=UpdatePolicy.PUT):
         # return value: state==creation_state - True if object was created or updated.
-        resource_id = self.get_id(resource_api)
+        resource_id, old_data = self.get_id(resource_api)
         logger.debug(f"Publishing id={resource_id}  type=X {self.key}={self.body[self.key]}")
         if resource_id:
             if update_policy == UpdatePolicy.PUT:
                 # update_rmw - would include 'id' for auth flow PUT
-                old_data = resource_api.get_one(resource_id)
-                # TODO per-class clenaup is required
-                for blacklisted_attr in ["internalId"]:
+                # old_data = resource_api.get_one(resource_id)
+                # TODO implement is_equal() for all classes - IdentityProviderResource is missing it.
+                # Then blacklisted_attr will not be needed anymore.
+                for blacklisted_attr in [
+                    "internalId",  # identity-provider
+                    # "id",  # clients, and others
+                    # "id" - no need to remove, .is_equal() will ignore id, internalId and other attributes
+                    # "authenticationFlowBindingOverrides",  # clients - this is not implemented yet
+                ]:
                     old_data.pop(blacklisted_attr, None)
                 # Is in new data anything different from old_data?
                 # Corner case: whole attributes added/removed in new_data - what behaviour do we want in this case?
-                if self.body == old_data:
-                    # Nothing to change
-                    return False
-                http_ok = resource_api.update(resource_id, self.body).isOk()
+                if self.single_resource:
+                    assert self.body == self.single_resource.body
+                    if self.single_resource.is_equal(old_data):
+                        # no change needed
+                        return False
+                else:
+                    # old code, when there was no self.single_resource.
+                    # TODO remove when it is not used anymore
+                    if self.body == old_data:
+                        # Nothing to change
+                        return False
+
+                # TODO BUG here - update URL is https://172.17.0.2:8443/auth/admin/realms/ci0-realm/roles-by-id/d8d61af4-186f-4293-b618-093b45db27c8
+                http_ok = resource_api.update(resource_id, self.body).isOk() # this ?
+
                 return True
             if update_policy == UpdatePolicy.DELETE:
                 http_ok = resource_api.remove(resource_id).isOk()
-                assert http_ok  # it not, exceptiopn should be raised by .isOk()
+                assert http_ok  # if not True, exception should be raised by .isOk()
                 http_ok = resource_api.create(self.body).isOk()
                 return True
         else:

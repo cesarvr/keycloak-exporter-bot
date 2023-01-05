@@ -1,6 +1,6 @@
     {
         "clientRole": true,
-        "composite": true,
+        "composite": false,
         "containerId": "7bdd87f3-7be9-4735-8904-2bcde978b3f9",
         "name": "villain"
     }

@@ -1,4 +1,6 @@
 import json
+import unittest
+import logging
 
 from kcapi import OpenID, Keycloak
 from kcloader.tools import read_from_json
@@ -7,6 +9,9 @@ import os
 # We run unittest from top level directory
 SAMPLES_PATH = "test/samples"
 SAMPLE_PAYLOADS_PATH = "test/sample_payloads"
+
+_level = logging.DEBUG
+logging.basicConfig(level=_level)
 
 
 class TestBed:
@@ -98,3 +103,30 @@ def remove_field_id(obj):
     assert isinstance(obj, dict)
     obj.pop("id", None)
     return obj
+
+
+class TestCaseBase(unittest.TestCase):
+    # @classmethod
+    # def setUpClass(cls):
+
+    # def setUp(self):
+
+    def setUp(self):
+        self.testbed = TestBed(realm='ci0-realm')
+        testbed = self.testbed
+
+        # create min realm first, ensure clean start
+        testbed.kc.admin().remove(testbed.REALM)
+        testbed.kc.admin().create({"realm": testbed.REALM})
+
+    # @classmethod
+    # def tearDownClass(cls):
+    #     # Removing realm make sense. But debugging is easier if realm is left.
+    #     pass
+
+    def assertUnorderedListOfDictEqual(self, a, b, key, msg=None):
+        self.assertEqual(
+            sorted(a, key=lambda x: x[key]),
+            sorted(b, key=lambda x: x[key]),
+            msg=msg,
+        )

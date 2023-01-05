@@ -51,6 +51,7 @@ class RHSSOExporterMain(unittest.TestCase):
             'id': 'name',
             'keycloak_api': self.keycloak_api,
             'realm': self.testbed.REALM,
+            'datadir': SAMPLE_PAYLOADS_PATH,
         }
 
         ManyResources(roles).publish()
@@ -77,10 +78,12 @@ class RHSSOExporterMain(unittest.TestCase):
             'id': 'clientId',
             'keycloak_api': self.keycloak_api,
             'realm': self.testbed.realm,
+            'datadir': SAMPLE_PAYLOADS_PATH,
         }
 
         client = SingleClientResource(params)
-        client.publish()
+        creation_state = client.publish()
+        self.assertTrue(creation_state)
         clients = self.keycloak_api.build('clients', self.realm)
         created = clients.findFirstByKV('clientId', client_tmpl['clientId'])
 
@@ -91,12 +94,12 @@ class RHSSOExporterMain(unittest.TestCase):
         #r = list( map(lambda n: n['name'], roles_file_json) )  # r == expected_role_names
         expected_role_names = ['hero', 'villain']
 
-        client_roles = clients.roles({'key':'clientId', 'value':client_tmpl['clientId']})
-        roles = client_roles.findAll().verify().resp().json()
-        r2 = list( map(lambda n: n['name'], roles) )
+        client_roles_api = clients.roles({'key': 'clientId', 'value': client_tmpl['clientId']})
+        roles = client_roles_api.findAll().verify().resp().json()
+        role_names = [role['name'] for role in roles]
 
-        self.assertTrue(len(roles) > 0, "No mapped roles found in this client dc/roles")
-        self.assertListEqual(sorted(expected_role_names), sorted(r2), "Cloud and Local should have the same roles")
+        self.assertEqual(2, len(roles), "Incorrect number of roles found in this client dc/roles")
+        self.assertListEqual(sorted(expected_role_names), sorted(role_names), "Cloud and Local should have the same roles")
 
     def testing_publishing_multiple_nodes(self):
         params = {
@@ -104,6 +107,7 @@ class RHSSOExporterMain(unittest.TestCase):
             'id': 'clientId',
             'keycloak_api': self.keycloak_api,
             'realm': self.testbed.realm,
+            'datadir': SAMPLE_PAYLOADS_PATH,
         }
         clients_path = os.path.join(SAMPLE_PAYLOADS_PATH, 'clients/')
 
@@ -158,3 +162,8 @@ class RHSSOExporterMain(unittest.TestCase):
     def tearDownClass(self):
         #self.testbed.cleanup()
         True
+
+    def setUp(self):
+        # also "reset" realm for each test
+        self.testbed.kc.admin().remove(self.testbed.REALM)
+        self.testbed.kc.admin().create({"realm": self.testbed.REALM})

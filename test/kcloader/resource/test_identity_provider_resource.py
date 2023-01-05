@@ -6,27 +6,13 @@ from copy import copy
 from kcloader.resource import IdentityProviderResource, IdentityProviderMapperResource, \
     IdentityProviderManager, IdentityProviderMapperManager
 from kcloader.tools import read_from_json, find_in_list
-from ...helper import TestBed, remove_field_id
+from ...helper import TestBed, remove_field_id, TestCaseBase
 
 
-# def setUpModule():
-#     pass  # createConnection()
-#
-#
-# def tearDownModule():
-#     pass  # closeConnection()
-
-
-class TestIdentityProviderBase(unittest.TestCase):
-
-    # @classmethod
-    # def setUpClass(cls):
-
-    # def setUp(self):
-
+class TestIdentityProviderBase(TestCaseBase):
     def setUp(self):
+        super().setUp()
         self.idp0_alias = "ci0-idp-saml-0"
-        self.testbed = TestBed(realm='ci0-realm')
         testbed = self.testbed
 
         idp0_filepath = os.path.join(testbed.DATADIR, f"{testbed.REALM}/identity-provider/ci0-idp-saml-0/ci0-idp-saml-0.json")
@@ -47,10 +33,6 @@ class TestIdentityProviderBase(unittest.TestCase):
 
         self.idp_api = testbed.kc.build("identity-provider", testbed.REALM)
         self.idp0_mappers_api = testbed.kc.build(f"identity-provider/instances/{self.idp0_alias}/mappers", testbed.REALM)
-
-        # create min realm first, ensure clean start
-        testbed.kc.admin().remove(testbed.REALM)
-        testbed.kc.admin().create({"realm": testbed.REALM})
 
         # check clean start
         assert self.idp_api.all() == []
