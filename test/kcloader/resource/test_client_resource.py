@@ -432,13 +432,7 @@ class TestClientRoleResource(TestCaseBase):
         # this creates "empty" "ci0-client0-role0"
         self.client0_resource.publish_self()
 
-    def test_publish(self):
-        our_roles_names = sorted([
-            "ci0-client0-role0",
-            "ci0-client0-role1",
-            "ci0-client0-role1a",
-            "ci0-client0-role1b",
-        ])
+    def test_publish_without_composites(self):
         # testbed = self.testbed
         # client0 = self.clients_api.findFirstByKV("clientId", self.client0_clientId)
         client_query = {'key': 'clientId', 'value': self.client0_clientId}
@@ -465,7 +459,7 @@ class TestClientRoleResource(TestCaseBase):
         # publish data - 1st time
         creation_state = role_resource.publish(include_composite=False)  # TODO extend CI test also with include_composite=True case
         self.assertTrue(creation_state)
-        roles_a = client0_roles_api.all(params=dict(briefRepresentation=False))
+        roles_a = client0_roles_api.all()
         self.assertEqual(
             ['ci0-client0-role0', 'ci0-client0-role1b'],
             sorted([role["name"] for role in roles_a])
@@ -480,7 +474,7 @@ class TestClientRoleResource(TestCaseBase):
         # publish data - 2nd time, idempotence
         creation_state = role_resource.publish(include_composite=False)  # TODO extend CI test also with include_composite=True case
         self.assertFalse(creation_state)
-        roles_b = client0_roles_api.all(params=dict(briefRepresentation=False))
+        roles_b = client0_roles_api.all()
         self.assertEqual(
             ['ci0-client0-role0', 'ci0-client0-role1b'],
             sorted([role["name"] for role in roles_b])
@@ -507,7 +501,7 @@ class TestClientRoleResource(TestCaseBase):
         self.assertEqual("ci0-client0-role1b-desc-NEW", role_c["description"])
         # .publish must revert change
         creation_state = role_resource.publish(include_composite=False)  # TODO extend CI test also with include_composite=True case
-        roles_d = client0_roles_api.all(params=dict(briefRepresentation=False))
+        roles_d = client0_roles_api.all()
         self.assertEqual(
             ['ci0-client0-role0', 'ci0-client0-role1b'],
             sorted([role["name"] for role in roles_d])
