@@ -14,30 +14,86 @@ logger = logging.getLogger(__name__)
 
 
 class ClientRoleResource(SingleResource):
-    def __init__(self, resource):
+    def __init__(
+            self,
+            resource: dict,
+            *,
+            clientId: str,
+            client_id: str,
+            client_roles_api,
+         ):
         """
         client_roles_api needs to be provided in resource dict,
         because SingleResource.resource (type Resource)
         does not know hot to build such CRUD object.
         """
         # or put in whole client object/resource?
-        assert "client_roles_api" in resource
+        self._client_clientId = clientId
+        self._client_id = client_id
         super().__init__({
             # GET https://172.17.0.2:8443/auth/admin/realms/ci0-realm/clients/<uuid>/roles
             "name": f"clients/TODO-client_id/roles",  # special "reserved" value !!! :/
             "id": "name",
+            "client_roles_api": client_roles_api,
             **resource,
         })
 
     def publish(self, *, include_composite=True):
-        # body = copy(self.body)
-        if not include_composite:
-            if self.body["composite"]:
-                logger.error("Client role composites are not published.")
-                # TODO skip composites only if they are missing on server side.
-                self.body["composite"] = False
-                self.body.pop("composites")
-        creation_state = self.resource.publish_object(self)
+        body = copy(self.body)
+        # both or none. If this assert fails, we have invalid/synthetic data.
+        assert (body["composite"] and body["composites"]) or \
+               ((not body["composite"]) and ("composites" not in body))
+
+        # if not include_composite:
+        if body["composite"]:
+            logger.error("Client role composites are not published.")
+            # TODO skip composites only if they are missing on server side.
+            # body["composite"] = False
+            body.pop("composites")
+
+        # new role - body.composite and .composites are ignored
+        # old role - body.composites must be valid
+        creation_state = self.resource.publish_object(body, self)
+
+        # We can setup composites only after role is created
+        creation_state_link = False
+        if include_composite:
+            creation_state_link = self._link_roles()
+
+        return creation_state or creation_state_link
+
+    def _link_roles(self):
+        # Get required global knowledge - TODO - move this out, and reuse data, to reduce network traffic
+        realm_roles_api = self.keycloak_api.build("roles", self.realm_name)
+        realm_roles = realm_roles_api.all()
+        clients_api = self.keycloak_api.build("clients", self.realm_name)
+        clients = clients_api.all()
+        roles_by_id_api = self.keycloak_api.build('roles-by-id', self.realm_name)
+
+        # # composites = body["composites"]
+        # for composite in self.body.get("composites", []):
+        #     sub_role = find_sub_role(self, clients, realm_roles, clients_roles=None, sub_role=composite)
+        #     if not sub_role:
+        #         logger.error(f"sub_role {composite} not found")
+        #     composite.pop("containerName")
+        #     composite["containerId"] = sub_role["id"]
+        #
+
+        this_client = find_in_list(clients, clientId=self._client_clientId)
+        this_client_roles_api = clients_api.get_child(clients_api, this_client["id"], "roles")
+        this_client_roles = this_client_roles_api.all()
+        this_role = find_in_list(this_client_roles, name=self.body["name"])
+        this_role_composites_api = roles_by_id_api.get_child(roles_by_id_api, this_role["id"], "composites")
+        # Full role representation will be sent to API (this_role_composites_api) that expects briefRepresentation.
+        # Hopefully this will work.
+
+        creation_state = False
+        for sub_role_doc in self.body.get("composites", []):
+            sub_role = find_sub_role(self, clients, realm_roles, clients_roles=None, sub_role=sub_role_doc)
+            if not sub_role:
+                logger.error(f"sub_role {sub_role_doc} not found")
+            this_role_composites_api.create([sub_role])  # TODO create/update
+            creation_state = True
         return creation_state
 
     def is_equal(self, obj):
@@ -58,7 +114,7 @@ class ClientRoleManager:
     _resource_id_blacklist = []
 
     def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
-                 *, clientId: str, client_filepath: str):
+                 *, clientId: str, client_id: str, client_filepath: str):
         self.keycloak_api = keycloak_api
         self.realm = realm
         self.datadir = datadir
@@ -79,8 +135,11 @@ class ClientRoleManager:
                 'keycloak_api': keycloak_api,
                 'realm': realm,
                 'datadir': datadir,
-                'client_roles_api': client_roles_api,
-            })
+            },
+            clientId=clientId,
+            client_id=client_id,
+            client_roles_api=client_roles_api,
+        )
             for object_filepath in object_filepaths
         ]
 
@@ -276,11 +335,12 @@ class SingleClientResource(SingleResource):
                 ", desired value={body['authenticationFlowBindingOverrides']}")
             body.pop("authenticationFlowBindingOverrides")
 
-        state = self.resource.publish_object(self)
+        state = self.resource.publish_object(self.body, self)
         # Now we have client id, and can get URL to client roles
+        client = self.resource.resource_api.findFirstByKV("clientId", self.body["clientId"])
         self.client_role_manager = ClientRoleManager(
             self.keycloak_api, self.realm_name, self.datadir,
-            clientId=self.body["clientId"], client_filepath=self.resource_path,
+            clientId=self.body["clientId"], client_id=client["id"], client_filepath=self.resource_path,
         )
 
         return state
