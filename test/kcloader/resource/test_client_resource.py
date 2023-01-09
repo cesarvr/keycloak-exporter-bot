@@ -341,10 +341,13 @@ class TestClientRoleResourceManager(TestCaseBase):
         # client0 = self.clients_api.findFirstByKV("clientId", self.client0_clientId)
         client_query = {'key': 'clientId', 'value': self.client0_clientId}
         client0_roles_api = self.clients_api.roles(client_query)
+        client0 = self.clients_api.findFirstByKV("clientId", self.client0_clientId)
 
         manager = ClientRoleManager(
             self.testbed.kc, self.testbed.REALM, self.testbed.DATADIR,
-            clientId=self.client0_clientId, client_filepath=os.path.join(self.testbed.DATADIR, "ci0-realm/clients/client-0/ci0-client-0.json"),
+            clientId=self.client0_clientId,
+            client_id=client0["id"],
+            client_filepath=os.path.join(self.testbed.DATADIR, "ci0-realm/clients/client-0/ci0-client-0.json"),
         )
 
         # check initial state
