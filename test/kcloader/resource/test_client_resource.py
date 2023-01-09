@@ -626,7 +626,6 @@ class TestClientRoleResource(TestCaseBase):
         role_id = role_a["id"]
         this_role_composites_api = roles_by_id_api.get_child(roles_by_id_api, role_id, "composites")
         _check_state()
-
         # publish data - 2nd time, idempotence
         creation_state = role_resource.publish()
         self.assertFalse(creation_state)
@@ -644,6 +643,9 @@ class TestClientRoleResource(TestCaseBase):
         creation_state = role_resource.publish()
         self.assertTrue(creation_state)
         _check_state()
+        creation_state = role_resource.publish()
+        self.assertFalse(creation_state)
+        _check_state()
 
         # ------------------------------------------------------------------------
         # modify something - add one sub-role
@@ -660,6 +662,9 @@ class TestClientRoleResource(TestCaseBase):
         creation_state = role_resource.publish()
         self.assertTrue(creation_state)
         _check_state()
+        creation_state = role_resource.publish()
+        self.assertFalse(creation_state)
+        _check_state()
 
         # ------------------------------------------------------------------------
         # modify something - remove one sub-role
@@ -675,4 +680,7 @@ class TestClientRoleResource(TestCaseBase):
         # .publish must revert change
         creation_state = role_resource.publish()
         self.assertTrue(creation_state)
+        _check_state()
+        creation_state = role_resource.publish()
+        self.assertFalse(creation_state)
         _check_state()
