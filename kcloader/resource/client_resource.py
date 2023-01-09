@@ -101,7 +101,6 @@ class ClientRoleResource(SingleResource):
                 this_role_composites_api.remove(None, [role_obj]).isOk()
                 creation_state = True
 
-
         return creation_state
 
     def _get_composites_docs(

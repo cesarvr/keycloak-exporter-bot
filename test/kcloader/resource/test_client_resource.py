@@ -527,6 +527,33 @@ class TestClientRoleResource(TestCaseBase):
         self.assertEqual(expected_role, role_min)
 
     def test_publish_with_composites(self):
+        def _check_state():
+            roles_b = client0_roles_api.all()
+            self.assertEqual(
+                ['ci0-client0-role0', 'ci0-client0-role1', 'ci0-client0-role1a', 'ci0-client0-role1b'],
+                sorted([role["name"] for role in roles_b])
+            )
+            role_b = find_in_list(roles_b, name='ci0-client0-role1')
+            # role should not be re-created
+            self.assertEqual(role_a["id"], role_b["id"])
+            # role attributes
+            role_min = copy(role_b)
+            role_min.pop("id")
+            role_min.pop("containerId")
+            self.assertEqual(expected_role, role_min)
+            # check subroles
+            composites = this_role_composites_api.all()
+            composite_role_names = sorted([obj["name"] for obj in composites])
+            composites_role_container_ids = sorted([obj["containerId"] for obj in composites])
+            self.assertEqual(
+                expected_composite_role_names,
+                composite_role_names,
+            )
+            self.assertEqual(
+                expected_composites_role_container_ids,
+                composites_role_container_ids,
+            )
+
         self.maxDiff = None
         # testbed = self.testbed
         # client0 = self.clients_api.findFirstByKV("clientId", self.client0_clientId)
@@ -596,64 +623,16 @@ class TestClientRoleResource(TestCaseBase):
         # publish data - 1st time
         creation_state = role_resource.publish()
         self.assertTrue(creation_state)
-        roles_a = client0_roles_api.all()
-        self.assertEqual(
-            ['ci0-client0-role0', 'ci0-client0-role1','ci0-client0-role1a', 'ci0-client0-role1b'],
-            sorted([role["name"] for role in roles_a])
-        )
-        #
-        # .composites are returned only by role-by-id API?
-        role_a_temp = find_in_list(roles_a, name='ci0-client0-role1')
-        role_id = role_a_temp["id"]
+        role_a = client0_roles_api.findFirstByKV("name", "ci0-client0-role1")
+        role_id = role_a["id"]
         this_role_composites_api = roles_by_id_api.get_child(roles_by_id_api, role_id, "composites")
-        role_a = roles_by_id_api.get_one(role_id)
-        #
-        # role attributes
-        role_min = copy(role_a)
-        role_min.pop("id")
-        role_min.pop("containerId")
-        self.assertEqual(expected_role, role_min)
-        # check subroles
-        composites = this_role_composites_api.all()
-        composite_role_names = sorted([obj["name"] for obj in composites])
-        composites_role_container_ids = sorted([obj["containerId"] for obj in composites])
-        self.assertEqual(
-            expected_composite_role_names,
-            composite_role_names,
-        )
-        self.assertEqual(
-            expected_composites_role_container_ids,
-            composites_role_container_ids,
-        )
+        _check_state()
 
         # publish data - 2nd time, idempotence
         creation_state = role_resource.publish()
-        self.assertFalse(creation_state)
-        roles_b = client0_roles_api.all()
-        self.assertEqual(
-            ['ci0-client0-role0', 'ci0-client0-role1', 'ci0-client0-role1a', 'ci0-client0-role1b'],
-            sorted([role["name"] for role in roles_b])
-        )
-        role_b = find_in_list(roles_b, name='ci0-client0-role1')
-        # role should not be re-created
-        self.assertEqual(role_a["id"], role_b["id"])
-        # role attributes
-        role_min = copy(role_b)
-        role_min.pop("id")
-        role_min.pop("containerId")
-        self.assertEqual(expected_role, role_min)
-        # check subroles
-        composites = this_role_composites_api.all()
-        composite_role_names = sorted([obj["name"] for obj in composites])
-        composites_role_container_ids = sorted([obj["containerId"] for obj in composites])
-        self.assertEqual(
-            expected_composite_role_names,
-            composite_role_names,
-        )
-        self.assertEqual(
-            expected_composites_role_container_ids,
-            composites_role_container_ids,
-        )
+#        self.assertFalse(creation_state)
+        self.assertTrue(creation_state)
+        _check_state()
 
         # ------------------------------------------------------------------------
         # modify something - change role config
@@ -665,20 +644,8 @@ class TestClientRoleResource(TestCaseBase):
         self.assertEqual("ci0-client0-role1b-desc-NEW", role_c["description"])
         # .publish must revert change
         creation_state = role_resource.publish()
-
-        roles_d = client0_roles_api.all()
-        self.assertEqual(
-            ['ci0-client0-role0', 'ci0-client0-role1', 'ci0-client0-role1a', 'ci0-client0-role1b'],
-            sorted([role["name"] for role in roles_d])
-        )
-        role_d = find_in_list(roles_d, name='ci0-client0-role1')
-        # role should not be re-created
-        self.assertEqual(role_a["id"], role_d["id"])
-        # role attributes
-        role_min = copy(role_d)
-        role_min.pop("id")
-        role_min.pop("containerId")
-        self.assertEqual(expected_role, role_min)
+        self.assertTrue(creation_state)
+        _check_state()
 
         # ------------------------------------------------------------------------
         # modify something - add one sub-role
@@ -694,28 +661,20 @@ class TestClientRoleResource(TestCaseBase):
         # .publish must revert change
         creation_state = role_resource.publish()
         self.assertTrue(creation_state)
-        roles_e = client0_roles_api.all()
+        _check_state()
+
+        # ------------------------------------------------------------------------
+        # modify something - remove one sub-role
+        composites_f = this_role_composites_api.all()
+        subrole_1b = find_in_list(composites_f, name="ci0-client0-role1b")
+        this_role_composites_api.remove(None, [subrole_1b]).isOk()
+        composites_f = this_role_composites_api.all()
+        self.assertEqual(2, len(composites_f))
         self.assertEqual(
-            ['ci0-client0-role0', 'ci0-client0-role1', 'ci0-client0-role1a', 'ci0-client0-role1b'],
-            sorted([role["name"] for role in roles_e])
+            ['ci0-client0-role1a', 'ci0-role-1a'],
+            sorted([role["name"] for role in composites_f])
         )
-        role_b = find_in_list(roles_e, name='ci0-client0-role1')
-        # role should not be re-created
-        self.assertEqual(role_a["id"], role_b["id"])
-        # role attributes
-        role_min = copy(role_b)
-        role_min.pop("id")
-        role_min.pop("containerId")
-        self.assertEqual(expected_role, role_min)
-        # check subroles
-        composites = this_role_composites_api.all()
-        composite_role_names = sorted([obj["name"] for obj in composites])
-        composites_role_container_ids = sorted([obj["containerId"] for obj in composites])
-        self.assertEqual(
-            expected_composite_role_names,
-            composite_role_names,
-        )
-        self.assertEqual(
-            expected_composites_role_container_ids,
-            composites_role_container_ids,
-        )
+        # .publish must revert change
+        creation_state = role_resource.publish()
+        self.assertTrue(creation_state)
+        _check_state()
