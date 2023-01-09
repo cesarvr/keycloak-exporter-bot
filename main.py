@@ -171,6 +171,10 @@ def main(args):
     client_manager = ClientManager(keycloak_api, realm_name, datadir)
     creation_state = client_manager.publish()
 
+    #---------------------------------
+    # Pass 2, resolve circular dependencies
+    creation_state = client_manager.publish()
+
     return
 
     # User federations
