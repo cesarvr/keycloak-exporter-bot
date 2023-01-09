@@ -362,7 +362,7 @@ class TestClientRoleResourceManager(TestCaseBase):
         self.assertEqual([], delete_objs)
 
         # publish data - 1st time
-        creation_state = manager.publish(include_composite=False)  # TODO extend CI test also with include_composite=True case
+        creation_state = manager.publish(include_composite=False)
         self.assertTrue(creation_state)
         roles = client0_roles_api.all()
         self.assertEqual(
@@ -375,10 +375,9 @@ class TestClientRoleResourceManager(TestCaseBase):
         self.assertEqual([], delete_objs)
 
         # publish same data again - idempotence
-        creation_state = manager.publish(include_composite=False)  # TODO extend CI test also with include_composite=True case
-        # TODO should be false; but composites are missing
-        # As ClientRoleResource just throws away .composites, we get idempotence, but data on server is WRONG!!!
-        self.assertFalse(creation_state)
+        creation_state = manager.publish(include_composite=False)
+        # TODO should be false; but one composite (realm sub-role) is missing
+        self.assertTrue(creation_state)
         roles = client0_roles_api.all()
         self.assertEqual(
             our_roles_names,
@@ -404,7 +403,7 @@ class TestClientRoleResourceManager(TestCaseBase):
         self.assertEqual(['ci0-client0-role-x-to-be-deleted'], delete_ids)
 
         # check extra role is deleted
-        creation_state = manager.publish(include_composite=False)  # TODO extend CI test also with include_composite=True case
+        creation_state = manager.publish(include_composite=False)
         self.assertTrue(creation_state)
         roles = client0_roles_api.all()
         self.assertEqual(4, len(roles))
