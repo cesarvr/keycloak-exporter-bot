@@ -684,3 +684,10 @@ class TestClientRoleResource(TestCaseBase):
         creation_state = role_resource.publish()
         self.assertFalse(creation_state)
         _check_state()
+
+        # ------------------------------------------------------------------------
+        # publish composite role, with include_composite=False should not destroy existing composites
+        # The composites should only remain unmodified.
+        creation_state = role_resource.publish(include_composite=False)
+        self.assertFalse(creation_state)
+        _check_state()
