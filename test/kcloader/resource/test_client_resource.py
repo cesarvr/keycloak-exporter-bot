@@ -630,8 +630,7 @@ class TestClientRoleResource(TestCaseBase):
 
         # publish data - 2nd time, idempotence
         creation_state = role_resource.publish()
-#        self.assertFalse(creation_state)
-        self.assertTrue(creation_state)
+        self.assertFalse(creation_state)
         _check_state()
 
         # ------------------------------------------------------------------------

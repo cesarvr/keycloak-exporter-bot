@@ -143,6 +143,8 @@ class ClientRoleResource(SingleResource):
         for oo in [obj1, obj2]:
             oo.pop("id", None)
             oo.pop("containerId", None)
+            # composites - ignore them, or convert one to hava containerId or containerName in both
+            oo.pop("composites", None)
         return obj1 == obj2
 
 
