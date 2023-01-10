@@ -14,6 +14,10 @@ logger = logging.getLogger(__name__)
 
 
 class ClientRoleResource(SingleResource):
+    """
+    The ClientRoleResource creates/updates client role.
+    It also creates/updates/deletes role composites - that part should be in some Manager class (but is not).
+    """
     def __init__(
             self,
             resource: dict,
