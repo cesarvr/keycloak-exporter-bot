@@ -11,6 +11,130 @@ from ...helper import TestBed, remove_field_id, TestCaseBase
 from kcloader.resource import ClientRoleManager, ClientRoleResource, SingleClientResource
 
 
+class TestRealmRoleManager(TestCaseBase):
+    def setUp(self):
+        super().setUp()
+        testbed = self.testbed
+
+        self.client0_clientId = "ci0-client-0"
+        client0_filepath = os.path.join(testbed.DATADIR, f"{testbed.REALM}/clients/client-0/ci0-client-0.json")
+        self.client0_resource = SingleClientResource({
+            'path': client0_filepath,
+            'keycloak_api': testbed.kc,
+            'realm': testbed.REALM,
+            'datadir': testbed.DATADIR,
+        })
+
+        self.realm_roles_api = testbed.kc.build("roles", testbed.REALM)
+        self.clients_api = testbed.kc.build("clients", testbed.REALM)
+        # check clean start
+        assert len(self.clients_api.all()) == 6  # 6 default clients
+        assert len(self.realm_roles_api.all()) == 2  # 2 default realm roles (for master realm - 4)
+
+        # this creates also "empty" "ci0-client0-role0"
+        self.client0_resource.publish_self()
+        self.client0 = self.clients_api.findFirstByKV("clientId", self.client0_clientId)
+        client_query = {'key': 'clientId', 'value': self.client0_clientId}
+        self.client0_roles_api = self.clients_api.roles(client_query)
+        client0_roles_api= self.client0_roles_api
+
+        # Fixup - create required sub-roles first
+        client0_roles_api.create(dict(name="ci0-client0-role1a", description="ci0-client0-role1a---injected-by-CI-test"))
+        assert len(client0_roles_api.all()) == 1 + 1  # the "empty" ci0-client0-role0 is created when client is created
+
+    def test_publish(self):
+        our_roles_names = sorted([
+            "ci0-role-0",
+            "ci0-role-1",
+            "ci0-role-1a",
+            "ci0-role-1b",
+        ])
+        blacklisted_roles_names = sorted([
+            "offline_access",
+            "uma_authorization",
+        ])
+        expected_roles_names = sorted(our_roles_names + blacklisted_roles_names)
+        # testbed = self.testbed
+        # client0 = self.clients_api.findFirstByKV("clientId", self.client0_clientId)
+        client_query = {'key': 'clientId', 'value': self.client0_clientId}
+        #client0_roles_api = self.clients_api.roles(client_query)
+        client0 = self.clients_api.findFirstByKV("clientId", self.client0_clientId)
+        realm_roles_api = self.realm_roles_api
+
+        manager = RealmRoleManager(
+            self.testbed.kc, self.testbed.REALM, self.testbed.DATADIR,
+        )
+
+        # check initial state
+        # "empty" ci0-client0-role0 is created when we import ci0-client-0.json
+        client0_roles = self.client0_roles_api.all()
+        self.assertEqual(
+            ["ci0-client0-role0", "ci0-client0-role1a"],
+            sorted([role["name"] for role in client0_roles]),
+        )
+        roles = realm_roles_api.all()
+        self.assertEqual(
+            blacklisted_roles_names,
+            sorted([role["name"] for role in roles])
+        )
+        create_ids, delete_objs = manager._difference_ids()
+        delete_ids = sorted([obj["name"] for obj in delete_objs])
+        expected_create_role_names = copy(our_roles_names)
+        self.assertEqual(expected_create_role_names, sorted(create_ids))
+        self.assertEqual([], delete_objs)
+
+        # publish data - 1st time
+        creation_state = manager.publish(include_composite=False)
+        self.assertTrue(creation_state)
+        roles = realm_roles_api.all()
+        self.assertEqual(
+            expected_roles_names,
+            sorted([role["name"] for role in roles])
+        )
+
+        create_ids, delete_objs = manager._difference_ids()
+        self.assertEqual([], create_ids)
+        self.assertEqual([], delete_objs)
+
+        # publish same data again - idempotence
+        creation_state = manager.publish(include_composite=False)
+        # TODO should be false; but one composite (realm sub-role) is missing
+        self.assertTrue(creation_state)
+        roles = realm_roles_api.all()
+        self.assertEqual(
+            expected_roles_names,
+            sorted([role["name"] for role in roles])
+        )
+
+        # ------------------------------------------------------------------------------
+        # create an additional role
+        realm_roles_api.create({
+            "name": "ci0-role-x-to-be-deleted",
+            "description": "ci0-role-x-to-be-DELETED",
+        }).isOk()
+        roles = realm_roles_api.all()
+        self.assertEqual(6 + 1, len(roles))
+        self.assertEqual(
+            sorted(our_roles_names + blacklisted_roles_names + ["ci0-role-x-to-be-deleted"]),
+            sorted([role["name"] for role in roles])
+        )
+
+        create_ids, delete_objs = manager._difference_ids()
+        delete_ids = sorted([obj["name"] for obj in delete_objs])
+        self.assertEqual([], create_ids)
+        self.assertEqual(['ci0-role-x-to-be-deleted'], delete_ids)
+
+        # check extra role is deleted
+        creation_state = manager.publish(include_composite=False)
+        self.assertTrue(creation_state)
+        roles = realm_roles_api.all()
+        self.assertEqual(6, len(roles))
+        self.assertEqual(
+            expected_roles_names,
+            sorted([role["name"] for role in roles])
+        )
+
+
 class TestRealmRoleResource(TestCaseBase):
     def setUp(self):
         super().setUp()
