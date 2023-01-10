@@ -42,7 +42,13 @@ class TestRealmRoleManager(TestCaseBase):
         client0_roles_api.create(dict(name="ci0-client0-role1a", description="ci0-client0-role1a---injected-by-CI-test"))
         assert len(client0_roles_api.all()) == 1 + 1  # the "empty" ci0-client0-role0 is created when client is created
 
-    def test_publish(self):
+    def test_publish_with_composites(self):
+        self.do_test_publish(include_composite=True)
+
+    def test_publish_without_composites(self):
+        self.do_test_publish(include_composite=False)
+
+    def do_test_publish(self, include_composite: bool):
         our_roles_names = sorted([
             "ci0-role-0",
             "ci0-role-1",
@@ -84,7 +90,7 @@ class TestRealmRoleManager(TestCaseBase):
         self.assertEqual([], delete_objs)
 
         # publish data - 1st time
-        creation_state = manager.publish(include_composite=False)
+        creation_state = manager.publish(include_composite=include_composite)
         self.assertTrue(creation_state)
         roles = realm_roles_api.all()
         self.assertEqual(
@@ -97,7 +103,7 @@ class TestRealmRoleManager(TestCaseBase):
         self.assertEqual([], delete_objs)
 
         # publish same data again - idempotence
-        creation_state = manager.publish(include_composite=False)
+        creation_state = manager.publish(include_composite=include_composite)
         # TODO should be false; but one composite (realm sub-role) is missing
         self.assertTrue(creation_state)
         roles = realm_roles_api.all()
@@ -125,7 +131,7 @@ class TestRealmRoleManager(TestCaseBase):
         self.assertEqual(['ci0-role-x-to-be-deleted'], delete_ids)
 
         # check extra role is deleted
-        creation_state = manager.publish(include_composite=False)
+        creation_state = manager.publish(include_composite=include_composite)
         self.assertTrue(creation_state)
         roles = realm_roles_api.all()
         self.assertEqual(6, len(roles))
