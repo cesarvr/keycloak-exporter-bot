@@ -74,7 +74,6 @@ class TestRealmRoleManager(TestCaseBase):
             self.testbed.kc, self.testbed.REALM, self.testbed.DATADIR,
         )
         logger.debug(f"RealmRoleManager manager.resources={manager.resources}")
-        # manager.resources = list(reversed(manager.resources))
 
         # check initial state
         # "empty" ci0-client0-role0 is created when we import ci0-client-0.json
@@ -109,8 +108,25 @@ class TestRealmRoleManager(TestCaseBase):
 
         # publish same data again - idempotence
         creation_state = manager.publish(include_composite=include_composite)
-        # TODO should be false; but one composite (realm sub-role) is missing
-        self.assertTrue(creation_state)
+        if include_composite:
+            # TODO should be false; but one composite (realm sub-role) is missing
+            # required roles might be already present, or not - this depends on manager.resources order.
+            # github CI test - seems roles are created in different order, and we get
+            # creation_state=False; comment out this line.
+            # self.assertTrue(creation_state)
+            pass
+        else:
+            # .composite flag is wrong - TODO fix code to exclude .composite in comparison
+            self.assertTrue(creation_state)
+        #
+        # after 2nd .publish(), composites should be correct, and creation_state=False.
+        creation_state = manager.publish(include_composite=include_composite)
+        if include_composite:
+            self.assertFalse(creation_state)
+        else:
+            # .composite flag is wrong - TODO fix code to exclude .composite in comparison
+            self.assertTrue(creation_state)
+        #
         roles = realm_roles_api.all()
         self.assertEqual(
             expected_roles_names,
