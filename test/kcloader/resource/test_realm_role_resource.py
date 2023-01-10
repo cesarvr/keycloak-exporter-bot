@@ -1,3 +1,4 @@
+import logging
 import json
 import os
 import unittest
@@ -9,6 +10,8 @@ from kcloader.tools import read_from_json, find_in_list
 from ...helper import TestBed, remove_field_id, TestCaseBase
 
 from kcloader.resource import ClientRoleManager, ClientRoleResource, SingleClientResource
+
+logger = logging.getLogger(__name__)
 
 
 class TestRealmRoleManager(TestCaseBase):
@@ -70,6 +73,8 @@ class TestRealmRoleManager(TestCaseBase):
         manager = RealmRoleManager(
             self.testbed.kc, self.testbed.REALM, self.testbed.DATADIR,
         )
+        logger.debug(f"RealmRoleManager manager.resources={manager.resources}")
+        # manager.resources = list(reversed(manager.resources))
 
         # check initial state
         # "empty" ci0-client0-role0 is created when we import ci0-client-0.json
