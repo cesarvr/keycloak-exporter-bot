@@ -144,7 +144,8 @@ class TestClientResource(TestCaseBase):
             self.assertEqual(client_c, client_c | expected_client0)
         self.assertEqual('ci0-client-0-desc', clients_api.get_one(client_a["id"])['description'])
 
-    def test_publish(self):
+    def test_publish_without_comnposites(self):
+        # TODO test also .publish with include_composite=True
         self.maxDiff = None
         expected_role_names = [
             'ci0-client0-role0',
@@ -169,7 +170,7 @@ class TestClientResource(TestCaseBase):
         self.assertEqual(len(clients_all), default_client_count)
 
         # create client
-        creation_state = client0_resource.publish()
+        creation_state = client0_resource.publish(include_composite=False)
         self.assertTrue(creation_state)
         # check objects are created
         clients_all = clients_api.all()
@@ -207,7 +208,7 @@ class TestClientResource(TestCaseBase):
             expected_client0_b.pop("defaultRoles")
 
         # publish same data again - idempotence
-        creation_state = client0_resource.publish()
+        creation_state = client0_resource.publish(include_composite=False)
         self.assertTrue(creation_state)  # TODO - should be False if defaultClientScopes would contain ci0-client-scope
         # check content is not modified
         clients_all = clients_api.all()
@@ -259,7 +260,7 @@ class TestClientResourceManager(TestCaseBase):
         self.assertEqual([], delete_ids)
 
         # publish data - 1st time
-        creation_state = manager.publish()
+        creation_state = manager.publish(include_composite=False)
         self.assertTrue(creation_state)
         clients_all = clients_api.all()
         self.assertEqual(
@@ -272,7 +273,7 @@ class TestClientResourceManager(TestCaseBase):
         self.assertEqual([], delete_objs)
 
         # publish same data again - idempotence
-        creation_state = manager.publish()
+        creation_state = manager.publish(include_composite=False)
         self.assertTrue(creation_state)  # TODO should be false
         clients_all = clients_api.all()
         self.assertEqual(
@@ -300,8 +301,8 @@ class TestClientResourceManager(TestCaseBase):
         self.assertEqual([], create_ids)
         self.assertEqual(['ci0-client-x-to-be-deleted'], delete_ids)
 
-        # check extra IdP is deleted
-        creation_state = manager.publish()
+        # check extra client is deleted
+        creation_state = manager.publish(include_composite=False)
         self.assertTrue(creation_state)
         clients_all = clients_api.all()
         self.assertEqual(

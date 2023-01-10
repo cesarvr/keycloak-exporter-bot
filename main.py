@@ -169,9 +169,9 @@ def main(args):
 
     # load clients
     client_manager = ClientManager(keycloak_api, realm_name, datadir)
-    creation_state = client_manager.publish()
+    creation_state = client_manager.publish(include_composite=False)
 
-    #---------------------------------
+    # ---------------------------------
     # Pass 2, resolve circular dependencies
     creation_state = client_manager.publish()
 
