@@ -1,5 +1,6 @@
 import logging
 import kcapi
+from sortedcontainers import SortedDict
 
 from kcloader.resource import SingleResource
 from kcloader.tools import find_in_list
@@ -8,6 +9,37 @@ logger = logging.getLogger(__name__)
 
 
 class ClientScopeResource(SingleResource):
+    def __init__(
+            self,
+            resource: dict,
+         ):
+        super().__init__({
+            "name": "client-scopes",
+            "id": "name",
+            **resource,
+        })
+
+    def publish_self(self):
+        creation_state = self.resource.publish_object(self.body, self)
+        return creation_state
+
+    def publish(self, body=None, *, include_scope_mappings=True):
+        # return super().publish(body=body)
+        creation_state = self.publish_self()
+        return creation_state
+
+    def is_equal(self, other):
+        obj1 = SortedDict(self.body)
+        obj2 = SortedDict(other)
+        for oo in [obj1, obj2]:
+            oo.pop("id", None)
+            # clientScopeMappings and scopeMappings are added by kcfetcher
+            oo.pop("clientScopeMappings", None)
+            oo.pop("scopeMappings", None)
+        return obj1 == obj2
+
+
+class ClientScopeResource___old(SingleResource):
     def publish_scope_mappings(self):
         state = self.publish_scope_mappings_realm()
         state = state and self.publish_scope_mappings_client()
