@@ -307,7 +307,7 @@ class TestRealmRoleResource(TestCaseBase):
         # client0_roles_api = self.client0_roles_api
         expected_composite_role_names = ["ci0-client0-role1a", "ci0-role-1a", "ci0-role-1b"]
         realm = self.testbed.master_realm.get_one(self.testbed.realm)
-        expected_composites_role_container_ids = [self.client0["id"], realm["id"], realm["id"]]
+        expected_composites_role_container_ids = sorted([self.client0["id"], realm["id"], realm["id"]])
 
         role_filepath = os.path.join(self.testbed.DATADIR, "ci0-realm/roles/ci0-role-1.json")
         with open(role_filepath) as ff:
