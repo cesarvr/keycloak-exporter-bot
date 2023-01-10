@@ -31,6 +31,43 @@ class ResourcePublisher:
             key = "id"
         elif isinstance(resource_api, kcapi.rest.clients.Clients):
             key = "id"
+        elif isinstance(resource_api, kcapi.rest.clients.ClientRoleCRUD):
+            # this can be client or realm role
+            key = "id"
+            # In .publish() .is_equal() will be called, and ClientRoleCRUD.is_equal() will compare also "composites"
+            # Add them into obj.
+            # TODO - code would be cleaner if "composites" would be moved out into one file for realm sub-roles,
+            # and one file for each client sub-role. Downside - explosion of small files.
+            # Do this.
+            # Old layout:
+            #     ci0-realm/clients/client-0/roles/ci0-client0-role1.json
+            # New layout:
+            #     ci0-realm/clients/client-0/roles/ci0-client0-role1/ci0-client0-role1.json
+            #     ci0-realm/clients/client-0/roles/ci0-client0-role1/composites/realm/ci0-role-1a.json
+            #     ci0-realm/clients/client-0/roles/ci0-client0-role1/composites/clients/ci0-client-0/ci0-client0-role1a.json
+            #     ci0-realm/clients/client-0/roles/ci0-client0-role1/composites/clients/ci0-client-0/ci0-client0-role1b.json
+            # Need to add SubroleResource, SubroleResourceManager
+            # SubroleResource - will need to know about parent client, role. Will it be easy enough to implement?
+            # Can we have SubroleResource, SubroleResourceManager without changing directory layout?
+            # I guess yes.
+            #
+            # Better refactoring (might be) - A client role class to provide a "fake" CRUD api?
+            if obj["composite"]:
+                # GET /{realm}/clients/{id}/roles/{role-name}/composites
+                this_role_composites_api = resource_api.get_child(resource_api, obj["name"], "composites")
+                composites = this_role_composites_api.all()
+                # keep only fields kcfetcher puts into json file
+                composites = [
+                    dict(
+                        name=role["name"],
+                        clientRole=role["clientRole"],
+                        containerId=role["containerId"],
+                    )
+                    for role in composites
+                ]
+                obj["composites"] = composites
+            return obj[key], obj
+
         elif isinstance(resource_api, kcapi.rest.clients.Role):
             # this can be client or realm role
             key = "id"
@@ -65,7 +102,7 @@ class ResourcePublisher:
                 # Is in new data anything different from old_data?
                 # Corner case: whole attributes added/removed in new_data - what behaviour do we want in this case?
                 if self.single_resource:
-                    assert self.body == self.single_resource.body
+                    # assert self.body == self.single_resource.body  # for roles "composites" is removed
                     if self.single_resource.is_equal(old_data):
                         # no change needed
                         return False
@@ -85,5 +122,5 @@ class ResourcePublisher:
                 http_ok = resource_api.create(self.body).isOk()
                 return True
         else:
-            http_ok = resource_api.create(self.body).isOk() # X
+            http_ok = resource_api.create(self.body).isOk()
             return True

@@ -19,6 +19,8 @@ def find_sub_role(self, clients, realm_roles, clients_roles, sub_role):
             # I'm not able to reproduce locally.
             logger.error(f"client clientId={sub_role['containerName']} not found")
             return None
+        # TODO move also this out, to cache/reuse API responses
+        # But how often is data for _all_ clients needed? Lazy loading would be nice.
         some_client_roles_api = clients_api.get_child(clients_api, some_client["id"], "roles")
         some_client_roles = some_client_roles_api.all()  # TODO cache this response
         role = find_in_list(some_client_roles, name=sub_role["name"])
@@ -47,7 +49,7 @@ class RoleResource(SingleResource):
 
         super().publish()
         # second publish for RTH SSO 7.4 to load also .attributes
-        super().publish()
+        super().publish()  # not needed with kcapi>=1.0.37
 
         if body_orig:
                 self.body["composites"] = body_orig

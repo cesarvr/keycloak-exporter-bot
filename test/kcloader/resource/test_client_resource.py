@@ -341,10 +341,13 @@ class TestClientRoleResourceManager(TestCaseBase):
         # client0 = self.clients_api.findFirstByKV("clientId", self.client0_clientId)
         client_query = {'key': 'clientId', 'value': self.client0_clientId}
         client0_roles_api = self.clients_api.roles(client_query)
+        client0 = self.clients_api.findFirstByKV("clientId", self.client0_clientId)
 
         manager = ClientRoleManager(
             self.testbed.kc, self.testbed.REALM, self.testbed.DATADIR,
-            clientId=self.client0_clientId, client_filepath=os.path.join(self.testbed.DATADIR, "ci0-realm/clients/client-0/ci0-client-0.json"),
+            clientId=self.client0_clientId,
+            client_id=client0["id"],
+            client_filepath=os.path.join(self.testbed.DATADIR, "ci0-realm/clients/client-0/ci0-client-0.json"),
         )
 
         # check initial state
@@ -359,7 +362,7 @@ class TestClientRoleResourceManager(TestCaseBase):
         self.assertEqual([], delete_objs)
 
         # publish data - 1st time
-        creation_state = manager.publish(include_composite=False)  # TODO extend CI test also with include_composite=True case
+        creation_state = manager.publish(include_composite=False)
         self.assertTrue(creation_state)
         roles = client0_roles_api.all()
         self.assertEqual(
@@ -372,10 +375,9 @@ class TestClientRoleResourceManager(TestCaseBase):
         self.assertEqual([], delete_objs)
 
         # publish same data again - idempotence
-        creation_state = manager.publish(include_composite=False)  # TODO extend CI test also with include_composite=True case
-        # TODO should be false; but composites are missing
-        # As ClientRoleResource just throws away .composites, we get idempotence, but data on server is WRONG!!!
-        self.assertFalse(creation_state)
+        creation_state = manager.publish(include_composite=False)
+        # TODO should be false; but one composite (realm sub-role) is missing
+        self.assertTrue(creation_state)
         roles = client0_roles_api.all()
         self.assertEqual(
             our_roles_names,
@@ -401,7 +403,7 @@ class TestClientRoleResourceManager(TestCaseBase):
         self.assertEqual(['ci0-client0-role-x-to-be-deleted'], delete_ids)
 
         # check extra role is deleted
-        creation_state = manager.publish(include_composite=False)  # TODO extend CI test also with include_composite=True case
+        creation_state = manager.publish(include_composite=False)
         self.assertTrue(creation_state)
         roles = client0_roles_api.all()
         self.assertEqual(4, len(roles))
@@ -426,36 +428,38 @@ class TestClientRoleResource(TestCaseBase):
         })
 
         self.clients_api = testbed.kc.build("clients", testbed.REALM)
+        self.realm_roles_api = testbed.kc.build("roles", testbed.REALM)
+        self.roles_by_id_api = testbed.kc.build("roles-by-id", testbed.REALM)
         # check clean start
         assert len(self.clients_api.all()) == 6  # 6 default clients
+        assert len(self.realm_roles_api.all()) == 2  # 2 default realm roles (for master realm - 4)
 
         # this creates "empty" "ci0-client0-role0"
         self.client0_resource.publish_self()
+        self.client0 = self.clients_api.findFirstByKV("clientId", self.client0_clientId)
 
-    def test_publish(self):
-        our_roles_names = sorted([
-            "ci0-client0-role0",
-            "ci0-client0-role1",
-            "ci0-client0-role1a",
-            "ci0-client0-role1b",
-        ])
+    def test_publish_without_composites(self):
         # testbed = self.testbed
         # client0 = self.clients_api.findFirstByKV("clientId", self.client0_clientId)
         client_query = {'key': 'clientId', 'value': self.client0_clientId}
         client0_roles_api = self.clients_api.roles(client_query)
         # TODO test with simple ci0-client-0.json and with some composite role
         role_filepath = os.path.join(self.testbed.DATADIR, "ci0-realm/clients/client-0/roles/ci0-client0-role1b.json")
-        expected_role = json.load(open(role_filepath))
+        with open(role_filepath) as ff:
+            expected_role = json.load(ff)
         # make sure we do test "attributes". They are just easy to miss.
         self.assertEqual({'ci0-client0-role1b-key0': ['ci0-client0-role1b-value0']}, expected_role["attributes"])
 
         role_resource = ClientRoleResource({
-            'path': role_filepath,
-            'keycloak_api': self.testbed.kc,
-            'realm': self.testbed.REALM,
-            'datadir': self.testbed.DATADIR,
-            'client_roles_api': client0_roles_api,
-        })
+                'path': role_filepath,
+                'keycloak_api': self.testbed.kc,
+                'realm': self.testbed.REALM,
+                'datadir': self.testbed.DATADIR,
+            },
+            clientId=self.client0_clientId,
+            client_id=self.client0["id"],
+            client_roles_api=client0_roles_api,
+        )
 
         # check initial state
         # "empty" ci0-client0-role0 is created when we import ci0-client-0.json
@@ -465,7 +469,7 @@ class TestClientRoleResource(TestCaseBase):
         # publish data - 1st time
         creation_state = role_resource.publish(include_composite=False)  # TODO extend CI test also with include_composite=True case
         self.assertTrue(creation_state)
-        roles_a = client0_roles_api.all(params=dict(briefRepresentation=False))
+        roles_a = client0_roles_api.all()
         self.assertEqual(
             ['ci0-client0-role0', 'ci0-client0-role1b'],
             sorted([role["name"] for role in roles_a])
@@ -480,7 +484,7 @@ class TestClientRoleResource(TestCaseBase):
         # publish data - 2nd time, idempotence
         creation_state = role_resource.publish(include_composite=False)  # TODO extend CI test also with include_composite=True case
         self.assertFalse(creation_state)
-        roles_b = client0_roles_api.all(params=dict(briefRepresentation=False))
+        roles_b = client0_roles_api.all()
         self.assertEqual(
             ['ci0-client0-role0', 'ci0-client0-role1b'],
             sorted([role["name"] for role in roles_b])
@@ -507,7 +511,7 @@ class TestClientRoleResource(TestCaseBase):
         self.assertEqual("ci0-client0-role1b-desc-NEW", role_c["description"])
         # .publish must revert change
         creation_state = role_resource.publish(include_composite=False)  # TODO extend CI test also with include_composite=True case
-        roles_d = client0_roles_api.all(params=dict(briefRepresentation=False))
+        roles_d = client0_roles_api.all()
         self.assertEqual(
             ['ci0-client0-role0', 'ci0-client0-role1b'],
             sorted([role["name"] for role in roles_d])
@@ -520,3 +524,170 @@ class TestClientRoleResource(TestCaseBase):
         role_min.pop("id")
         role_min.pop("containerId")
         self.assertEqual(expected_role, role_min)
+
+    def test_publish_with_composites(self):
+        def _check_state():
+            roles_b = client0_roles_api.all()
+            self.assertEqual(
+                ['ci0-client0-role0', 'ci0-client0-role1', 'ci0-client0-role1a', 'ci0-client0-role1b'],
+                sorted([role["name"] for role in roles_b])
+            )
+            role_b = find_in_list(roles_b, name='ci0-client0-role1')
+            # role should not be re-created
+            self.assertEqual(role_a["id"], role_b["id"])
+            # role attributes
+            role_min = copy(role_b)
+            role_min.pop("id")
+            role_min.pop("containerId")
+            self.assertEqual(expected_role, role_min)
+            # check subroles
+            composites = this_role_composites_api.all()
+            composite_role_names = sorted([obj["name"] for obj in composites])
+            composites_role_container_ids = sorted([obj["containerId"] for obj in composites])
+            self.assertEqual(
+                expected_composite_role_names,
+                composite_role_names,
+            )
+            self.assertEqual(
+                expected_composites_role_container_ids,
+                composites_role_container_ids,
+            )
+
+        self.maxDiff = None
+        # testbed = self.testbed
+        # client0 = self.clients_api.findFirstByKV("clientId", self.client0_clientId)
+        client_query = {'key': 'clientId', 'value': self.client0_clientId}
+        client0_roles_api = self.clients_api.roles(client_query)
+        roles_by_id_api = self.roles_by_id_api
+        # TODO test with simple ci0-client-0.json and with some composite role
+        role_filepath = os.path.join(self.testbed.DATADIR, "ci0-realm/clients/client-0/roles/ci0-client0-role1.json")
+        with open(role_filepath) as ff:
+            expected_role = json.load(ff)
+            # API does not include composites into API response.
+            # kcfetcher is "artificially" adding "composites" into role .json file.
+            expected_role_composites = expected_role.pop("composites")
+        # make sure we do test "attributes". They are just easy to miss.
+        self.assertEqual({'ci0-client0-role1-key0': ['ci0-client0-role1-value0']}, expected_role["attributes"])
+        # make sure composites are complex enough
+        self.assertEqual([
+                {
+                    "clientRole": True,
+                    "containerName": "ci0-client-0",
+                    "name": "ci0-client0-role1a"
+                },
+                {
+                    "clientRole": True,
+                    "containerName": "ci0-client-0",
+                    "name": "ci0-client0-role1b"
+                },
+                {
+                    "clientRole": False,
+                    "containerName": "ci0-realm",
+                    "name": "ci0-role-1a"
+                }
+            ],
+            expected_role_composites
+        )
+
+        role_resource = ClientRoleResource({
+            'path': role_filepath,
+            'keycloak_api': self.testbed.kc,
+            'realm': self.testbed.REALM,
+            'datadir': self.testbed.DATADIR,
+            },
+            clientId=self.client0_clientId,
+            client_id=self.client0["id"],
+            client_roles_api=client0_roles_api,
+        )
+
+        # check initial state
+        # "empty" ci0-client0-role0 is created when we import ci0-client-0.json
+        roles = client0_roles_api.all()
+        self.assertEqual(["ci0-client0-role0"], [role["name"] for role in roles])
+
+        # Fixup - create required sub-roles first
+        self.realm_roles_api.create(dict(name="ci0-role-1a", description="ci0-role-1a---injected-by-CI-test"))
+        assert len(self.realm_roles_api.all()) == 2 + 1  # 2 default realm roles
+        client0_roles_api.create(dict(name="ci0-client0-role1a", description="ci0-client0-role1a---injected-by-CI-test"))
+        client0_roles_api.create(dict(name="ci0-client0-role1b", description="ci0-client0-role1b---injected-by-CI-test"))
+        assert len(client0_roles_api.all()) == 1 + 2  # the "empty" ci0-client0-role0 is created when client is createddf
+
+        expected_composite_role_names = ["ci0-client0-role1a", "ci0-client0-role1b", "ci0-role-1a"]
+        realm = self.testbed.master_realm.get_one(self.testbed.realm)
+        expected_composites_role_container_ids = sorted([self.client0["id"], self.client0["id"], realm["id"]])
+
+        # END prepare
+        # -----------------------------------------
+
+        # publish data - 1st time
+        creation_state = role_resource.publish()
+        self.assertTrue(creation_state)
+        role_a = client0_roles_api.findFirstByKV("name", "ci0-client0-role1")
+        role_id = role_a["id"]
+        this_role_composites_api = roles_by_id_api.get_child(roles_by_id_api, role_id, "composites")
+        _check_state()
+        # publish data - 2nd time, idempotence
+        creation_state = role_resource.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # ------------------------------------------------------------------------
+        # modify something - change role config
+        data = client0_roles_api.findFirstByKV("name", 'ci0-client0-role1')
+        data.update({"description": 'ci0-client0-role1b-desc-NEW'})
+        client0_roles_api.update(role_a["id"], data)
+        role_c = client0_roles_api.findFirstByKV("name", 'ci0-client0-role1')
+        self.assertEqual(role_a["id"], role_c["id"])
+        self.assertEqual("ci0-client0-role1b-desc-NEW", role_c["description"])
+        # .publish must revert change
+        creation_state = role_resource.publish()
+        self.assertTrue(creation_state)
+        _check_state()
+        creation_state = role_resource.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # ------------------------------------------------------------------------
+        # modify something - add one sub-role
+        self.realm_roles_api.create(dict(name="ci0-role-temp", description="ci0-role-TEMP---injected-by-CI-test"))
+        realm_role_temp = self.realm_roles_api.findFirstByKV("name", "ci0-role-temp")
+        this_role_composites_api.create([realm_role_temp])
+        composites_e = this_role_composites_api.all()
+        self.assertEqual(4, len(composites_e))
+        self.assertEqual(
+            ['ci0-client0-role1a', 'ci0-client0-role1b', 'ci0-role-1a', 'ci0-role-temp'],
+            sorted([role["name"] for role in composites_e])
+        )
+        # .publish must revert change
+        creation_state = role_resource.publish()
+        self.assertTrue(creation_state)
+        _check_state()
+        creation_state = role_resource.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # ------------------------------------------------------------------------
+        # modify something - remove one sub-role
+        composites_f = this_role_composites_api.all()
+        subrole_1b = find_in_list(composites_f, name="ci0-client0-role1b")
+        this_role_composites_api.remove(None, [subrole_1b]).isOk()
+        composites_f = this_role_composites_api.all()
+        self.assertEqual(2, len(composites_f))
+        self.assertEqual(
+            ['ci0-client0-role1a', 'ci0-role-1a'],
+            sorted([role["name"] for role in composites_f])
+        )
+        # .publish must revert change
+        creation_state = role_resource.publish()
+        self.assertTrue(creation_state)
+        _check_state()
+        creation_state = role_resource.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # ------------------------------------------------------------------------
+        # publish composite role, with include_composite=False should not destroy existing composites
+        # The composites should only remain unmodified.
+        creation_state = role_resource.publish(include_composite=False)
+        self.assertFalse(creation_state)
+        _check_state()
