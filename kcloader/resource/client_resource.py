@@ -392,9 +392,9 @@ class SingleClientResource(SingleResource):
 
         return state
 
-    def publish(self):
+    def publish(self, *, include_composite=True):
         state = self.publish_self()
-        state_roles = self.client_role_manager.publish(include_composite=False)
+        state_roles = self.client_role_manager.publish(include_composite=include_composite)
         state_scopes = self.publish_scopes()
         return any([state, state_roles, state_scopes])
 
@@ -473,9 +473,9 @@ class ClientManager:
         object_filepaths = [fp for fp in object_filepaths if not fp.endswith("/scope-mappings.json")]
         return object_filepaths
 
-    def publish(self):
+    def publish(self, *, include_composite=True):
         create_ids, delete_objs = self._difference_ids()
-        status_resources = [resource.publish() for resource in self.resources]
+        status_resources = [resource.publish(include_composite=include_composite) for resource in self.resources]
         status_deleted = False
         for delete_obj in delete_objs:
             delete_id = delete_obj[self._resource_delete_id]
