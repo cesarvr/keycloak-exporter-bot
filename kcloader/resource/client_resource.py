@@ -7,7 +7,7 @@ from sortedcontainers import SortedDict
 import kcapi
 
 from kcloader.resource import SingleResource, ResourcePublisher, UpdatePolicy
-from kcloader.resource.role_resource import find_sub_role
+from kcloader.resource.role_resource import find_sub_role, BaseRoleManager
 from kcloader.tools import lookup_child_resource, read_from_json, find_in_list, get_path
 
 logger = logging.getLogger(__name__)
@@ -156,8 +156,8 @@ class ClientRoleResource(SingleResource):
         return obj1 == obj2
 
 
-class ClientRoleManager:
-    # _resource_name = "clients/TODO-client_id/roles"
+class ClientRoleManager(BaseRoleManager):
+    _resource_name = "clients/TODO-client_id/roles"
     # _resource_name_template = "clients/{client_id}/roles"
     # _resource_name_template will not work - 2 of 4 URLs need to be changed to use "/roles-by-id/<role_id>".
     _resource_id = "name"
@@ -166,73 +166,29 @@ class ClientRoleManager:
 
     def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
                  *, clientId: str, client_id: str, client_filepath: str):
-        self.keycloak_api = keycloak_api
-        self.realm = realm
-        self.datadir = datadir
+        self._client_clientId = clientId
+        self._client_id = client_id
         self._client_filepath = client_filepath
+        super().__init__(keycloak_api, realm, datadir)
 
-        # will not work
-        # self.resource_api = self.keycloak_api.build(self._resource_name, self.realm)
+    def _get_resource_api(self):
         clients_api = self.keycloak_api.build("clients", self.realm)
-        client_query = {'key': 'clientId', 'value': clientId}
+        client_query = {'key': 'clientId', 'value': self._client_clientId}
         client_roles_api = clients_api.roles(client_query)
-        self.resource_api = client_roles_api
+        return client_roles_api
 
-        object_filepaths = self._object_filepaths()
-
-        self.resources = [
-            ClientRoleResource({
-                'path': object_filepath,
-                'keycloak_api': keycloak_api,
-                'realm': realm,
-                'datadir': datadir,
-            },
-            clientId=clientId,
-            client_id=client_id,
-            client_roles_api=client_roles_api,
+    def _get_resource_instance(self, params):
+        return ClientRoleResource(
+            params,
+            clientId=self._client_clientId,
+            client_id=self._client_id,
+            client_roles_api=self.resource_api,
         )
-            for object_filepath in object_filepaths
-        ]
 
     def _object_filepaths(self):
         client_dirname = os.path.dirname(self._client_filepath)
         object_filepaths = glob(os.path.join(client_dirname, "roles/*.json"))
         return object_filepaths
-
-    def publish(self, *, include_composite=True):
-        create_ids, delete_objs = self._difference_ids()
-        # TODO publish simple roles first, then composites;
-        # group per client, or per all-clients; group also per realm-roles?
-        status_resources = [resource.publish(include_composite=include_composite) for resource in self.resources]
-        status_deleted = False
-        for delete_obj in delete_objs:
-            delete_id = delete_obj[self._resource_delete_id]
-            self.resource_api.remove(delete_id).isOk()
-            status_deleted = True
-        return any(status_resources + [status_deleted])
-
-    def _difference_ids(self):
-        """
-        If object is present on server but missing in datadir, then it needs to be removed.
-        This function will return list of ids (alias-es, clientId-s, etc.) that needs to be removed.
-        """
-        # idp_filepaths = glob(os.path.join(self.datadir, f"{self.realm}/identity-provider/*/*.json"))
-        object_filepaths = self._object_filepaths()
-
-        file_docs = [read_from_json(object_filepath) for object_filepath in object_filepaths]
-        file_ids = [doc[self._resource_id] for doc in file_docs]
-        server_objs = self.resource_api.all()
-        server_ids = [obj[self._resource_id] for obj in server_objs]
-
-        # do not try to create/remove/modify blacklisted objects
-        server_ids = [sid for sid in server_ids if sid not in self._resource_id_blacklist]
-
-        # remove objects that are on server, but missing in datadir
-        delete_ids = list(set(server_ids).difference(file_ids))
-        # create objects that are in datdir, but missing on server
-        create_ids = list(set(file_ids).difference(server_ids))
-        delete_objs = [obj for obj in server_objs if obj[self._resource_id] in delete_ids]
-        return create_ids, delete_objs
 
 
 class SingleClientResource(SingleResource):
