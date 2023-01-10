@@ -11,7 +11,7 @@ from kcapi import Keycloak, OpenID
 from kcapi.ie import AuthenticationFlowsImporter
 
 from kcloader.resource import ResourcePublisher, ManyResources, SingleResource, \
-    SingleClientResource, SingleCustomAuthenticationResource, RoleResource, ClientScopeResource, \
+    SingleClientResource, SingleCustomAuthenticationResource, ClientScopeResource, \
     IdentityProviderResource, IdentityProviderMapperResource, UserFederationResource, \
     RealmResource
 from kcloader.resource import IdentityProviderManager, ClientManager, RealmRoleManager
