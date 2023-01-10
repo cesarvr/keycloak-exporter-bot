@@ -95,6 +95,10 @@ class ClientRoleResource(SingleResource):
             sub_role = find_sub_role(self, clients, realm_roles, clients_roles=None, sub_role=sub_role_doc)
             if not sub_role:
                 logger.error(f"sub_role {sub_role_doc} not found")
+                # Either ignore or crash
+                # For now, ignore.
+                # TODO - code should crash - on second pass, all subroles should be present.
+                continue
             this_role_composites_api.create([sub_role]).isOk()
             creation_state = True
 
