@@ -4,7 +4,8 @@ from .resource import Resource
 from .single_resource import SingleResource
 from .client_resource import SingleClientResource, ClientManager, ClientRoleManager, ClientRoleResource
 from .custom_authentication_resource import SingleCustomAuthenticationResource
-from .role_resource import RoleResource
+# from .role_resource import RoleResource
+from .realm_role_resource import RealmRoleManager, RealmRoleResource
 from .client_scope_resource import ClientScopeResource
 from .identity_provider_resource import IdentityProviderResource, IdentityProviderMapperResource
 from .identity_provider_resource import IdentityProviderManager, IdentityProviderMapperManager
@@ -23,7 +24,6 @@ __all__ = [
     RealmResource,
     SingleClientResource,
     SingleCustomAuthenticationResource,
-    RoleResource,
     IdentityProviderResource,
     IdentityProviderMapperResource,
     UserFederationResource,

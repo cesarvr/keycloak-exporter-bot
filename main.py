@@ -11,10 +11,10 @@ from kcapi import Keycloak, OpenID
 from kcapi.ie import AuthenticationFlowsImporter
 
 from kcloader.resource import ResourcePublisher, ManyResources, SingleResource, \
-    SingleClientResource, SingleCustomAuthenticationResource, RoleResource, ClientScopeResource, \
+    SingleClientResource, SingleCustomAuthenticationResource, ClientScopeResource, \
     IdentityProviderResource, IdentityProviderMapperResource, UserFederationResource, \
     RealmResource
-from kcloader.resource import IdentityProviderManager, ClientManager
+from kcloader.resource import IdentityProviderManager, ClientManager, RealmRoleManager
 from kcloader.tools import read_from_json
 
 _level = logging.INFO
@@ -167,12 +167,16 @@ def main(args):
     idp_manager = IdentityProviderManager(keycloak_api, realm_name, datadir)
     creation_state = idp_manager.publish()
 
+    realm_role_manager = RealmRoleManager(keycloak_api, realm_name, datadir)
+    creation_state = realm_role_manager.publish(include_composite=False)
+
     # load clients
     client_manager = ClientManager(keycloak_api, realm_name, datadir)
     creation_state = client_manager.publish(include_composite=False)
 
     # ---------------------------------
     # Pass 2, resolve circular dependencies
+    creation_state = realm_role_manager.publish()
     creation_state = client_manager.publish()
 
     return
