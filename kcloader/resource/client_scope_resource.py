@@ -36,6 +36,9 @@ class ClientScopeResource(SingleResource):
             # clientScopeMappings and scopeMappings are added by kcfetcher
             oo.pop("clientScopeMappings", None)
             oo.pop("scopeMappings", None)
+            if "protocolMappers" in oo:
+                for pm in oo["protocolMappers"]:
+                    pm.pop("id", None)
         return obj1 == obj2
 
 
