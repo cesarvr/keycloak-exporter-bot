@@ -19,14 +19,38 @@ class ClientScopeResource(SingleResource):
             "id": "name",
             **resource,
         })
+        self.datadir = resource['datadir']
+        # self._client_scope_id = None
+        self.scope_mappings_realm_manager = None
 
     def publish_self(self):
         creation_state = self.resource.publish_object(self.body, self)
+
+        # now build what could not be build in __init__.
+        client_scope_name = self.body["name"]
+        client_scope = self.resource.resource_api.findFirstByKV("name", client_scope_name)
+        # self._client_scope_id = client_scope["id"]
+        self.scope_mappings_realm_manager = ClientScopeScopeMappingsRealmManager(
+            self.keycloak_api,
+            self.realm_name,
+            self.datadir,
+            client_scope_name=client_scope_name,
+            client_scope_id=client_scope["id"],
+            client_scope_filepath=self.resource_path,
+        )
+
         return creation_state
 
+    def publish_scope_mappings_realm(self):
+        self.scope_mappings_realm_manager.publish()
+
     def publish(self, body=None, *, include_scope_mappings=True):
-        creation_state = self.publish_self()
-        return creation_state
+        creation_state_all = []
+        creation_state_all.append(self.publish_self())
+        if include_scope_mappings:
+            creation_state_all.append(self.publish_scope_mappings_realm())
+            # creation_state_all.append(self.publish_scope_mappings_client())
+        return any(creation_state_all)
 
     def is_equal(self, other):
         obj1 = SortedDict(self.body)
