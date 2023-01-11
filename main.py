@@ -176,8 +176,8 @@ def main(args):
 
     # ---------------------------------
     # Pass 2, resolve circular dependencies
-    creation_state = realm_role_manager.publish()
-    creation_state = client_manager.publish()
+    creation_state = realm_role_manager.publish(include_composite=True)
+    creation_state = client_manager.publish(include_composite=True)
 
     return
 
