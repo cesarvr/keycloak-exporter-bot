@@ -131,6 +131,63 @@ class TestClientScopeResource(TestCaseBase):
         self.assertFalse(creation_state)
         _check_state()
 
+    def test_publish_mappers(self):
+        def _check_state():
+            client_scopes_b = client_scopes_api.all()
+            client_scope_b = find_in_list(client_scopes_b, name=client_scope_name)
+            self.assertEqual(client_scope_a["id"], client_scope_b["id"])
+            self.assertEqual(client_scope_a, client_scope_b)
+
+            protocol_mappers_names = [pm["name"] for pm in client_scope_b["protocolMappers"]]
+            self.assertEqual(["birthdate"], protocol_mappers_names)
+
+        client_scope_name = "ci0-client-scope"
+        client_scopes_api = self.client_scopes_api
+        client_scope_filepath = os.path.join(self.testbed.DATADIR, f"ci0-realm/client-scopes/{client_scope_name}.json")
+
+        client_scope_resource = ClientScopeResource({
+            'path': client_scope_filepath,
+            'keycloak_api': self.testbed.kc,
+            'realm': self.testbed.REALM,
+            'datadir': self.testbed.DATADIR,
+        })
+
+        self.maxDiff = None
+        # check initial state
+        client_scopes = client_scopes_api.all()
+        self.assertEqual(
+            self.blacklisted_client_scopes,
+            sorted([client_scope["name"] for client_scope in client_scopes]),
+        )
+
+        # publish data - 1st time
+        creation_state = client_scope_resource.publish(include_scope_mappings=False)
+        self.assertTrue(creation_state)
+        client_scopes_a = client_scopes_api.all()
+        client_scope_a = find_in_list(client_scopes_a, name=client_scope_name)
+        # GET /{realm}/client-scopes/{id}/scope-mappings
+        this_client_scope_mapper_api = client_scopes_api.get_child(client_scopes_api, client_scope_a["id"], "protocol-mappers/models")
+        _check_state()
+
+        # publish data - 2nd time, idempotence
+        creation_state = client_scope_resource.publish(include_scope_mappings=False)
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify something - remove protocol mapper
+        this_client_scope_mapper_api.remove(client_scope_a["protocolMappers"][0]["id"], None)
+        client_scope_c = client_scopes_api.findFirstByKV("name", client_scope_name)
+        self.assertEqual(client_scope_a["id"], client_scope_c["id"])
+        self.assertNotIn("protocolMappers", client_scope_c)
+        #
+        # .publish must revert change
+        creation_state = client_scope_resource.publish(include_scope_mappings=False)
+        self.assertTrue(creation_state)
+        _check_state()
+        creation_state = client_scope_resource.publish(include_scope_mappings=False)
+        self.assertFalse(creation_state)
+        _check_state()
+
     def test_publish_with_mapping(self):
         # client-scope, with mappings/roles assigned, with mappers assigned
         def _check_state():
@@ -230,6 +287,7 @@ class TestClientScopeResource(TestCaseBase):
         creation_state = client_scope_resource.publish(include_scope_mappings=True)
         self.assertFalse(creation_state)
         _check_state()
+
         # include_scope_mappings=False must not change existing mappings
         creation_state = client_scope_resource.publish(include_scope_mappings=False)
         self.assertFalse(creation_state)
