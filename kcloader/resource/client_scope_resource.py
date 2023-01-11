@@ -1,3 +1,4 @@
+import json
 import logging
 import kcapi
 from sortedcontainers import SortedDict
@@ -24,7 +25,6 @@ class ClientScopeResource(SingleResource):
         return creation_state
 
     def publish(self, body=None, *, include_scope_mappings=True):
-        # return super().publish(body=body)
         creation_state = self.publish_self()
         return creation_state
 
@@ -38,6 +38,60 @@ class ClientScopeResource(SingleResource):
             oo.pop("scopeMappings", None)
         return obj1 == obj2
 
+
+# not needed
+# class ClientScopeScopeMappingsRealmResource(SingleResource):
+
+class ClientScopeScopeMappingsRealmManager:
+    def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
+                 *, client_scope_name: str, client_scope_id: str, client_scope_filepath: str):
+        self._client_scope_name = client_scope_name
+        self._client_scope_id = client_scope_id
+        self._client_scope_filepath = client_scope_filepath
+
+        # Manager will directly update the links - less REST calls.
+        # A single ClientScopeScopeMappingsRealmCRUD will be enough.
+        client_scopes_api = keycloak_api.build("client-scopes", realm)
+        self.realm_roles_api = keycloak_api.build("roles", realm)
+        self.cssm_realm_resource = client_scopes_api.scope_mappings_realm_api(client_scope_id=client_scope_id)
+        with open(client_scope_filepath) as ff:
+            client_scope_doc = json.load(ff)
+        self.cssm_realm_doc = client_scope_doc.get("scopeMappings", [])
+
+    def publish(self, body=None):
+        creation_state = False
+        # requested_roles = self.cssm_realm_body.get("roles", [])
+        create_ids, delete_objs = self._difference_ids()
+
+        realm_roles = self.realm_roles_api.all(
+            params=dict(briefRepresentation=True)
+        )
+        create_roles = [rr for rr in realm_roles if rr["name"] in create_ids]
+        status_created = False
+        if create_roles:
+            self.cssm_realm_resource.create(create_roles).isOk()
+            status_created = True
+
+        status_deleted = False
+        if delete_objs:
+            self.cssm_realm_resource.remove(None, delete_objs).isOk()
+            status_deleted = True
+
+        return any([status_created, status_deleted])
+
+    def _difference_ids(self):
+        file_ids = self.cssm_realm_doc.get("roles", [])
+
+        # file_ids is list of realm role names
+        server_objs = self.cssm_realm_resource.all()
+        server_ids = [obj["name"] for obj in server_objs]
+
+        # remove objects that are on server, but missing in datadir
+        delete_ids = list(set(server_ids).difference(file_ids))
+        # create objects that are in datdir, but missing on server
+        create_ids = list(set(file_ids).difference(server_ids))
+        delete_objs = [obj for obj in server_objs if obj["name"] in delete_ids]
+        return create_ids, delete_objs
 
 class ClientScopeResource___old(SingleResource):
     def publish_scope_mappings(self):
