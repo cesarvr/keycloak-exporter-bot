@@ -1,5 +1,7 @@
 import json
 import logging
+from copy import copy
+
 import kcapi
 from sortedcontainers import SortedDict
 
@@ -119,6 +121,47 @@ class ClientScopeScopeMappingsRealmManager:
         create_ids = list(set(file_ids).difference(server_ids))
         delete_objs = [obj for obj in server_objs if obj["name"] in delete_ids]
         return create_ids, delete_objs
+
+
+class ClientScopeProtocolMapperResource(SingleResource):
+    def __init__(
+            self,
+            resource: dict,
+            *,
+            body: dict,
+            client_scope_id,
+            client_scopes_api,
+    ):
+        protocol_mapper_api = client_scopes_api.protocol_mapper_api(client_scope_id=client_scope_id)
+        super().__init__(
+            {
+                "name": "client-scopes/{client_scope_id}/protocol-mappers/models",
+                "id": "name",
+                **resource,
+            },
+            body=body,
+            resource_api=protocol_mapper_api,
+        )
+        self.datadir = resource['datadir']
+
+    def publish(self, *, include_composite=True):
+        body = copy(self.body)
+        creation_state = self.resource.publish_object(body, self)
+        return creation_state
+
+    def is_equal(self, obj):
+        obj1 = SortedDict(self.body)
+        obj2 = SortedDict(obj)
+        for oo in [obj1, obj2]:
+            oo.pop("id", None)
+        return obj1 == obj2
+
+    def get_update_payload(self, obj):
+        # PUT {realm}/client-scopes/{id}/protocol-mappers/models/{id} fails if "id" is not also part of payload.
+        body = copy(self.body)
+        body["id"] = obj["id"]
+        return body
+
 
 class ClientScopeResource___old(SingleResource):
     def publish_scope_mappings(self):

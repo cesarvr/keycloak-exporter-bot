@@ -5,26 +5,26 @@ import unittest
 from glob import glob
 from copy import copy
 
-from kcloader.resource import ClientScopeResource, ClientScopeScopeMappingsRealmManager
+from kcloader.resource import ClientScopeResource, ClientScopeScopeMappingsRealmManager, \
+    ClientScopeProtocolMapperResource
 from kcloader.tools import read_from_json, find_in_list
 from ...helper import TestBed, remove_field_id, TestCaseBase
 
 logger = logging.getLogger(__name__)
 
+blacklisted_client_scopes = sorted([
+    "address",
+    "email",
+    "microprofile-jwt",
+    "offline_access",
+    "phone",
+    "profile",
+    "role_list",
+    "roles",
+    "web-origins",
+])
 
 class TestClientScopeResource(TestCaseBase):
-    blacklisted_client_scopes = sorted([
-        "address",
-        "email",
-        "microprofile-jwt",
-        "offline_access",
-        "phone",
-        "profile",
-        "role_list",
-        "roles",
-        "web-origins",
-    ])
-
     def setUp(self):
         super().setUp()
         testbed = self.testbed
@@ -80,7 +80,7 @@ class TestClientScopeResource(TestCaseBase):
         # check initial state
         client_scopes = client_scopes_api.all()
         self.assertEqual(
-            self.blacklisted_client_scopes,
+            blacklisted_client_scopes,
             sorted([client_scope["name"] for client_scope in client_scopes]),
         )
 
@@ -156,7 +156,7 @@ class TestClientScopeResource(TestCaseBase):
         # check initial state
         client_scopes = client_scopes_api.all()
         self.assertEqual(
-            self.blacklisted_client_scopes,
+            blacklisted_client_scopes,
             sorted([client_scope["name"] for client_scope in client_scopes]),
         )
 
@@ -241,7 +241,7 @@ class TestClientScopeResource(TestCaseBase):
         # check initial state
         client_scopes = client_scopes_api.all()
         self.assertEqual(
-            self.blacklisted_client_scopes,
+            blacklisted_client_scopes,
             sorted([client_scope["name"] for client_scope in client_scopes]),
         )
 
@@ -392,5 +392,130 @@ class TestClientScopeScopeMappingsRealmManager(TestCaseBase):
         self.assertTrue(creation_state)
         _check_state()
         creation_state = cssm_realm_manager.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
+
+class TestClientScopeProtocolMapperResource(TestCaseBase):
+    def setUp(self):
+        super().setUp()
+        testbed = self.testbed
+
+        self.client_scopes_api = testbed.kc.build("client-scopes", testbed.REALM)
+        self.client_scope_name = "ci0-client-scope"
+        self.client_scope_filepath = os.path.join(self.testbed.DATADIR, f"ci0-realm/client-scopes/{self.client_scope_name}.json")
+        client_scope_resource = ClientScopeResource({
+            'path': self.client_scope_filepath,
+            'keycloak_api': self.testbed.kc,
+            'realm': self.testbed.REALM,
+            'datadir': self.testbed.DATADIR,
+        })
+        creation_state = client_scope_resource.publish(include_scope_mappings=False)
+        self.assertTrue(creation_state)
+        client_scopes = self.client_scopes_api.all()
+        # self.client_scope = find_in_list(client_scopes, name=self.client_scope_name)
+
+
+    def test_publish(self):
+        def _check_state():
+            client_scopes_b = client_scopes_api.all()
+            client_scope_b = find_in_list(client_scopes_b, name=client_scope_name)
+            self.assertEqual(client_scope_a["id"], client_scope_b["id"])
+            self.assertEqual(client_scope_a, client_scope_b)
+
+            for ii in range(len(client_scope_a["protocolMappers"])):
+                self.assertEqual(client_scope_a["protocolMappers"][ii]["id"], client_scope_b["protocolMappers"][ii]["id"])
+            protocol_mappers_min = copy(client_scope_b["protocolMappers"])
+            protocol_mappers_min = sorted(protocol_mappers_min, key=lambda obj: obj["name"])
+            for pm in protocol_mappers_min:
+                pm.pop("id")
+            self.assertEqual(protocol_mapper_docs, protocol_mappers_min)
+
+            # -------------------------------------
+
+        self.maxDiff = None
+        client_scope_name = self.client_scope_name
+        client_scopes_api = self.client_scopes_api
+        client_scopes = client_scopes_api.all()
+        client_scope_a = find_in_list(client_scopes, name=self.client_scope_name)
+        protocol_mappers_a = client_scope_a["protocolMappers"]
+        protocol_mappers_a = sorted(protocol_mappers_a, key=lambda pm: pm["name"])
+        protocol_mapper_api = client_scopes_api.protocol_mapper_api(client_scope_id=client_scope_a["id"])
+
+        protocol_mapper_docs = [
+            {
+                'config': {
+                    'access.token.claim': 'true',
+                    'claim.name': 'birthdate',
+                    'id.token.claim': 'true',
+                    'jsonType.label': 'String',
+                    'user.attribute': 'birthdate',
+                    'userinfo.token.claim': 'true',
+                },
+                'consentRequired': False,
+                'name': 'birthdate',
+                'protocol': 'openid-connect',
+                'protocolMapper': 'oidc-usermodel-attribute-mapper',
+            },
+        ]
+
+        # check initial state
+        self.assertEqual(
+            sorted([self.client_scope_name] + blacklisted_client_scopes),
+            sorted([client_scope["name"] for client_scope in client_scopes]),
+        )
+        # client_scope.publish_self() already created one initial protocolMapper.
+        cs_protocol_mapper_id = client_scope_a["protocolMappers"][0]["id"]
+        _check_state()
+
+        cs_protocol_mapper = ClientScopeProtocolMapperResource(
+            {
+                'path': self.client_scope_filepath,
+                'keycloak_api': self.testbed.kc,
+                'realm': self.testbed.REALM,
+                'datadir': self.testbed.DATADIR,
+            },
+            body=protocol_mapper_docs[0],
+            client_scope_id=client_scope_a["id"],
+            client_scopes_api=client_scopes_api,
+        )
+
+        # publish data - 1st time, protocol mapper was already created when client scope was created
+        creation_state = cs_protocol_mapper.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # Now a clean start - remove the mapper, it will be recreated, with new id.
+        self.assertEqual(1, len(protocol_mapper_api.all()))
+        protocol_mapper_api.remove(cs_protocol_mapper_id, None).isOk()
+        self.assertEqual(0, len(protocol_mapper_api.all()))
+
+        # publish data - 1st time
+        creation_state = cs_protocol_mapper.publish()
+        self.assertTrue(creation_state)
+        # only id should be different in this client_scopes_a
+        client_scope_a = find_in_list(client_scopes_api.all(), name=self.client_scope_name)
+        cs_protocol_mapper_id = client_scope_a["protocolMappers"][0]["id"]
+        _check_state()
+        # publish data - 2nd time, idempotence
+        creation_state = cs_protocol_mapper.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify something
+        data = protocol_mapper_api.get_one(cs_protocol_mapper_id)
+        data["config"].update({
+            'claim.name': 'birthdate-NEW-a',
+            'user.attribute': 'birthdate-NEW-b',
+        })
+        protocol_mapper_api.update(cs_protocol_mapper_id, data)
+        data2 = protocol_mapper_api.get_one(cs_protocol_mapper_id)
+        self.assertEqual(data, data2)
+        #
+        # .publish must revert change
+        creation_state = cs_protocol_mapper.publish()
+        self.assertTrue(creation_state)
+        _check_state()
+        creation_state = cs_protocol_mapper.publish()
         self.assertFalse(creation_state)
         _check_state()
