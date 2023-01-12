@@ -183,6 +183,12 @@ class TestClientScopeResource(TestCaseBase):
         # .publish must revert change
         creation_state = client_scope_resource.publish(include_scope_mappings=False)
         self.assertTrue(creation_state)
+        #
+        # only id should be changed, update it in expected client_scope_a
+        protocol_mappers = this_client_scope_mapper_api.all()
+        self.assertEqual(1, len(protocol_mappers))
+        client_scope_a["protocolMappers"][0]["id"] = protocol_mappers[0]["id"]
+        #
         _check_state()
         creation_state = client_scope_resource.publish(include_scope_mappings=False)
         self.assertFalse(creation_state)
