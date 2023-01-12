@@ -106,18 +106,17 @@ class BaseRoleManager(ABC):
 
 
 class BaseRoleResource(SingleResource):
+    def get_update_payload(self, obj):
+        body = copy(self.body)
+        body.pop("composites", None)
+        return body
+
     def publish(self, *, include_composite=True):
         body = copy(self.body)
         # both or none. If this assert fails, we have invalid/synthetic data.
         assert (body["composite"] and body["composites"]) or \
                ((not body["composite"]) and ("composites" not in body))
-
-        # if not include_composite:
-        if body["composite"]:
-            logger.error("Client role composites are not published.")
-            # TODO skip composites only if they are missing on server side.
-            # body["composite"] = False
-            body.pop("composites")
+        body.pop("composites", None)  # it will be used as create payload
 
         # new role - body.composite and .composites are ignored
         # old role - body.composites must be valid
