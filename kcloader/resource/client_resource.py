@@ -273,6 +273,8 @@ class SingleClientResource(SingleResource):
                     protocol_mapper.pop("id", None)
                 # sort protocolMappers by name
                 oo["protocolMappers"] = sorted(oo["protocolMappers"], key=lambda pm: pm["name"])
+                # TODO - client protocol-mappers are FOR SURE not updated when client is updated
+                # GET /{realm}/clients/{id}/protocol-mappers/models
 
         # sort obj2 - it is return by API
         # obj2 = json.loads(json.dumps(obj2, sort_keys=True))
