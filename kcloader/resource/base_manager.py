@@ -41,12 +41,13 @@ class BaseManager(ABC):
     def _get_resource_api(self):
         # Works for simple URLs - GET /{realm}/clients
         # Not enough for URLs with id - GET /{realm}/clients/{id}/protocol-mappers/models
+        assert self._resource_name != ''
         resource_api = self.keycloak_api.build(self._resource_name, self.realm)
         return resource_api
 
     def publish(self, **publish_kwargs):
         create_ids, delete_objs = self._difference_ids()
-        status_resources = [resource.publish(publish_kwargs) for resource in self.resources]
+        status_resources = [resource.publish(**publish_kwargs) for resource in self.resources]
         status_deleted = False
         for delete_obj in delete_objs:
             delete_id = delete_obj[self._resource_delete_id]

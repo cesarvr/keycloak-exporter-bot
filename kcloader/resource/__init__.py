@@ -7,7 +7,7 @@ from .custom_authentication_resource import SingleCustomAuthenticationResource
 # from .role_resource import RoleResource
 from .realm_role_resource import RealmRoleManager, RealmRoleResource
 from .client_scope_resource import ClientScopeResource, ClientScopeScopeMappingsRealmManager, \
-    ClientScopeProtocolMapperResource
+    ClientScopeProtocolMapperResource, ClientScopeProtocolMapperManager
 from .identity_provider_resource import IdentityProviderResource, IdentityProviderMapperResource
 from .identity_provider_resource import IdentityProviderManager, IdentityProviderMapperManager
 from .user_federation_resource import UserFederationResource
