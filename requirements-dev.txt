@@ -1,4 +1,4 @@
 build
 twine
 # test with specific kcapi version
-# -e git+ssh://git@github.com/justinc1/keycloak-api.git@e6e25c74abdd76c9c47f727eb8f2626bd86e7452#egg=kcapi
+# -e git+ssh://git@github.com/justinc1/keycloak-api.git@cf51f3e8eaeb96592aa90bfbceb6aaa531c320e9#egg=kcapi
