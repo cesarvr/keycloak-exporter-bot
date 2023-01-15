@@ -136,8 +136,51 @@ class ClientScopeScopeMappingsRealmManager:
         delete_objs = [obj for obj in server_objs if obj["name"] in delete_ids]
         return create_ids, delete_objs
 
+
 class ClientScopeScopeMappingsAllClientsManager:
-    pass
+    def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
+                 *,
+                 requested_doc: dict,  # dict read from json files, only part relevant clients mappings
+                 client_scope_id: int,
+                 ):
+        assert isinstance(requested_doc, dict)
+        # self._client_scope_id = client_scope_id
+        # self._cssm_clients_doc = requested_doc
+
+        # create a manager for each client
+        clients_api = keycloak_api.build("clients", realm)
+        clients = clients_api.all()
+        self.resources = [
+            ClientScopeScopeMappingsClientManager(
+                keycloak_api,
+                realm,
+                datadir,
+                requested_doc=requested_doc.get(client["clientId"], []),
+                client_scope_id=client_scope_id,
+                client_id=client["id"],
+                )
+            for client in clients
+        ]
+
+        # We assume all clients were already created.
+        # If there is in json file some unknown clientId - it will be ignored.
+        # Write this to logfile.
+        clientIds = [client["clientId"] for client in clients]
+        for doc_clientId in requested_doc:
+            if doc_clientId not in clientIds:
+                logger.error(f"clientID={doc_clientId} not present on server")
+
+    def publish(self):
+        status_created = [
+            resource.publish()
+            for resource in self.resources
+        ]
+        return any(status_created)
+
+    def _difference_ids(self):
+        # Not needed for this class.
+        raise NotImplementedError()
+
 
 class ClientScopeScopeMappingsClientManager:
     def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
@@ -164,7 +207,7 @@ class ClientScopeScopeMappingsClientManager:
             assert isinstance(requested_doc[0], str)
         self.cssm_client_doc = requested_doc  # list of client role names
 
-    def publish(self, body=None):
+    def publish(self):
         creation_state = False
         # requested_roles = self.cssm_realm_body.get("roles", [])
         create_ids, delete_objs = self._difference_ids()

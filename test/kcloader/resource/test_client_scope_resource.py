@@ -7,7 +7,7 @@ from copy import copy
 
 from kcloader.resource import ClientScopeResource, ClientScopeScopeMappingsRealmManager, \
     ClientScopeProtocolMapperResource, ClientScopeProtocolMapperManager, \
-    ClientScopeScopeMappingsClientManager
+    ClientScopeScopeMappingsClientManager, ClientScopeScopeMappingsAllClientsManager
 from kcloader.tools import read_from_json, find_in_list
 from ...helper import TestBed, remove_field_id, TestCaseBase
 
@@ -742,5 +742,123 @@ class TestClientScopeScopeMappingsClientManager(TestCaseBase):
         _check_state()
         # publish data - 2nd time, idempotence
         creation_state = cssm_client_manager.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
+
+class TestClientScopeScopeMappingsAllClientsManager(TestCaseBase):
+    def setUp(self):
+        super().setUp()
+        testbed = self.testbed
+
+        self.client_scopes_api = testbed.kc.build("client-scopes", testbed.REALM)
+        self.client_scope_name = "ci0-client-scope"
+        self.client_scope_filepath = os.path.join(
+            self.testbed.DATADIR,
+            f"ci0-realm/client-scopes/{self.client_scope_name}.json",
+        )
+        self.client_scope_doc = read_from_json(self.client_scope_filepath)
+        self.client_scopes_api.create(self.client_scope_doc).isOk()
+        client_scopes = self.client_scopes_api.all()
+        self.client_scope = find_in_list(client_scopes, name=self.client_scope_name)
+        self.assertEqual(self.client_scope_name, self.client_scope["name"])
+
+        self.client_clientId = "account"
+        self.clients_api = testbed.kc.build("clients", testbed.REALM)
+        self.client = self.clients_api.findFirstByKV("clientId", self.client_clientId)
+        client_query = dict(key="id", value=self.client["id"])
+        this_client_roles_api = self.clients_api.roles(client_query)
+        self.client_role_name = "view-profile"
+        self.client_role = this_client_roles_api.findFirstByKV(
+            "name", self.client_role_name,
+            params=dict(briefRepresentation=True),
+        )
+
+        # self.cssm_client_api = self.client_scopes_api.scope_mappings_client_api(
+        #     client_scope_id=self.client_scope["id"],
+        #     client_id=self.client["id"],
+        # )
+        self.cssm_api = self.client_scopes_api.scope_mappings_api(
+            client_scope_id=self.client_scope["id"],
+        )
+
+    def test_publish(self):
+        def _check_state():
+            assigned_scope_mappings = cssm_api.all()
+            self.assertEqual(expected_scope_mappings, assigned_scope_mappings)
+            # -------------------------------------
+
+        self.maxDiff = None
+        cssm_api = self.cssm_api
+        # requested_client_scope_mappings is clientScopeMappings field in json file
+        requested_client_scope_mappings = self.client_scope_doc["clientScopeMappings"]
+        self.assertEqual(
+            requested_client_scope_mappings,
+            {
+                "account": [
+                    "view-profile",
+                ],
+            }
+        )
+        # expected_client_roles = [self.client_role]
+        expected_scope_mappings = {
+            "clientMappings": {
+                "account": {
+                    "client": "account",
+                    "id": self.client["id"],
+                    "mappings": [
+                        self.client_role,
+                    ],
+                }
+            }
+        }
+        cssm_clients_manager = ClientScopeScopeMappingsAllClientsManager(
+            self.testbed.kc,
+            self.testbed.REALM,
+            self.testbed.DATADIR,
+            requested_doc=requested_client_scope_mappings,
+            client_scope_id=self.client_scope["id"],
+        )
+
+        # check initial state - no roles assigned
+        self.assertEqual({}, cssm_api.all())
+
+        # publish data - 1st time
+        creation_state = cssm_clients_manager.publish()
+        self.assertTrue(creation_state)
+        _check_state()
+        # publish data - 2nd time, idempotence
+        creation_state = cssm_clients_manager.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # add extra mapping to some role
+        extra_client_clientId = "broker"
+        extra_client = self.clients_api.findFirstByKV("clientId", extra_client_clientId)
+        extra_role_name = "read-token"
+        client_query = dict(key="id", value=extra_client["id"])
+        extra_client_roles_api = self.clients_api.roles(client_query)
+        extra_role = extra_client_roles_api.findFirstByKV(
+            "name", extra_role_name,
+            params=dict(briefRepresentation=True),
+        )
+        extra_cssm_client_api = self.client_scopes_api.scope_mappings_client_api(
+            client_scope_id=self.client_scope["id"],
+            client_id=extra_client["id"],
+        )
+        cssm = cssm_api.all()
+        self.assertEqual(1, len(cssm))
+        self.assertEqual(1, len(cssm["clientMappings"]))
+        extra_cssm_client_api.create([extra_role])
+        cssm = cssm_api.all()
+        self.assertEqual(1, len(cssm))
+        self.assertEqual(2, len(cssm["clientMappings"]))
+        #
+        # publish data - 1st time
+        creation_state = cssm_clients_manager.publish()
+        self.assertTrue(creation_state)
+        _check_state()
+        # publish data - 2nd time, idempotence
+        creation_state = cssm_clients_manager.publish()
         self.assertFalse(creation_state)
         _check_state()
