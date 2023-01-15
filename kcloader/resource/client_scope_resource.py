@@ -1,6 +1,8 @@
 import json
 import logging
+import os
 from copy import copy
+from glob import glob
 
 import kcapi
 from sortedcontainers import SortedDict
@@ -92,8 +94,47 @@ class ClientScopeResource(SingleResource):
         return obj1 == obj2
 
 
-# not needed
-# class ClientScopeScopeMappingsRealmResource(SingleResource):
+class ClientScopeManager(BaseManager):
+    _resource_name = "client-scopes"
+    _resource_id = "name"
+    _resource_delete_id = "id"
+    _resource_id_blacklist = [
+        "address",
+        "email",
+        "microprofile-jwt",
+        "offline_access",
+        "phone",
+        "profile",
+        "role_list",
+        "roles",
+        "web-origins",
+    ]
+
+    def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str):
+        super().__init__(keycloak_api, realm, datadir)
+
+        # self.client_scopes_api = keycloak_api.build("client-scopes", realm)
+        self.resources = []
+        object_filepaths = self._object_filepaths()
+        self.resources = [
+            ClientScopeResource({
+                'path': object_filepath,
+                'keycloak_api': keycloak_api,
+                'realm': realm,
+                'datadir': datadir,
+            })
+            for object_filepath in object_filepaths
+        ]
+
+    def _object_filepaths(self):
+        object_filepaths = glob(os.path.join(self.datadir, f"{self.realm}/client-scopes/*.json"))
+        return object_filepaths
+
+    def _object_docs(self):
+        object_filepaths = self._object_filepaths()
+        object_docs = [read_from_json(fp) for fp in object_filepaths]
+        return object_docs
+
 
 class ClientScopeScopeMappingsRealmManager:
     def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,

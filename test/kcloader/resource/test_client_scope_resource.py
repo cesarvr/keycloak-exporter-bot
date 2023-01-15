@@ -7,7 +7,8 @@ from copy import copy
 
 from kcloader.resource import ClientScopeResource, ClientScopeScopeMappingsRealmManager, \
     ClientScopeProtocolMapperResource, ClientScopeProtocolMapperManager, \
-    ClientScopeScopeMappingsClientManager, ClientScopeScopeMappingsAllClientsManager
+    ClientScopeScopeMappingsClientManager, ClientScopeScopeMappingsAllClientsManager, \
+    ClientScopeManager
 from kcloader.tools import read_from_json, find_in_list
 from ...helper import TestBed, remove_field_id, TestCaseBase
 
@@ -24,6 +25,7 @@ blacklisted_client_scopes = sorted([
     "roles",
     "web-origins",
 ])
+
 
 class TestClientScopeResource(TestCaseBase):
     def setUp(self):
@@ -297,6 +299,74 @@ class TestClientScopeResource(TestCaseBase):
 
         # include_scope_mappings=False must not change existing mappings
         creation_state = client_scope_resource.publish(include_scope_mappings=False)
+        self.assertFalse(creation_state)
+        _check_state()
+
+
+class TestClientScopeManager(TestCaseBase):
+    def setUp(self):
+        super().setUp()
+        testbed = self.testbed
+
+        self.client0_clientId = "ci0-client-0"
+        self.clients_api = testbed.kc.build("clients", testbed.REALM)
+        self.realm_roles_api = testbed.kc.build("roles", testbed.REALM)
+        # self.roles_by_id_api = testbed.kc.build("roles-by-id", testbed.REALM)
+        self.client_scopes_api = testbed.kc.build("client-scopes", testbed.REALM)
+
+    def test_publish_simple(self):
+        # client-scope, no roles assigned, no mappers assigned
+        def _check_state():
+            client_scopes_b = client_scopes_api.all()
+            client_scopes_b = sorted(client_scopes_b, key=lambda obj: obj["name"])
+            client_scopes_b_names = [cs["name"] for cs in client_scopes_b]
+            self.assertEqual(expected_client_scope_names, client_scopes_b_names)
+            self.assertEqual(client_scopes_a[0]["id"], client_scopes_b[0]["id"])
+            self.assertEqual(client_scopes_a, client_scopes_b)
+
+        our_client_scope_names = [
+            "ci0-client-scope",
+            "ci0-client-scope-1-saml",
+            "ci0-client-scope-2-saml",
+        ]
+        expected_client_scope_names = sorted(blacklisted_client_scopes + our_client_scope_names)
+        client_scopes_api = self.client_scopes_api
+        client_scope_manager = ClientScopeManager(
+            self.testbed.kc,
+            self.testbed.REALM,
+            self.testbed.DATADIR,
+        )
+
+        # check initial state
+        client_scopes = client_scopes_api.all()
+        self.assertEqual(
+            blacklisted_client_scopes,
+            sorted([client_scope["name"] for client_scope in client_scopes]),
+        )
+
+        # publish data - 1st time
+        creation_state = client_scope_manager.publish(include_scope_mappings=False)
+        self.assertTrue(creation_state)
+        client_scopes_a = client_scopes_api.all()
+        _check_state()
+        # publish data - 2nd time, idempotence
+        creation_state = client_scope_manager.publish(include_scope_mappings=False)
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify something - add extra client scope
+        self.assertEqual(9 + 3, len(client_scopes_api.all()))
+        client_scopes_api.create({
+            "name": "ci0-client-scope-EXTRA",
+            "description": "ci0-client-scope-EXTRA-desc",
+        }).isOk()
+        self.assertEqual(9 + 3 + 1, len(client_scopes_api.all()))
+        #
+        # .publish must revert change
+        creation_state = client_scope_manager.publish(include_scope_mappings=False)
+        self.assertTrue(creation_state)
+        _check_state()
+        creation_state = client_scope_manager.publish(include_scope_mappings=False)
         self.assertFalse(creation_state)
         _check_state()
 

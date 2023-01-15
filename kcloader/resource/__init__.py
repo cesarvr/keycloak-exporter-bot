@@ -8,7 +8,8 @@ from .custom_authentication_resource import SingleCustomAuthenticationResource
 from .realm_role_resource import RealmRoleManager, RealmRoleResource
 from .client_scope_resource import ClientScopeResource, ClientScopeScopeMappingsRealmManager, \
     ClientScopeProtocolMapperResource, ClientScopeProtocolMapperManager, \
-    ClientScopeScopeMappingsClientManager, ClientScopeScopeMappingsAllClientsManager
+    ClientScopeScopeMappingsClientManager, ClientScopeScopeMappingsAllClientsManager, \
+    ClientScopeManager
 from .identity_provider_resource import IdentityProviderResource, IdentityProviderMapperResource
 from .identity_provider_resource import IdentityProviderManager, IdentityProviderMapperManager
 from .user_federation_resource import UserFederationResource
