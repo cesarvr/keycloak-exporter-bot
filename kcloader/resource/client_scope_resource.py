@@ -42,6 +42,13 @@ class ClientScopeResource(SingleResource):
             client_scope_id=client_scope["id"],
             client_scope_filepath=self.resource_path,
         )
+        self.scope_mappings_clients_manager = ClientScopeScopeMappingsAllClientsManager(
+            self.keycloak_api,
+            self.realm_name,
+            self.datadir,
+            requested_doc=self.body.get("clientScopeMappings", {}),
+            client_scope_id=client_scope["id"],
+        )
         self.protocol_mapper_manager = ClientScopeProtocolMapperManager(
             self.keycloak_api,
             self.realm_name,
@@ -56,6 +63,9 @@ class ClientScopeResource(SingleResource):
     def publish_scope_mappings_realm(self):
         self.scope_mappings_realm_manager.publish()
 
+    def publish_scope_mappings_clients(self):
+        self.scope_mappings_clients_manager.publish()
+
     def publish_protocol_mappers(self):
         self.protocol_mapper_manager.publish()
 
@@ -65,7 +75,7 @@ class ClientScopeResource(SingleResource):
         creation_state_all.append(self.publish_protocol_mappers())
         if include_scope_mappings:
             creation_state_all.append(self.publish_scope_mappings_realm())
-            # creation_state_all.append(self.publish_scope_mappings_client())
+            creation_state_all.append(self.publish_scope_mappings_clients())
         return any(creation_state_all)
 
     def is_equal(self, other):
