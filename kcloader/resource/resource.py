@@ -6,14 +6,16 @@ class Resource:
     params = {
         'path': <string> path to the JSON template, // see the sample_payloads folder
         'name': <string> name of the RH-SSO resource,  // for example clients, realms, roles, etc..
-        'id': 'Unique identifier field of the target resource',   // 'Every resource has its own id field for example => clients => clientId, roles => id, realms => realm'
+        'id': 'Unique identifier field of the target resource',   // 'Every resource has its own id field for example => clients => clientId, roles => name, realms => realm'
         'keycloak_api': Keycloak API instance,
         'realm': 'realm where we want to operate, use None for master',
     }
     '''
-    def __init__(self, params={}):
+    def __init__(self, params={}, *, resource_api=None):
         self.name = params['name']
-        self._resource_api = self.instantiate_api(params)
+        if resource_api is None:
+            resource_api = self.instantiate_api(params)
+        self._resource_api = resource_api
         self.key = params['id']
 
     def instantiate_api(self, params):

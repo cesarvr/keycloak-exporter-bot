@@ -106,14 +106,17 @@ class ResourcePublisher:
                     if self.single_resource.is_equal(old_data):
                         # no change needed
                         return False
+                    else:
+                        update_body = self.single_resource.get_update_payload(old_data)
                 else:
                     # old code, when there was no self.single_resource.
                     # TODO remove when it is not used anymore
                     if self.body == old_data:
                         # Nothing to change
                         return False
+                    update_body = self.body
 
-                http_ok = resource_api.update(resource_id, self.body).isOk() # this ?
+                http_ok = resource_api.update(resource_id, update_body).isOk()
 
                 return True
             if update_policy == UpdatePolicy.DELETE:

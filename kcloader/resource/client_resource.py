@@ -99,89 +99,6 @@ class SingleClientResource(SingleResource):
 
         self.client_role_manager = None  # we do not have client id yet...
 
-    def __init_client_role_resources(self):
-        assert 0
-        # TODO if this works, move it to ClientRoleResourceManager class
-        clients_api = self.resource.resource_api
-        client = clients_api.findFirstByKV('clientId', self.body["clientId"])
-        client_roles_api = self.resource.resource_api.roles({'key': 'id', 'value': client["id"]})
-        # clientId = self.body["clientId"]
-
-        # TODO - move to ._object_filepaths()
-        # Grrr - clients are in directories like client-0, client-1, etc
-        # roles_paths = glob(os.path.join(self.datadir, f"{self.realm_name}/clients/{clientId}/roles/*.json"))
-        client_resource_dirname = os.path.dirname(self.resource_path)
-        roles_paths = glob(os.path.join(client_resource_dirname, "roles/*.json"))
-
-        self._client_role_resources = [
-            ClientRoleResource({
-                'path': role_path,
-                'keycloak_api': self.keycloak_api,
-                'realm': self.realm_name,
-                'datadir': self.datadir,
-                'client_roles_api': client_roles_api,
-            })
-            for role_path in roles_paths
-        ]
-
-    def RM_publish_roles_old_2(self, include_composite):
-        # TODO rm
-        state = True
-        # [roles_path_exist, roles_path] = lookup_child_resource(self.resource_path, '/roles/roles.json')
-        role_filepaths = glob(os.path.join(get_path(self.resource_path), "roles/*.json"))
-
-        if not role_filepaths:
-            return state
-
-        clients_api = self.keycloak_api.build('clients', self.realm_name)
-        clients = clients_api.all()
-
-        #  roles_by_id_api.get_child(roles_by_id_api, ci0_default_roles['id'], "composites")
-        this_client = find_in_list(clients, clientId=self.body["clientId"])
-        this_client_roles_api = clients_api.get_child(clients_api, this_client["id"], "roles")
-         ###         roles_api = client0_resource.resource.resource_api.roles({'key': 'id', 'value': client_a["id"]})
-        this_client_roles = this_client_roles_api.all()
-
-        # master_realm = self.keycloak_api.admin()
-        realm_roles_api = self.keycloak_api.build('roles', self.realm_name)
-        realm_roles = realm_roles_api.all()
-        roles_by_id_api = self.keycloak_api.build('roles-by-id', self.realm_name)
-
-        for role_filepath in role_filepaths:
-            # self.resource.resource_api == clients_api (?)
-            id, obj = ResourcePublisher(key='clientId', body=self.body).get_id(self.resource.resource_api)
-            roles = self.resource.resource_api.roles({'key': 'id', 'value': id})
-            role_object = read_from_json(role_filepath)
-            if not include_composite:
-                # 1st pass, only simple roles
-                if "composites" in role_object:
-                    logger.error(f"Client composite roles are not implemented yet, role={role_object['name']}")
-                    assert role_object["composite"] is True
-                    role_object["composite"] = False
-                    role_object.pop("composites")
-                state = state and ResourcePublisher(key='name', body=role_object).publish(roles, update_policy=UpdatePolicy.DELETE)
-
-                # UpdatePolicy.PUT - RH SSO 7.4 will set .attributes only when updating existing object
-                # ResourcePublisher(key='id', body=this_role).publish(roles, update_policy=UpdatePolicy.PUT)
-                role = this_client_roles_api.findFirstByKV('name', role_object['name'])
-                state = roles_by_id_api.update( role['id'], role_object).isOk()
-
-            else:
-                # 2nd pass, setup composites
-                if "composites" not in role_object:
-                    continue
-
-                this_role = find_in_list(this_client_roles, name=role_object["name"])
-                this_role_composites_api = roles_by_id_api.get_child(roles_by_id_api, this_role["id"], "composites")
-
-                for sub_role_object in role_object["composites"]:
-                    sub_role = find_sub_role(self, clients, realm_roles, clients_roles=None, sub_role=sub_role_object)
-                    if not sub_role:
-                        logger.error(f"sub_role {sub_role_object} not found")
-                    this_role_composites_api.create([sub_role])
-
-        return state
-
     def publish_scopes(self):
         state = True
         [scopes_path_exist, scopes_path] = lookup_child_resource(self.resource_path, 'scope-mappings.json')
@@ -273,11 +190,11 @@ class SingleClientResource(SingleResource):
                     protocol_mapper.pop("id", None)
                 # sort protocolMappers by name
                 oo["protocolMappers"] = sorted(oo["protocolMappers"], key=lambda pm: pm["name"])
+                # TODO - client protocol-mappers are FOR SURE not updated when client is updated
+                # GET /{realm}/clients/{id}/protocol-mappers/models
 
         # sort obj2 - it is return by API
-        # obj2 = json.loads(json.dumps(obj2, sort_keys=True))
         # obj1 - we added and remove authenticationFlowBindingOverrides, sort is needed too
-        # obj1 = json.loads(json.dumps(obj1, sort_keys=True))
         obj1 = SortedDict(obj1)
         obj2 = SortedDict(obj2)
 
