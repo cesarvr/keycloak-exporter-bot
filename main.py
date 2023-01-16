@@ -151,16 +151,33 @@ def main(args):
     realm_res.publish(minimal_representation=True)
 
     # load all auth flows
-    auth_flow_filepaths = glob(os.path.join(datadir, f"{realm_name}/authentication/flows/*/*.json"))
-    for auth_flow_filepath in auth_flow_filepaths:
-        auth_flow_res = SingleCustomAuthenticationResource({
-            'path': auth_flow_filepath,
-            # 'name': 'authentication',
-            # 'id': 'alias',
-            'keycloak_api': keycloak_api,
-            'realm': realm_name,
-        })
-        creation_state = auth_flow_res.publish()
+    if 0:
+        # refactoring needed
+        auth_flow_filepaths = glob(os.path.join(datadir, f"{realm_name}/authentication/flows/*/*.json"))
+        for auth_flow_filepath in auth_flow_filepaths:
+            auth_flow_res = SingleCustomAuthenticationResource({
+                'path': auth_flow_filepath,
+                # 'name': 'authentication',
+                # 'id': 'alias',
+                'keycloak_api': keycloak_api,
+                'realm': realm_name,
+            })
+            creation_state = auth_flow_res.publish()
+    else:
+        # temporal workaround
+        auth_flow_alias = "ci0-auth-flow-generic"  # used for realm resetCredentialsFlow
+        logger.error(f"Creating a fake authentication flow {auth_flow_alias}")
+        auth_flow_api = keycloak_api.build("authentication", realm_name)
+        auth_flows = auth_flow_api.all()
+        auth_flow_aliases = [auth_flow["alias"] for auth_flow in auth_flows]
+        if auth_flow_alias not in auth_flow_aliases:
+            auth_flow_api.create({
+                "alias": auth_flow_alias,
+                "providerId": "basic-flow",
+                "description": auth_flow_alias + "---TEMP-INJECTED",
+                "topLevel": True,
+                "builtIn": False
+            }).isOk()
 
     idp_manager = IdentityProviderManager(keycloak_api, realm_name, datadir)
     realm_role_manager = RealmRoleManager(keycloak_api, realm_name, datadir)
