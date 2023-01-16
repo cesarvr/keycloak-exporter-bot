@@ -219,7 +219,9 @@ class ClientScopeScopeMappingsAllClientsManager:
         clientIds = [client["clientId"] for client in clients]
         for doc_clientId in requested_doc:
             if doc_clientId not in clientIds:
-                logger.error(f"clientID={doc_clientId} not present on server")
+                msg = f"clientID={doc_clientId} not present on server"
+                logger.error(msg)
+                raise Exception(msg)
 
     def publish(self):
         status_created = [
