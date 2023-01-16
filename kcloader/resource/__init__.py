@@ -10,7 +10,7 @@ from .client_scope_resource import ClientScopeResource, ClientScopeScopeMappings
     ClientScopeProtocolMapperResource, ClientScopeProtocolMapperManager, \
     ClientScopeScopeMappingsClientManager, ClientScopeScopeMappingsAllClientsManager, \
     ClientScopeManager
-from .default_client_scope_resource import DefaultDefaultClientScopeManager
+from .default_client_scope_resource import DefaultDefaultClientScopeManager, DefaultOptionalClientScopeManager
 from .identity_provider_resource import IdentityProviderResource, IdentityProviderMapperResource
 from .identity_provider_resource import IdentityProviderManager, IdentityProviderMapperManager
 from .user_federation_resource import UserFederationResource

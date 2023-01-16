@@ -14,9 +14,9 @@ from kcloader.resource.base_manager import BaseManager
 logger = logging.getLogger(__name__)
 
 
-class DefaultDefaultClientScopeManager(BaseManager):
+class BaseDefaultClientScopeManager(BaseManager):
     # https://172.17.0.2:8443/auth/admin/realms/ci0-realm/default-default-client-scopes/ee3a3fed-af78-4c04-b9d9-3fc1b614a0a2
-    _resource_name = "default-default-client-scopes"
+    # _resource_name = "default-default-client-scopes"
     _resource_id = "name"
     _resource_delete_id = "id"
     _resource_id_blacklist = []
@@ -30,7 +30,8 @@ class DefaultDefaultClientScopeManager(BaseManager):
         ## self.realm_roles_api = keycloak_api.build("roles", realm)
         self.resource_api = self._get_resource_api()
 
-        requested_doc = read_from_json(os.path.join(datadir, realm, "client-scopes/default/default-default-client-scopes.json"))
+        requested_doc = read_from_json(os.path.join(datadir, realm, f"client-scopes/default/{self._resource_name}.json"))
+        self.requested_doc = requested_doc
         self.requested_doc = requested_doc
 
     def publish(self):
@@ -59,3 +60,11 @@ class DefaultDefaultClientScopeManager(BaseManager):
     def _object_docs_ids(self):
         # requested_doc contains only client-scope names
         return self.requested_doc
+
+
+class DefaultDefaultClientScopeManager(BaseDefaultClientScopeManager):
+    _resource_name = "default-default-client-scopes"
+
+
+class DefaultOptionalClientScopeManager(BaseDefaultClientScopeManager):
+    _resource_name = "default-optional-client-scopes"
