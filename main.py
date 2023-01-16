@@ -13,7 +13,8 @@ from kcapi.ie import AuthenticationFlowsImporter
 from kcloader.resource import ResourcePublisher, ManyResources, SingleResource, \
     SingleClientResource, SingleCustomAuthenticationResource, ClientScopeResource, \
     IdentityProviderResource, IdentityProviderMapperResource, UserFederationResource, \
-    RealmResource, ClientScopeManager
+    RealmResource, ClientScopeManager, \
+    DefaultDefaultClientScopeManager, DefaultOptionalClientScopeManager
 from kcloader.resource import IdentityProviderManager, ClientManager, RealmRoleManager
 from kcloader.tools import read_from_json
 
@@ -150,25 +151,47 @@ def main(args):
     realm_res.publish(minimal_representation=True)
 
     # load all auth flows
-    auth_flow_filepaths = glob(os.path.join(datadir, f"{realm_name}/authentication/flows/*/*.json"))
-    for auth_flow_filepath in auth_flow_filepaths:
-        auth_flow_res = SingleCustomAuthenticationResource({
-            'path': auth_flow_filepath,
-            # 'name': 'authentication',
-            # 'id': 'alias',
-            'keycloak_api': keycloak_api,
-            'realm': realm_name,
-        })
-        creation_state = auth_flow_res.publish()
+    if 0:
+        # refactoring needed
+        auth_flow_filepaths = glob(os.path.join(datadir, f"{realm_name}/authentication/flows/*/*.json"))
+        for auth_flow_filepath in auth_flow_filepaths:
+            auth_flow_res = SingleCustomAuthenticationResource({
+                'path': auth_flow_filepath,
+                # 'name': 'authentication',
+                # 'id': 'alias',
+                'keycloak_api': keycloak_api,
+                'realm': realm_name,
+            })
+            creation_state = auth_flow_res.publish()
+    else:
+        # temporal workaround
+        auth_flow_alias = "ci0-auth-flow-generic"  # used for realm resetCredentialsFlow
+        logger.error(f"Creating a fake authentication flow {auth_flow_alias}")
+        auth_flow_api = keycloak_api.build("authentication", realm_name)
+        auth_flows = auth_flow_api.all()
+        auth_flow_aliases = [auth_flow["alias"] for auth_flow in auth_flows]
+        if auth_flow_alias not in auth_flow_aliases:
+            auth_flow_api.create({
+                "alias": auth_flow_alias,
+                "providerId": "basic-flow",
+                "description": auth_flow_alias + "---TEMP-INJECTED",
+                "topLevel": True,
+                "builtIn": False
+            }).isOk()
 
     idp_manager = IdentityProviderManager(keycloak_api, realm_name, datadir)
     realm_role_manager = RealmRoleManager(keycloak_api, realm_name, datadir)
     client_manager = ClientManager(keycloak_api, realm_name, datadir)
     client_scope_manager = ClientScopeManager(keycloak_api, realm_name, datadir)
+    default_default_client_scope_manager = DefaultDefaultClientScopeManager(keycloak_api, realm_name, datadir)
+    default_optional_client_scope_manager = DefaultOptionalClientScopeManager(keycloak_api, realm_name, datadir)
 
     creation_state = idp_manager.publish()
     creation_state = realm_role_manager.publish(include_composite=False)
     creation_state = client_manager.publish(include_composite=False)
+    # new client_scopes are not yet created, we need setup_new_links=False.
+    creation_state = default_default_client_scope_manager.publish(setup_new_links=False)
+    creation_state = default_optional_client_scope_manager.publish(setup_new_links=False)
     creation_state = client_scope_manager.publish(include_scope_mappings=False)
 
     # ---------------------------------
@@ -177,6 +200,8 @@ def main(args):
     creation_state = realm_role_manager.publish(include_composite=True)
     creation_state = client_manager.publish(include_composite=True)
     creation_state = client_scope_manager.publish(include_scope_mappings=True)
+    creation_state = default_default_client_scope_manager.publish(setup_new_links=True)
+    creation_state = default_optional_client_scope_manager.publish(setup_new_links=True)
 
     return
 
