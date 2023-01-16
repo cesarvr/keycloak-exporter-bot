@@ -236,7 +236,12 @@ class ClientScopeScopeMappingsAllClientsManager:
         raise NotImplementedError()
 
 
-class ClientScopeScopeMappingsClientManager:
+class ClientScopeScopeMappingsClientManager(BaseManager):
+    _resource_name = "client-scopes/{client_scope_id}/scope-mappings/clients/{client_id}"
+    _resource_id = "name"
+    _resource_delete_id = "id"
+    _resource_id_blacklist = []
+
     def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
                  *,
                  requested_doc: dict,  # dict read from json files, only part relevant for this client-scope - client mapping
@@ -254,46 +259,33 @@ class ClientScopeScopeMappingsClientManager:
         client_query = dict(key="id", value=client_id)
         self._this_client_roles_api = clients_api.roles(client_query)
 
-        self.cssm_client_api = client_scopes_api.scope_mappings_client_api(client_scope_id=client_scope_id, client_id=client_id)
-        # self.cssm_realm_doc = client_scope_doc.get("clientScopeMappings", [])
+        self.resource_api = client_scopes_api.scope_mappings_client_api(client_scope_id=client_scope_id, client_id=client_id)
         assert isinstance(requested_doc, list)
         if requested_doc:
             assert isinstance(requested_doc[0], str)
         self.cssm_client_doc = requested_doc  # list of client role names
 
     def publish(self):
-        creation_state = False
-        # requested_roles = self.cssm_realm_body.get("roles", [])
         create_ids, delete_objs = self._difference_ids()
 
         client_roles = self._this_client_roles_api.all()
-            # params=dict(briefRepresentation=True)
         create_roles = [rr for rr in client_roles if rr["name"] in create_ids]
         status_created = False
         if create_roles:
-            self.cssm_client_api.create(create_roles).isOk()
+            self.resource_api.create(create_roles).isOk()
             status_created = True
 
         status_deleted = False
         if delete_objs:
-            self.cssm_client_api.remove(None, delete_objs).isOk()
+            self.resource_api.remove(None, delete_objs).isOk()
             status_deleted = True
 
         return any([status_created, status_deleted])
 
-    def _difference_ids(self):
+    def _object_docs_ids(self):
+        # we already have role names, just return the list
         file_ids = self.cssm_client_doc
-
-        # file_ids is list of realm role names
-        server_objs = self.cssm_client_api.all()
-        server_ids = [obj["name"] for obj in server_objs]
-
-        # remove objects that are on server, but missing in datadir
-        delete_ids = list(set(server_ids).difference(file_ids))
-        # create objects that are in datdir, but missing on server
-        create_ids = list(set(file_ids).difference(server_ids))
-        delete_objs = [obj for obj in server_objs if obj["name"] in delete_ids]
-        return create_ids, delete_objs
+        return file_ids
 
 
 class ClientScopeProtocolMapperResource(SingleResource):

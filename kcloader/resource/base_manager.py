@@ -69,14 +69,17 @@ class BaseManager(ABC):
         # file_docs = [read_from_json(object_filepath) for object_filepath in object_filepaths]
         # return file_docs
 
+    def _object_docs_ids(self):
+        file_docs = self._object_docs()
+        file_ids = [doc[self._resource_id] for doc in file_docs]
+        return file_ids
+
     def _difference_ids(self):
         """
         If object is present on server but missing in datadir, then it needs to be removed.
         This function will return list of ids (alias-es, clientId-s, etc.) that needs to be removed.
         """
-        file_docs = self._object_docs()
-
-        file_ids = [doc[self._resource_id] for doc in file_docs]
+        file_ids = self._object_docs_ids()
         server_objs = self.resource_api.all()
         server_ids = [obj[self._resource_id] for obj in server_objs]
 
