@@ -30,6 +30,7 @@ class TestRealmResource(TestCaseBase):
 
         self.realm_filepath = os.path.join(testbed.DATADIR, f"{testbed.REALM}/{testbed.REALM}.json")
         self.realm_roles_api = testbed.kc.build("roles", testbed.REALM)
+        self.authentication_flows_api = testbed.kc.build("authentication", testbed.REALM)
         self.realms_api = testbed.kc.admin()
         # self.clients_api = testbed.kc.build("clients", testbed.REALM)
         # check clean start
@@ -45,18 +46,6 @@ class TestRealmResource(TestCaseBase):
             self.assertEqual(realm_obj_a["id"], realm_obj_b["id"])
             self.assertEqual(realm_obj_a, realm_obj_b)
 
-        # our_roles_names = sorted([
-        #     "ci0-role-0",
-        #     # "ci0-role-1",
-        #     # "ci0-role-1a",
-        #     # "ci0-role-1b",
-        # ])
-        # blacklisted_roles_names = sorted([
-        #     "offline_access",
-        #     "uma_authorization",
-        # ])
-        # expected_default_role_names = sorted(our_roles_names + blacklisted_roles_names)
-        # testbed = self.testbed
         realm_roles_api = self.realm_roles_api
         testbed = self.testbed
         realms_api = self.realms_api
@@ -66,16 +55,6 @@ class TestRealmResource(TestCaseBase):
             'keycloak_api': testbed.kc,
             'realm': realm_name,
         })
-
-        # check initial state
-        # realm_objs = realms_api.all()
-        # realm_obj = find_in_list(realm_objs, realm=realm_name)
-        # self.assertEqual(blacklisted_roles_names, sorted(realm_obj["defaultRoles"]))
-        # roles = realm_roles_api.all()
-        # self.assertEqual(
-        #     blacklisted_roles_names,
-        #     sorted([role["name"] for role in roles])
-        # )
 
         # publish data - 1st time
         creation_state = realm_resource.publish(minimal_representation=True)
@@ -103,6 +82,126 @@ class TestRealmResource(TestCaseBase):
         self.assertTrue(creation_state)
         _check_state()
         # publish same data again - idempotence
+        creation_state = realm_resource.publish(minimal_representation=True)
+        self.assertFalse(creation_state)
+        _check_state()
+
+    def test_publish_default_roles(self):
+        def _check_state():
+            realm_objs_b = self.realms_api.all()
+            realm_obj_b = find_in_list(realm_objs_b, realm=realm_name)
+            self.assertEqual(realm_obj_a["id"], realm_obj_b["id"])
+            self.assertEqual(realm_obj_a, realm_obj_b)
+            self.assertEqual(
+                expected_default_role_names,
+                sorted(realm_obj_a["defaultRoles"]),
+            )
+            self.assertEqual("ci0-auth-flow-generic", realm_obj_a["resetCredentialsFlow"])
+            # --------------------------------------------------------------------------------
+
+        our_roles_names = sorted([
+            "ci0-role-0",
+            # "ci0-role-1",
+            # "ci0-role-1a",
+            # "ci0-role-1b",
+        ])
+        blacklisted_roles_names = sorted([
+            "offline_access",
+            "uma_authorization",
+        ])
+        expected_default_role_names = sorted(our_roles_names + blacklisted_roles_names)
+        realm_roles_api = self.realm_roles_api
+        authentication_flows_api = self.authentication_flows_api
+        testbed = self.testbed
+        realms_api = self.realms_api
+        realm_name = testbed.REALM
+        realm_resource = RealmResource({
+            'path': self.realm_filepath,
+            'keycloak_api': testbed.kc,
+            'realm': realm_name,
+        })
+
+        # prepare - create unconfigured realm
+        realms = realms_api.all()
+        realm_names = [rr["realm"] for rr in realms]
+        self.assertNotIn(realm_name, realm_names)
+        realms_api.create({
+            "realm": realm_name,
+            "displayName": "ci0-realm-display-NOT-CONFIGURED",
+        }).isOk()
+        realms = realms_api.all()
+        realm_names = [rr["realm"] for rr in realms]
+        self.assertIn(realm_name, realm_names)
+
+        # prepare - create other required objects - realm roles, auth flows, etc
+        realm_role_name = "ci0-role-0"
+        realm_roles_api.create({
+            "name": realm_role_name,
+            "description": realm_role_name + "---CI-INJECTED",
+        }).isOk()
+        #
+        auth_flow_alias = "ci0-auth-flow-generic"  # used for realm resetCredentialsFlow
+        auth_flows = authentication_flows_api.all()
+        auth_flow_aliases = [auth_flow["alias"] for auth_flow in auth_flows]
+        self.assertNotIn(auth_flow_alias, auth_flow_aliases)
+        authentication_flows_api.create({
+            "alias": auth_flow_alias,
+            "providerId": "basic-flow",
+            "description": auth_flow_alias + "---TEMP-INJECTED",
+            "topLevel": True,
+            "builtIn": False
+        }).isOk()
+
+        # publish data - 1st time
+        creation_state = realm_resource.publish(minimal_representation=False)
+        self.assertTrue(creation_state)
+        realm_objs_a = self.realms_api.all()
+        realm_obj_a = find_in_list(realm_objs_a, realm=realm_name)
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = realm_resource.publish(minimal_representation=False)
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify something
+        data1 = realms_api.findFirstByKV("realm", realm_name)
+        data1.update({
+            "displayName": "ci0-realm-display-NEW",
+            "verifyEmail": True,
+        })
+        realms_api.update(realm_name, data1)
+        data2 = realms_api.findFirstByKV("realm", realm_name)
+        self.assertEqual(data1, data2)
+        #
+        # publish must revert changes
+        creation_state = realm_resource.publish(minimal_representation=False)
+        self.assertTrue(creation_state)
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = realm_resource.publish(minimal_representation=False)
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify default roles, auth-flow
+        data1 = realms_api.findFirstByKV("realm", realm_name)
+        data1.update({
+            "defaultRoles": ["uma_authorization"],
+            "resetCredentialsFlow": "browser",
+        })
+        realms_api.update(realm_name, data1)
+        data2 = realms_api.findFirstByKV("realm", realm_name)
+        self.assertEqual(data1, data2)
+        #
+        # publish must revert changes
+        creation_state = realm_resource.publish(minimal_representation=False)
+        self.assertTrue(creation_state)
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = realm_resource.publish(minimal_representation=False)
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # minimal_representation=True must not misconfigure existing object
         creation_state = realm_resource.publish(minimal_representation=True)
         self.assertFalse(creation_state)
         _check_state()

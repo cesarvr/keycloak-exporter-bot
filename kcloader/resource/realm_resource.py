@@ -62,8 +62,10 @@ class RealmResource(SingleResource):
             if self._minimal_representation is True:
                 for unsafe_attr in self._unsafe_attrs:
                     oo.pop(unsafe_attr, None)
-            # also sort enabledEventTypes
-            oo["enabledEventTypes"] = sorted(oo["enabledEventTypes"])
+            # also sort enabledEventTypes, etc
+            for list_name in ["enabledEventTypes", "defaultRoles", "eventsListeners"]:
+                if list_name in oo:
+                    oo[list_name] = sorted(oo[list_name])
         obj1 = SortedDict(obj1)
         obj2 = SortedDict(obj2)
         return obj1 == obj2
