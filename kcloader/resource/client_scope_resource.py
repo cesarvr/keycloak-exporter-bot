@@ -27,6 +27,7 @@ class ClientScopeResource(SingleResource):
         self.datadir = resource['datadir']
         # self._client_scope_id = None
         self.scope_mappings_realm_manager = None
+        self.scope_mappings_clients_manager = None
         self.protocol_mapper_manager = None
 
     def publish_self(self):
