@@ -398,8 +398,8 @@ class TestClientScopeScopeMappingsRealmManager(TestCaseBase):
         client_scopes_api = self.client_scopes_api
         self.client_scope_filepath = os.path.join(self.testbed.DATADIR, f"ci0-realm/client-scopes/{client_scope_name}.json")
         with open(self.client_scope_filepath) as ff:
-            expected_client_scope = json.load(ff)
-            self.expected_client_scope_scope_mappings_realm = expected_client_scope["scopeMappings"]["roles"]
+            self.expected_client_scope = json.load(ff)
+            self.expected_client_scope_scope_mappings_realm = self.expected_client_scope["scopeMappings"]["roles"]
         self.client_scope_resource = ClientScopeResource({
             'path': self.client_scope_filepath,
             'keycloak_api': self.testbed.kc,
@@ -447,9 +447,8 @@ class TestClientScopeScopeMappingsRealmManager(TestCaseBase):
             self.testbed.kc,
             self.testbed.REALM,
             self.testbed.DATADIR,
-            client_scope_name=client_scope_name,
+            requested_doc=self.expected_client_scope["scopeMappings"],
             client_scope_id=self.client_scope["id"],
-            client_scope_filepath=self.client_scope_filepath,
         )
         creation_state = cssm_realm_manager.publish()
         self.assertTrue(creation_state)
