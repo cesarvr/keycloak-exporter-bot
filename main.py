@@ -161,8 +161,6 @@ def main(args):
         })
         creation_state = auth_flow_res.publish()
 
-    # realm_res.publish()
-
     idp_manager = IdentityProviderManager(keycloak_api, realm_name, datadir)
     realm_role_manager = RealmRoleManager(keycloak_api, realm_name, datadir)
     client_manager = ClientManager(keycloak_api, realm_name, datadir)
@@ -175,6 +173,7 @@ def main(args):
 
     # ---------------------------------
     # Pass 2, resolve circular dependencies
+    realm_res.publish()
     creation_state = realm_role_manager.publish(include_composite=True)
     creation_state = client_manager.publish(include_composite=True)
     creation_state = client_scope_manager.publish(include_scope_mappings=True)
