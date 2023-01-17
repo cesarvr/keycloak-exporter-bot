@@ -4,6 +4,7 @@ from glob import glob
 import logging
 import os
 import kcapi
+from sortedcontainers import SortedDict
 
 from kcloader.resource import SingleResource
 from kcloader.tools import find_in_list
@@ -51,14 +52,19 @@ class UserFederationResource(SingleResource):
         del self.body["parentName"]
         self.body["parentId"] = parent["id"]
 
-        status_self = self.publish_self()
-
+        self_state = self.resource.publish_object(self.body, self)
         match = self.find_created_object(parent, self.body)
         mapper_manager = UserFederationMapperManager(self.keycloak_api, self.realm_name, self.datadir, parent=match)
 
         status_mappers = mapper_manager.publish()
-        return any([status_self, status_mappers])
+        return any([self_state, status_mappers])
 
+    def is_equal(self, obj):
+        obj1 = SortedDict(self.body)
+        obj2 = SortedDict(obj)
+        for oo in [obj1, obj2]:
+            oo.pop("id", None)
+        return obj1 == obj2
 
 ##### NEW
 class UserFederationManager:
