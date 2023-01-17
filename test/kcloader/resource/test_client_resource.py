@@ -554,12 +554,28 @@ class TestClientRoleResourceManager(TestCaseBase):
         # creation_state = manager.publish(include_composite=False)
         # self.assertFalse(creation_state)
         # _check_state()
+
+        # ------------------------------------------------------------------------------
+        # remove a role
+        role_x_name = "ci0-client0-role1b"
+        role_x_old = find_in_list(roles_a, name=role_x_name)
+        client0_roles_api.remove(role_x_old["id"], None).isOk()
         roles = client0_roles_api.all()
-        self.assertEqual(4, len(roles))
+        self.assertEqual(4 - 1, len(roles))
+        temp_roles_name = copy(our_roles_names)
+        temp_roles_name.remove(role_x_name)
         self.assertEqual(
-            our_roles_names,
+            sorted(temp_roles_name),
             sorted([role["name"] for role in roles])
         )
+
+        # check missing role is added back; it will have new id/uuid
+        creation_state = manager.publish(include_composite=False)
+        self.assertTrue(creation_state)
+        # role_x_new = find_in_list(client0_roles_api.all(), name=role_x_name)
+        # modify expected state - new role id
+        roles_a = client0_roles_api.all()
+        _check_state()
 
 
 class TestClientRoleResource(TestCaseBase):
