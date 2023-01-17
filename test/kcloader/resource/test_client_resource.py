@@ -144,7 +144,7 @@ class TestClientResource(TestCaseBase):
             self.assertEqual(client_c, client_c | expected_client0)
         self.assertEqual('ci0-client-0-desc', clients_api.get_one(client_a["id"])['description'])
 
-    def test_publish_without_comnposites(self):
+    def test_publish_without_composites(self):
         # TODO test also .publish with include_composite=True
         self.maxDiff = None
         expected_role_names = [
@@ -234,6 +234,10 @@ class TestClientResourceManager(TestCaseBase):
         # check clean start
         assert len(self.clients_api.all()) == 6  # 6 default clients
 
+    def _sort_client_object(self, obj):
+        obj["defaultClientScopes"] = sorted(obj["defaultClientScopes"])
+        return obj
+
     def test_publish(self):
         default_client_clientIds = [
             'account',
@@ -309,6 +313,90 @@ class TestClientResourceManager(TestCaseBase):
             sorted(default_client_clientIds + our_client_clientIds),
             sorted([obj["clientId"] for obj in clients_all])
         )
+
+    def test_publish__client_default_roles__custom_client(self):
+        def _check_state():
+            # check objects are created
+            clients_all = clients_api.all()
+            self.assertEqual(len(clients_all), expected_client_count)
+            client_b = clients_api.findFirstByKV("clientId", client_clientId)
+            self._sort_client_object(client_b)
+            self.assertEqual(expected_client_default_roles, client_b["defaultRoles"])
+
+            # check objects are not recreated without reason.
+            self.assertEqual(client_a["id"], client_b["id"])
+            roles_b = this_client_roles_api.all()
+            roles_b_names = sorted([role["name"] for role in roles_b])
+            self.assertEqual(expected_client_role_names, roles_b_names)
+            self.assertEqual(roles_a, roles_b)
+
+        # -------------------------------------------------------------
+
+        self.maxDiff = None
+        expected_client_role_names = [
+            "ci0-client0-role0",
+            "ci0-client0-role1",
+            "ci0-client0-role1a",
+            "ci0-client0-role1b",
+        ]
+        expected_client_default_roles = [
+            "ci0-client0-role0",
+        ]
+        wrong_client_default_roles = [
+            "ci0-client0-role1a",
+            "ci0-client0-role1b",
+        ]
+
+        default_client_count = 6  # newly created realm has 6 clients
+        expected_client_count = 6 + 4
+        # client_resource = self.client0_resource
+        clients_api = self.clients_api
+        client_clientId = "ci0-client-0"
+
+        manager = ClientManager(self.testbed.kc, self.testbed.REALM, self.testbed.DATADIR)
+
+        # initial state
+        clients_all = clients_api.all()
+        self.assertEqual(len(clients_all), default_client_count)
+
+        # Setup required objects - client-scopes
+
+        # create client
+        creation_state = manager.publish(include_composite=False)
+        self.assertTrue(creation_state)
+        # check objects are created
+        clients_all = clients_api.all()
+        self.assertEqual(len(clients_all), expected_client_count)
+        client_a = clients_api.findFirstByKV("clientId", client_clientId)
+        this_client_roles_api = clients_api.roles({'key': 'id', 'value': client_a["id"]})
+        roles_a = this_client_roles_api.all()
+        roles_a_names = sorted([role["name"] for role in roles_a])
+        self.assertEqual(roles_a_names, expected_client_role_names)
+        self._sort_client_object(client_a)
+        self.assertEqual(expected_client_default_roles, client_a["defaultRoles"])
+        _check_state()
+        #
+        # publish same data again - idempotence
+        creation_state = manager.publish(include_composite=False)
+        self.assertTrue(creation_state)
+        _check_state()
+
+        # modify something - set different default roles
+        data1 = clients_api.findFirstByKV("clientId", client_clientId)
+        data1.update({
+            "defaultRoles": wrong_client_default_roles,
+        })
+        clients_api.update(client_a["id"], data1).isOk()
+        data2 = clients_api.findFirstByKV("clientId", client_clientId)
+        self.assertEqual(data1, data2)
+
+        # publish must revert changes
+        creation_state = manager.publish(include_composite=False)
+        self.assertTrue(creation_state)
+        _check_state()
+        creation_state = manager.publish(include_composite=False)
+        self.assertTrue(creation_state)
+        _check_state()
 
 
 class TestClientRoleResourceManager(TestCaseBase):
