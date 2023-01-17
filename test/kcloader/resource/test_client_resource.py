@@ -95,8 +95,7 @@ class TestClientResource(TestCaseBase):
         oo = deepcopy(obj)
         oo.pop("id")
         for proto_mapper in oo.get("protocolMappers", []):
-            # TODO why is None needed in pop()? "id" should be always there.
-            proto_mapper.pop("id", None)
+            proto_mapper.pop("id")
         return oo
 
     def test_publish_self(self):
@@ -106,8 +105,12 @@ class TestClientResource(TestCaseBase):
             client_x = find_in_list(clients, id=client_a["id"])
             self.assertEqual('ci0-client-0-desc', client_x['description'])
             self.assertTrue(self.client0_resource.is_equal(client_x))
+            self.assertEqual(client_x, client_x | self.expected_client0)
             client_x_noid = self._remove_id(client_x)
             self.assertEqual(client_a_noid, client_x_noid)
+            # check objects are not recreated without reason.
+            self.assertEqual(client_a["id"], client_x["id"])
+            self.assertEqual(client_a, client_x)
 
         self.maxDiff = None
         default_client_count = 6  # newly created realm has 6 clients
@@ -122,23 +125,13 @@ class TestClientResource(TestCaseBase):
         # create client
         creation_state = client0_resource.publish_self()
         self.assertTrue(creation_state)
-        # check objects are created
-        clients_all = clients_api.all()
-        self.assertEqual(len(clients_all), default_client_count + 1)
         client_a = clients_api.findFirstByKV("clientId", client0_clientId)
         client_a_noid = self._remove_id(client_a)
-        self.assertEqual(client_a, client_a | self.expected_client0)
-
+        _check_state()
         # publish same data again
         creation_state = client0_resource.publish_self()
         self.assertFalse(creation_state)
-        # check content is not modified
-        clients_all = clients_api.all()
-        self.assertEqual(len(clients_all), default_client_count + 1)
-        client_b = clients_api.findFirstByKV("clientId", client0_clientId)
-        # check objects are not recreated without reason.
-        self.assertEqual(client_a["id"], client_b["id"])
-        self.assertEqual(client_a, client_b)
+        _check_state()
 
         # modify something
         clients_api.update_rmw(client_a["id"], {'description': 'ci0-client-0-desc-NEW'})
@@ -146,6 +139,9 @@ class TestClientResource(TestCaseBase):
         # publish same data again
         creation_state = client0_resource.publish_self()
         self.assertTrue(creation_state)
+        _check_state()
+        creation_state = client0_resource.publish_self()
+        self.assertFalse(creation_state)
         _check_state()
 
     def test_publish_without_composites(self):
