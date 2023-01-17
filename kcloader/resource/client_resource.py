@@ -1,7 +1,7 @@
 import logging
 import os
 from glob import glob
-from copy import copy
+from copy import copy, deepcopy
 from sortedcontainers import SortedDict
 
 import kcapi
@@ -175,8 +175,8 @@ class SingleClientResource(SingleResource):
         :return: True if content in self.body is same as in obj
         """
         # self.body is already sorted
-        obj1 = copy(self.body)
-        obj2 = copy(obj)
+        obj1 = deepcopy(self.body)
+        obj2 = deepcopy(obj)
         for oo in [obj1, obj2]:
             oo.pop("id", None)
             # TODO authenticationFlowBindingOverrides is not implemented yet, ignore it
