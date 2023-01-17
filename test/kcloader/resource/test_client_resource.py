@@ -236,6 +236,7 @@ class TestClientResourceManager(TestCaseBase):
 
     def _sort_client_object(self, obj):
         obj["defaultClientScopes"] = sorted(obj["defaultClientScopes"])
+        obj["defaultRoles"] = sorted(obj["defaultRoles"])
         return obj
 
     def test_publish(self):
@@ -315,6 +316,37 @@ class TestClientResourceManager(TestCaseBase):
         )
 
     def test_publish__client_default_roles__custom_client(self):
+        client_clientId = "ci0-client-0"
+        expected_client_role_names = [
+            "ci0-client0-role0",
+            "ci0-client0-role1",
+            "ci0-client0-role1a",
+            "ci0-client0-role1b",
+        ]
+        expected_client_default_roles = [
+            "ci0-client0-role0",
+        ]
+        wrong_client_default_roles = [
+            "ci0-client0-role1a",
+            "ci0-client0-role1b",
+        ]
+        self.do_test_publish__client_default_roles(
+            client_clientId,
+            expected_client_role_names,
+            expected_client_default_roles,
+            wrong_client_default_roles,
+        )
+
+    def test_publish__client_default_roles__builtin_client(self):
+        pass
+
+    def do_test_publish__client_default_roles(
+            self,
+            client_clientId,
+            expected_client_role_names,
+            expected_client_default_roles,
+            wrong_client_default_roles,
+        ):
         def _check_state():
             # check objects are created
             clients_all = clients_api.all()
@@ -333,25 +365,11 @@ class TestClientResourceManager(TestCaseBase):
         # -------------------------------------------------------------
 
         self.maxDiff = None
-        expected_client_role_names = [
-            "ci0-client0-role0",
-            "ci0-client0-role1",
-            "ci0-client0-role1a",
-            "ci0-client0-role1b",
-        ]
-        expected_client_default_roles = [
-            "ci0-client0-role0",
-        ]
-        wrong_client_default_roles = [
-            "ci0-client0-role1a",
-            "ci0-client0-role1b",
-        ]
 
         default_client_count = 6  # newly created realm has 6 clients
         expected_client_count = 6 + 4
         # client_resource = self.client0_resource
         clients_api = self.clients_api
-        client_clientId = "ci0-client-0"
 
         manager = ClientManager(self.testbed.kc, self.testbed.REALM, self.testbed.DATADIR)
 
@@ -386,8 +404,10 @@ class TestClientResourceManager(TestCaseBase):
         data1.update({
             "defaultRoles": wrong_client_default_roles,
         })
+        data1 = self._sort_client_object(data1)
         clients_api.update(client_a["id"], data1).isOk()
         data2 = clients_api.findFirstByKV("clientId", client_clientId)
+        data2 = self._sort_client_object(data2)
         self.assertEqual(data1, data2)
 
         # publish must revert changes
