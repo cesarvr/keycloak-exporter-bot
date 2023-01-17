@@ -106,6 +106,10 @@ class BaseRoleManager(ABC):
 
 
 class BaseRoleResource(SingleResource):
+    def __init__(self, resource, *, body=None, resource_api=None):
+        super().__init__(resource, body=body, resource_api=resource_api)
+        self._include_composite = None
+
     def get_update_payload(self, obj):
         body = copy(self.body)
         body.pop("composites", None)
@@ -120,7 +124,9 @@ class BaseRoleResource(SingleResource):
 
         # new role - body.composite and .composites are ignored
         # old role - body.composites must be valid
+        self._include_composite = include_composite
         creation_state = self.resource.publish_object(body, self)
+        self._include_composite = None
 
         # We can setup composites only after role is created
         creation_state_link = False
@@ -216,4 +222,12 @@ class BaseRoleResource(SingleResource):
             oo.pop("containerId", None)
             # composites - ignore them, or convert one to hava containerId or containerName in both
             oo.pop("composites", None)
+        """
+        If we have complex role, and is published with include_composite=False,
+        and it is still a simple role on server, then:
+        Composites will not be set anyway, so ignore fact that composite flag is wrong on server.
+        """
+        if self._include_composite is False and self.body["composite"] is True:
+            obj1.pop("composite")
+            obj2.pop("composite")
         return obj1 == obj2
