@@ -51,14 +51,14 @@ class TestClientResource(TestCaseBase):
         "clientAuthenticatorType": "client-secret",
         "clientId": "ci0-client-0",
         "consentRequired": False,
-        "defaultClientScopes": [
-            # "ci0-client-scope",
-            "email",
-            "profile",
-            "role_list",
-            "roles",
-            "web-origins"
-        ],
+        # "defaultClientScopes": []  # ignore
+        #     # "ci0-client-scope", # TODO
+        #     "email",
+        #     "profile",
+        #     "role_list",
+        #     "roles",
+        #     "web-origins"
+        # ],
         "defaultRoles": [
             "ci0-client0-role0"
         ],
@@ -89,10 +89,6 @@ class TestClientResource(TestCaseBase):
         # check clean start
         assert len(self.clients_api.all()) == 6  # 6 default clients
 
-    def _sort_object(self, obj):
-        obj["defaultClientScopes"] = sorted(obj["defaultClientScopes"])
-        return obj
-
     def test_publish_self(self):
         self.maxDiff = None
         default_client_count = 6  # newly created realm has 6 clients
@@ -111,17 +107,15 @@ class TestClientResource(TestCaseBase):
         clients_all = clients_api.all()
         self.assertEqual(len(clients_all), default_client_count + 1)
         client_a = clients_api.findFirstByKV("clientId", client0_clientId)
-        self._sort_object(client_a)
         self.assertEqual(client_a, client_a | self.expected_client0)
 
         # publish same data again
         creation_state = client0_resource.publish_self()
-        self.assertTrue(creation_state)  # TODO - should be False if defaultClientScopes would contain ci0-client-scope
+        self.assertFalse(creation_state)
         # check content is not modified
         clients_all = clients_api.all()
         self.assertEqual(len(clients_all), default_client_count + 1)
         client_b = clients_api.findFirstByKV("clientId", client0_clientId)
-        self._sort_object(client_b)
         # check objects are not recreated without reason.
         self.assertEqual(client_a["id"], client_b["id"])
         self.assertEqual(client_a, client_b)
@@ -135,13 +129,7 @@ class TestClientResource(TestCaseBase):
         clients_all = clients_api.all()
         self.assertEqual(len(clients_all), default_client_count + 1)
         client_c = clients_api.get_one(client_a["id"])
-        if 1:
-            ref_client0_resource = copy(self.client0_resource)
-            ref_client0_resource.body["defaultClientScopes"].remove("ci0-client-scope")
-            self.assertTrue(ref_client0_resource.is_equal(client_c))
-        else:
-            # is not sorted...
-            self.assertEqual(client_c, client_c | expected_client0)
+        self.assertTrue(self.client0_resource.is_equal(client_c))
         self.assertEqual('ci0-client-0-desc', clients_api.get_one(client_a["id"])['description'])
 
     def test_publish_without_composites(self):
@@ -176,7 +164,6 @@ class TestClientResource(TestCaseBase):
         clients_all = clients_api.all()
         self.assertEqual(len(clients_all), default_client_count + 1)
         client_a = clients_api.findFirstByKV("clientId", client0_clientId)
-        self._sort_object(client_a)
         self.assertEqual(client_a, client_a | expected_client0_a)
         # check roles
         roles_api = client0_resource.resource.resource_api.roles({'key': 'id', 'value': client_a["id"]})
@@ -190,12 +177,11 @@ class TestClientResource(TestCaseBase):
         # TODO - try not to use UpdatePolicy.DELETE - just avoid it.
         if 1:
             creation_state = client0_resource.publish_self()
-            self.assertTrue(creation_state)  # is True, because of defaultClientScopes and defaultRoles
+            self.assertFalse(creation_state)
             # check content is not modified
             clients_all = clients_api.all()
             self.assertEqual(len(clients_all), default_client_count + 1)
             client_b = clients_api.findFirstByKV("clientId", client0_clientId)
-            self._sort_object(client_b)
             # check objects are not recreated without reason.
             self.assertEqual(client_a["id"], client_b["id"])
             self.assertEqual(client_b, client_b | expected_client0_b)
@@ -204,6 +190,7 @@ class TestClientResource(TestCaseBase):
             roles_b_names = sorted([role["name"] for role in roles_a])
             self.assertEqual(roles_b_names, expected_role_names)
 
+            # TODO
             # TEMP - .publish_roles() is broken, and destroys defaultRoles
             expected_client0_b.pop("defaultRoles")
 
@@ -214,7 +201,6 @@ class TestClientResource(TestCaseBase):
         clients_all = clients_api.all()
         self.assertEqual(len(clients_all), default_client_count + 1)
         client_b = clients_api.findFirstByKV("clientId", client0_clientId)
-        self._sort_object(client_b)
         # check objects are not recreated without reason.
         self.assertEqual(client_a["id"], client_b["id"])
         self.assertEqual(client_b, client_b | expected_client0_b)
@@ -235,7 +221,6 @@ class TestClientResourceManager(TestCaseBase):
         assert len(self.clients_api.all()) == 6  # 6 default clients
 
     def _sort_client_object(self, obj):
-        obj["defaultClientScopes"] = sorted(obj["defaultClientScopes"])
         obj["defaultRoles"] = sorted(obj["defaultRoles"])
         return obj
 

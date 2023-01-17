@@ -179,11 +179,11 @@ class SingleClientResource(SingleResource):
         obj2 = copy(obj)
         for oo in [obj1, obj2]:
             oo.pop("id", None)
-            # authenticationFlowBindingOverrides is not implemented yet, ignore it
+            # TODO authenticationFlowBindingOverrides is not implemented yet, ignore it
             oo["authenticationFlowBindingOverrides"] = {}
-            # sort scopes
-            oo["defaultClientScopes"] = sorted(oo["defaultClientScopes"])
-            oo["optionalClientScopes"] = sorted(oo["optionalClientScopes"])
+            # defaultClientScopes/optionalClientScopes are intentionally not stored by kcfetcher
+            oo.pop("defaultClientScopes", None)
+            oo.pop("optionalClientScopes", None)
             if "protocolMappers" in oo:
                 # remove id from protocolMappers
                 for protocol_mapper in oo["protocolMappers"]:
