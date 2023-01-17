@@ -91,6 +91,39 @@ class TestClientResource(TestCaseBase):
         # check clean start
         assert len(self.clients_api.all()) == 6  # 6 default clients
 
+    def create_needed_objects(self):
+        realm_roles_api = self.realm_roles_api
+        client_scopes_api = self.client_scopes_api
+        # create required client-scope
+        self.assertEqual(9 + 0, len(client_scopes_api.all()))
+        client_scope_name = "ci0-client-scope"
+        client_scopes_api.create(dict(
+            name=client_scope_name,
+            description=client_scope_name + "---CI-INJECTED",
+            protocol="openid-connect",
+        )).isOk()
+        extra_client_scope_name = "ci0-client-scope-EXTRA"
+        client_scopes_api.create(dict(
+            name=extra_client_scope_name,
+            description=extra_client_scope_name + "---CI-INJECTED",
+            protocol="openid-connect",
+        )).isOk()
+        self.assertEqual(9 + 2, len(client_scopes_api.all()))
+
+        # create required realm roles
+        self.assertEqual(2 + 0, len(realm_roles_api.all()))
+        realm_roles_api.create(dict(
+            name="ci0-role-0",
+            description="ci0-role-0---CI-INJECTED",
+        )).isOk()
+        realm_roles_api.create(dict(
+            name="ci0-role-1b",
+            description="ci0-role-1b---CI-INJECTED",
+        )).isOk()
+        self.assertEqual(2 + 2, len(realm_roles_api.all()))
+
+        # client role ci0-client0-role0 will be auto-created on client POST
+
     @staticmethod
     def _remove_id(obj):
         # from client obj
@@ -143,6 +176,67 @@ class TestClientResource(TestCaseBase):
         self.assertTrue(creation_state)
         _check_state()
         creation_state = client0_resource.publish_self()
+        self.assertFalse(creation_state)
+        _check_state()
+
+    def test_publish_client_scopes(self):
+        return
+        def _check_state():
+            clients = clients_api.all()
+            self.assertEqual(len(clients), default_client_count + 1)
+            client_x = find_in_list(clients, id=client_a["id"])
+            # check objects are not recreated without reason.
+            self.assertEqual(client_a["id"], client_x["id"])
+            self.assertEqual(client_a, client_x)
+
+        self.maxDiff = None
+        default_client_count = 6  # newly created realm has 6 clients
+        client0_resource = self.client0_resource
+        clients_api = self.clients_api
+        client0_clientId = self.client0_clientId
+        realm_roles_api = self.realm_roles_api
+        client_scopes_api = self.client_scopes_api
+
+        self.create_needed_objects()
+        client_scope_0_name = "ci0-client-scope"
+        client_scope_0 = client_scopes_api.findFirstByKV("name", client_scope_0_name)
+        client_scope_extra_name = "ci0-client-scope-EXTRA"
+        client_scope_extra = client_scopes_api.findFirstByKV("name", client_scope_extra_name)
+
+        # initial state
+        clients_all = clients_api.all()
+        self.assertEqual(len(clients_all), default_client_count)
+
+        # create client
+        creation_state = client0_resource.publish(include_composite=False)
+        self.assertTrue(creation_state)
+        client_a = clients_api.findFirstByKV("clientId", client0_clientId)
+        this_client_client_scopes_api = KeycloakCRUD.get_child(clients_api, client_a["id"], "client-scopes")
+        _check_state()
+        # publish same data again
+        creation_state = client0_resource.publish(include_composite=False)
+        self.assertTrue(creation_state)  # TODO should be false, but...
+        _check_state()
+        creation_state = client0_resource.publish(include_composite=False)
+        self.assertFalse(creation_state)  # 3rd publish is idempotent
+        _check_state()
+
+        # modify something - remove one required client_scope, add one extra client_scope
+        self.assertEqual(4, len(this_client_client_scopes_api.all))
+        this_client_client_scopes_api.remove(client_scope["id"], None).isOk()
+        self.assertEqual(4 -1, len(this_client_client_scopes_api.all))
+        payload = dict(
+            realm=self.testbed.REALM,
+            client=client_a["id"],
+            clientScopeId=client_scope_extra["id"],
+        )
+        self.assertEqual(4, len(this_client_client_scopes_api.all))
+        #
+        # publish same data again
+        creation_state = client0_resource.publish(include_composite=False)
+        self.assertTrue(creation_state)
+        _check_state()
+        creation_state = client0_resource.publish(include_composite=False)
         self.assertFalse(creation_state)
         _check_state()
 
