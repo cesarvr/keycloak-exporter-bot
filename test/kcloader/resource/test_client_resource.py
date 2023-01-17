@@ -2,7 +2,7 @@ import json
 import os
 import unittest
 from glob import glob
-from copy import copy
+from copy import copy, deepcopy
 
 from kcloader.resource import SingleClientResource, \
     ClientManager, ClientRoleManager, ClientRoleResource
@@ -89,7 +89,26 @@ class TestClientResource(TestCaseBase):
         # check clean start
         assert len(self.clients_api.all()) == 6  # 6 default clients
 
+    @staticmethod
+    def _remove_id(obj):
+        # from client obj
+        oo = deepcopy(obj)
+        oo.pop("id")
+        for proto_mapper in oo.get("protocolMappers", []):
+            # TODO why is None needed in pop()? "id" should be always there.
+            proto_mapper.pop("id", None)
+        return oo
+
     def test_publish_self(self):
+        def _check_state():
+            clients = clients_api.all()
+            self.assertEqual(len(clients), default_client_count + 1)
+            client_x = find_in_list(clients, id=client_a["id"])
+            self.assertEqual('ci0-client-0-desc', client_x['description'])
+            self.assertTrue(self.client0_resource.is_equal(client_x))
+            client_x_noid = self._remove_id(client_x)
+            self.assertEqual(client_a_noid, client_x_noid)
+
         self.maxDiff = None
         default_client_count = 6  # newly created realm has 6 clients
         client0_resource = self.client0_resource
@@ -107,6 +126,7 @@ class TestClientResource(TestCaseBase):
         clients_all = clients_api.all()
         self.assertEqual(len(clients_all), default_client_count + 1)
         client_a = clients_api.findFirstByKV("clientId", client0_clientId)
+        client_a_noid = self._remove_id(client_a)
         self.assertEqual(client_a, client_a | self.expected_client0)
 
         # publish same data again
@@ -126,11 +146,7 @@ class TestClientResource(TestCaseBase):
         # publish same data again
         creation_state = client0_resource.publish_self()
         self.assertTrue(creation_state)
-        clients_all = clients_api.all()
-        self.assertEqual(len(clients_all), default_client_count + 1)
-        client_c = clients_api.get_one(client_a["id"])
-        self.assertTrue(self.client0_resource.is_equal(client_c))
-        self.assertEqual('ci0-client-0-desc', clients_api.get_one(client_a["id"])['description'])
+        _check_state()
 
     def test_publish_without_composites(self):
         # TODO test also .publish with include_composite=True
