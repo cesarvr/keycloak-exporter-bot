@@ -32,7 +32,6 @@ class BaseDefaultClientScopeManager(BaseManager):
 
         requested_doc = read_from_json(os.path.join(datadir, realm, f"client-scopes/default/{self._resource_name}.json"))
         self.requested_doc = requested_doc
-        self.requested_doc = requested_doc
 
     def publish(self, *, setup_new_links):
         """
@@ -48,10 +47,7 @@ class BaseDefaultClientScopeManager(BaseManager):
             client_scopes = self.client_scopes_api.all()
             for create_id in create_ids:
                 client_scope = find_in_list(client_scopes, name=create_id)
-                create_obj = dict(
-                    realm=self.realm,
-                    clientScopeId=client_scope["id"],
-                )
+                create_obj = self._get_put_payload(client_scope)
                 self.resource_api.update(client_scope["id"], create_obj).isOk()
                 status_created = True
 
@@ -61,6 +57,12 @@ class BaseDefaultClientScopeManager(BaseManager):
             status_deleted = True
 
         return any([status_created, status_deleted])
+
+    def _get_put_payload(self, client_scope: dict):
+        return dict(
+            realm=self.realm,
+            clientScopeId=client_scope["id"],
+        )
 
     def _object_docs_ids(self):
         # requested_doc contains only client-scope names
