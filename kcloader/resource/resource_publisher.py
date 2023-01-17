@@ -107,6 +107,8 @@ class ResourcePublisher:
                         # no change needed
                         return False
                     else:
+                        # TODO - pass in self.body, SingleResource derived classes modify it before calling publish -
+                        # e.g. RealmResource.publish(minimal_representation=True)
                         update_body = self.single_resource.get_update_payload(old_data)
                 else:
                     # old code, when there was no self.single_resource.
