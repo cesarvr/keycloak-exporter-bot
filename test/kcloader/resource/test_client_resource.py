@@ -338,7 +338,28 @@ class TestClientResourceManager(TestCaseBase):
         )
 
     def test_publish__client_default_roles__builtin_client(self):
-        pass
+        client_clientId = "account"
+        expected_client_role_names = [
+            "manage-account",
+            "manage-account-links",
+            "manage-consent",
+            "view-applications",
+            "view-consent",
+            "view-profile",
+        ]
+        expected_client_default_roles = [
+            "manage-account",
+            "view-profile",
+        ]
+        wrong_client_default_roles = [
+            "view-applications",
+        ]
+        self.do_test_publish__client_default_roles(
+            client_clientId,
+            expected_client_role_names,
+            expected_client_default_roles,
+            wrong_client_default_roles,
+        )
 
     def do_test_publish__client_default_roles(
             self,
