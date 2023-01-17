@@ -323,28 +323,54 @@ class TestClientResourceManager(TestCaseBase):
             "ci0-client0-role1a",
             "ci0-client0-role1b",
         ]
-        expected_client_default_roles = [
+        expected_client_default_roles_1 = [
             "ci0-client0-role0",
         ]
         wrong_client_default_roles = [
             "ci0-client0-role1a",
             "ci0-client0-role1b",
         ]
+        expected_client_default_roles_2 = expected_client_default_roles_1
         self.do_test_publish__client_default_roles(
             client_clientId,
             expected_client_role_names,
-            expected_client_default_roles,
+            expected_client_default_roles_1,
+            expected_client_default_roles_2,
             wrong_client_default_roles,
         )
 
     def test_publish__client_default_roles__builtin_client(self):
-        pass
+        client_clientId = "account"
+        expected_client_role_names = [
+            "manage-account",
+            "manage-account-links",
+            "manage-consent",
+            "view-applications",
+            "view-consent",
+            "view-profile",
+        ]
+        expected_client_default_roles_1 = [
+            "manage-account",
+            "view-profile",
+        ]
+        wrong_client_default_roles = [
+            "view-applications",
+        ]
+        expected_client_default_roles_2 = wrong_client_default_roles
+        self.do_test_publish__client_default_roles(
+            client_clientId,
+            expected_client_role_names,
+            expected_client_default_roles_1,
+            expected_client_default_roles_2,
+            wrong_client_default_roles,
+        )
 
     def do_test_publish__client_default_roles(
             self,
             client_clientId,
             expected_client_role_names,
-            expected_client_default_roles,
+            expected_client_default_roles_1,
+            expected_client_default_roles_2,
             wrong_client_default_roles,
         ):
         def _check_state():
@@ -365,6 +391,7 @@ class TestClientResourceManager(TestCaseBase):
         # -------------------------------------------------------------
 
         self.maxDiff = None
+        expected_client_default_roles = expected_client_default_roles_1
 
         default_client_count = 6  # newly created realm has 6 clients
         expected_client_count = 6 + 4
@@ -409,6 +436,10 @@ class TestClientResourceManager(TestCaseBase):
         data2 = clients_api.findFirstByKV("clientId", client_clientId)
         data2 = self._sort_client_object(data2)
         self.assertEqual(data1, data2)
+
+        # New expected state depends on client being custom or builtin.
+        # The builtin clients are not managed - default roles are not reverted.
+        expected_client_default_roles = expected_client_default_roles_2
 
         # publish must revert changes
         creation_state = manager.publish(include_composite=False)
