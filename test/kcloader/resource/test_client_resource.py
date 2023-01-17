@@ -9,6 +9,13 @@ from kcloader.resource import SingleClientResource, \
 from kcloader.tools import read_from_json, find_in_list
 from ...helper import TestBed, remove_field_id, TestCaseBase
 
+"""
+missing
+ mappers - only initial create works; missing create, delete, update, 
+ client scope - delete, extra entry is not removed
+ scope - missing entry are added, extra entries are not removed
+"""
+
 
 class TestClientResource(TestCaseBase):
     expected_client0 = {
@@ -52,7 +59,7 @@ class TestClientResource(TestCaseBase):
         "clientId": "ci0-client-0",
         "consentRequired": False,
         "defaultClientScopes": [
-            # "ci0-client-scope",
+            # "ci0-client-scope",   # TODO - test this too, create and update
             "email",
             "profile",
             "role_list",
