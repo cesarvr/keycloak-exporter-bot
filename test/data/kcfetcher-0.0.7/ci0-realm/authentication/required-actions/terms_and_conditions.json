@@ -1,0 +1,9 @@
+{
+    "alias": "terms_and_conditions",
+    "config": {},
+    "defaultAction": false,
+    "enabled": true,
+    "name": "Terms and Conditions",
+    "priority": 20,
+    "providerId": "terms_and_conditions"
+}

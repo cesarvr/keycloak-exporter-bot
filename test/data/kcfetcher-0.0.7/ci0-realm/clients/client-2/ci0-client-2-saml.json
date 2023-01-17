@@ -1,0 +1,75 @@
+{
+    "access": {
+        "configure": true,
+        "manage": true,
+        "view": true
+    },
+    "adminUrl": "http://ci0-client-2-saml-admin-url.example.com",
+    "alwaysDisplayInConsole": false,
+    "attributes": {
+        "saml.assertion.lifespan": "120",
+        "saml.authnstatement": "true",
+        "saml.client.signature": "true",
+        "saml.force.post.binding": "true",
+        "saml.server.signature": "true",
+        "saml.signature.algorithm": "RSA_SHA256",
+        "saml_assertion_consumer_url_post": "http://saml-admin-url-post.example.com",
+        "saml_force_name_id_format": "false",
+        "saml_name_id_format": "username",
+        "saml_signature_canonicalization_method": "http://www.w3.org/2001/10/xml-exc-c14n#"
+    },
+    "authenticationFlowBindingOverrides": {
+        "browser": "browser"
+    },
+    "bearerOnly": false,
+    "clientAuthenticatorType": "client-secret",
+    "clientId": "ci0-client-2-saml",
+    "consentRequired": false,
+    "description": "ci0-client-2-saml-desc",
+    "directAccessGrantsEnabled": false,
+    "enabled": true,
+    "frontchannelLogout": true,
+    "fullScopeAllowed": false,
+    "implicitFlowEnabled": false,
+    "name": "ci0-client-2-saml-name",
+    "nodeReRegistrationTimeout": -1,
+    "notBefore": 0,
+    "protocol": "saml",
+    "protocolMappers": [
+        {
+            "config": {
+                "attribute.name": "urn:oid:1.2.840.113549.1.9.1",
+                "attribute.nameformat": "urn:oasis:names:tc:SAML:2.0:attrname-format:uri",
+                "friendly.name": "email",
+                "user.attribute": "email"
+            },
+            "consentRequired": false,
+            "name": "X500 email",
+            "protocol": "saml",
+            "protocolMapper": "saml-user-property-mapper"
+        },
+        {
+            "config": {
+                "Script": "/**/\n//insert your code here...",
+                "attribute.name": "ci0-client-2-saml-mapper-attr-name",
+                "attribute.nameformat": "Basic",
+                "friendly.name": "ci0-client-2-saml-mapper-js-friedly",
+                "single": "true"
+            },
+            "consentRequired": false,
+            "name": "ci0-client-2-saml-mapper-js",
+            "protocol": "saml",
+            "protocolMapper": "saml-javascript-mapper"
+        }
+    ],
+    "publicClient": false,
+    "redirectUris": [
+        "https://ci0-client-2-saml.example.com/redirect-url"
+    ],
+    "serviceAccountsEnabled": false,
+    "standardFlowEnabled": true,
+    "surrogateAuthRequired": false,
+    "webOrigins": [
+        "https://ci0-client-2-saml.example.com"
+    ]
+}

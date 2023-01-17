@@ -1,0 +1,7 @@
+{
+    "attributes": {},
+    "clientRole": true,
+    "composite": false,
+    "description": "${role_query-clients}",
+    "name": "query-clients"
+}

@@ -1,0 +1,11 @@
+{
+    "config": {
+        "attribute.friendly.name": "attr-friendly-name",
+        "attribute.name": "attr-name",
+        "attribute.value": "attr-value",
+        "role": "ci0-client-0.ci0-client0-role0"
+    },
+    "identityProviderAlias": "ci0-idp-saml-0",
+    "identityProviderMapper": "saml-role-idp-mapper",
+    "name": "idp-mapper-1"
+}

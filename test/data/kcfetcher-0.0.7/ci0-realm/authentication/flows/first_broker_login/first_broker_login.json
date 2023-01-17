@@ -1,0 +1,24 @@
+{
+    "alias": "first broker login",
+    "authenticationExecutions": [
+        {
+            "authenticator": "idp-review-profile",
+            "authenticatorConfig": "review profile config",
+            "autheticatorFlow": false,
+            "priority": 10,
+            "requirement": "REQUIRED",
+            "userSetupAllowed": false
+        },
+        {
+            "autheticatorFlow": true,
+            "flowAlias": "User creation or linking",
+            "priority": 20,
+            "requirement": "REQUIRED",
+            "userSetupAllowed": false
+        }
+    ],
+    "builtIn": true,
+    "description": "Actions taken after first broker login with identity provider account, which is not yet linked to any Keycloak account",
+    "providerId": "basic-flow",
+    "topLevel": true
+}

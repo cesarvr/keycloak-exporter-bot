@@ -1,0 +1,8 @@
+{
+    "config": {
+        "template": "ci-template-1"
+    },
+    "identityProviderAlias": "ci0-idp-saml-1",
+    "identityProviderMapper": "saml-username-idp-mapper",
+    "name": "ci0-saml-template-mapper"
+}

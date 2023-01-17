@@ -41,7 +41,7 @@ jobs:
       - name: Wait on keycloak to be up
         run: curl -k --connect-timeout 60 --retry 60 --retry-delay 1 --retry-connrefused --retry-max-time 60 https://keycloak:8443 -v
       # At least it should not crash
-      - run: ./main.py --url https://keycloak:8443 --username admin --password admin --datadir test/data/kcfetcher-0.0.6   --realm-name ci0-realm
+      - run: ./main.py --url https://keycloak:8443 --username admin --password admin --datadir test/data/kcfetcher-latest   --realm-name ci0-realm
     env:
       KEYCLOAK_API_CA_BUNDLE:
     services:

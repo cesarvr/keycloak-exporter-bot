@@ -1,0 +1,28 @@
+{
+    "access": {
+        "configure": true,
+        "manage": true,
+        "view": true
+    },
+    "alwaysDisplayInConsole": false,
+    "attributes": {},
+    "authenticationFlowBindingOverrides": {},
+    "bearerOnly": true,
+    "clientAuthenticatorType": "client-secret",
+    "clientId": "master-realm",
+    "consentRequired": false,
+    "directAccessGrantsEnabled": false,
+    "enabled": true,
+    "frontchannelLogout": false,
+    "fullScopeAllowed": true,
+    "implicitFlowEnabled": false,
+    "name": "master Realm",
+    "nodeReRegistrationTimeout": 0,
+    "notBefore": 0,
+    "publicClient": false,
+    "redirectUris": [],
+    "serviceAccountsEnabled": false,
+    "standardFlowEnabled": true,
+    "surrogateAuthRequired": false,
+    "webOrigins": []
+}
