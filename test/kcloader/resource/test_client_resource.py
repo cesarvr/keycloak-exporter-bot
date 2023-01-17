@@ -471,6 +471,18 @@ class TestClientRoleResourceManager(TestCaseBase):
         self.client0_resource.publish_self()
 
     def test_publish(self):
+        def _check_state():
+            roles_b = client0_roles_api.all()
+            self.assertEqual(4, len(roles_b))
+            self.assertEqual(
+                our_roles_names,
+                sorted([role["name"] for role in roles_b])
+            )
+            create_ids, delete_objs = manager._difference_ids()
+            self.assertEqual([], create_ids)
+            self.assertEqual([], delete_objs)
+        # -------------------------------------------------------------------
+
         our_roles_names = sorted([
             "ci0-client0-role0",
             "ci0-client0-role1",
@@ -504,25 +516,18 @@ class TestClientRoleResourceManager(TestCaseBase):
         # publish data - 1st time
         creation_state = manager.publish(include_composite=False)
         self.assertTrue(creation_state)
-        roles = client0_roles_api.all()
+        roles_a = client0_roles_api.all()
         self.assertEqual(
             our_roles_names,
-            sorted([role["name"] for role in roles])
+            sorted([role["name"] for role in roles_a])
         )
-
-        create_ids, delete_objs = manager._difference_ids()
-        self.assertEqual([], create_ids)
-        self.assertEqual([], delete_objs)
+        _check_state()
 
         # publish same data again - idempotence
         creation_state = manager.publish(include_composite=False)
         # TODO should be false; but one composite (realm sub-role) is missing
         self.assertTrue(creation_state)
-        roles = client0_roles_api.all()
-        self.assertEqual(
-            our_roles_names,
-            sorted([role["name"] for role in roles])
-        )
+        _check_state()
 
         # ------------------------------------------------------------------------------
         # create an additional role
@@ -545,12 +550,33 @@ class TestClientRoleResourceManager(TestCaseBase):
         # check extra role is deleted
         creation_state = manager.publish(include_composite=False)
         self.assertTrue(creation_state)
+        _check_state()
+        # creation_state = manager.publish(include_composite=False)
+        # self.assertFalse(creation_state)
+        # _check_state()
+
+        # ------------------------------------------------------------------------------
+        # remove a role
+        role_x_name = "ci0-client0-role1b"
+        role_x_old = find_in_list(roles_a, name=role_x_name)
+        client0_roles_api.remove(role_x_old["id"], None).isOk()
         roles = client0_roles_api.all()
-        self.assertEqual(4, len(roles))
+        self.assertEqual(4 - 1, len(roles))
+        temp_roles_name = copy(our_roles_names)
+        temp_roles_name.remove(role_x_name)
         self.assertEqual(
-            our_roles_names,
+            sorted(temp_roles_name),
             sorted([role["name"] for role in roles])
         )
+
+        # check missing role is added back; it will have new id/uuid
+        creation_state = manager.publish(include_composite=False)
+        self.assertTrue(creation_state)
+        # role_x_new = find_in_list(client0_roles_api.all(), name=role_x_name)
+        # modify expected state - new role id
+        roles_a = client0_roles_api.all()
+        self.assertEqual(4, len(roles_a))
+        _check_state()
 
 
 class TestClientRoleResource(TestCaseBase):
