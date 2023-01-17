@@ -86,7 +86,9 @@ class TestRealmResource(TestCaseBase):
         self.assertFalse(creation_state)
         _check_state()
 
-    def test_publish_default_roles(self):
+    def test_publish_default_realm_roles(self):
+        # Only default realm roles are tested here.
+        # Default client roles are part of client config.
         def _check_state():
             realm_objs_b = self.realms_api.all()
             realm_obj_b = find_in_list(realm_objs_b, realm=realm_name)
@@ -205,36 +207,6 @@ class TestRealmResource(TestCaseBase):
         creation_state = realm_resource.publish(minimal_representation=True)
         self.assertFalse(creation_state)
         _check_state()
-
-        return
-
-        # ------------------------------------------------------------------------------
-        # create an additional role
-        realm_roles_api.create({
-            "name": "ci0-role-x-to-be-deleted",
-            "description": "ci0-role-x-to-be-DELETED",
-        }).isOk()
-        roles = realm_roles_api.all()
-        self.assertEqual(6 + 1, len(roles))
-        self.assertEqual(
-            sorted(our_roles_names + blacklisted_roles_names + ["ci0-role-x-to-be-deleted"]),
-            sorted([role["name"] for role in roles])
-        )
-
-        create_ids, delete_objs = manager._difference_ids()
-        delete_ids = sorted([obj["name"] for obj in delete_objs])
-        self.assertEqual([], create_ids)
-        self.assertEqual(['ci0-role-x-to-be-deleted'], delete_ids)
-
-        # check extra role is deleted
-        creation_state = manager.publish(include_composite=include_composite)
-        self.assertTrue(creation_state)
-        roles = realm_roles_api.all()
-        self.assertEqual(6, len(roles))
-        self.assertEqual(
-            expected_roles_names,
-            sorted([role["name"] for role in roles])
-        )
 
 
 
