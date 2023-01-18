@@ -35,11 +35,6 @@ class BaseClientScopeScopeMappingsRealmManager(BaseManager):
         self.realm_roles_api = keycloak_api.build("roles", realm)
         self._cssm_realm_doc = requested_doc
 
-    def _get_resource_api(self):
-        client_scopes_api = self.keycloak_api.build("client-scopes", self.realm)
-        resource_api = client_scopes_api.scope_mappings_realm_api(client_scope_id=self._client_scope_id)
-        return resource_api
-
     def publish(self):
         create_ids, delete_objs = self._difference_ids()
 
@@ -65,9 +60,6 @@ class BaseClientScopeScopeMappingsRealmManager(BaseManager):
 
 class RealmClientScopeScopeMappingsRealmManager(BaseClientScopeScopeMappingsRealmManager):
     _resource_name = "client-scopes/{client_scope_id}/scope-mappings/realm"
-    _resource_id = "name"
-    _resource_delete_id = "id"
-    _resource_id_blacklist = []
 
     def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
                  *,
@@ -76,6 +68,11 @@ class RealmClientScopeScopeMappingsRealmManager(BaseClientScopeScopeMappingsReal
                  ):
         self._client_scope_id = client_scope_id
         super().__init__(keycloak_api, realm, datadir, requested_doc=requested_doc)
+
+    def _get_resource_api(self):
+        client_scopes_api = self.keycloak_api.build("client-scopes", self.realm)
+        resource_api = client_scopes_api.scope_mappings_realm_api(client_scope_id=self._client_scope_id)
+        return resource_api
 
 
 class ClientClientScopeScopeMappingsRealmManager(BaseClientScopeScopeMappingsRealmManager):
