@@ -11,13 +11,6 @@
     "clientAuthenticatorType": "client-secret",
     "clientId": "cddc_1",
     "consentRequired": false,
-    "defaultClientScopes": [
-        "web-origins",
-        "role_list",
-        "roles",
-        "profile",
-        "email"
-    ],
     "directAccessGrantsEnabled": true,
     "enabled": true,
     "frontchannelLogout": false,
@@ -25,11 +18,6 @@
     "implicitFlowEnabled": false,
     "nodeReRegistrationTimeout": -1,
     "notBefore": 0,
-    "optionalClientScopes": [
-        "address",
-        "phone",
-        "offline_access"
-    ],
     "protocol": "openid-connect",
     "protocolMappers": [
         {
