@@ -16,8 +16,8 @@ from kcloader.resource.base_manager import BaseManager
 logger = logging.getLogger(__name__)
 
 
-class RealmClientScopeScopeMappingsRealmManager(BaseManager):
-    _resource_name = "client-scopes/{client_scope_id}/scope-mappings/realm"
+class BaseClientScopeScopeMappingsRealmManager(BaseManager):
+    # _resource_name = "client-scopes/{client_scope_id}/scope-mappings/realm"
     _resource_id = "name"
     _resource_delete_id = "id"
     _resource_id_blacklist = []
@@ -25,17 +25,17 @@ class RealmClientScopeScopeMappingsRealmManager(BaseManager):
     def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
                  *,
                  requested_doc: dict,
-                 # client_scope_name: str,
-                 client_scope_id: str,
                  ):
+        super().__init__(keycloak_api, realm, datadir)
         # Manager will directly update the links - less REST calls.
         # A single ClientScopeScopeMappingsRealmCRUD will be enough.
-        client_scopes_api = keycloak_api.build("client-scopes", realm)
         self.realm_roles_api = keycloak_api.build("roles", realm)
-        self.resource_api = client_scopes_api.scope_mappings_realm_api(client_scope_id=client_scope_id)
-        assert list(requested_doc.keys()) in [["roles"], []]
-        assert isinstance(requested_doc.get("roles", []), list)
         self.cssm_realm_doc = requested_doc
+
+    def _get_resource_api(self):
+        client_scopes_api = self.keycloak_api.build("client-scopes", self.realm)
+        resource_api = client_scopes_api.scope_mappings_realm_api(client_scope_id=self._client_scope_id)
+        return resource_api
 
     def publish(self):
         create_ids, delete_objs = self._difference_ids()
@@ -60,26 +60,41 @@ class RealmClientScopeScopeMappingsRealmManager(BaseManager):
         file_ids = self.cssm_realm_doc.get("roles", [])
         return file_ids
 
+class RealmClientScopeScopeMappingsRealmManager(BaseClientScopeScopeMappingsRealmManager):
+    _resource_name = "client-scopes/{client_scope_id}/scope-mappings/realm"
+    _resource_id = "name"
+    _resource_delete_id = "id"
+    _resource_id_blacklist = []
 
-class ClientClientScopeScopeMappingsRealmManager(RealmClientScopeScopeMappingsRealmManager):
     def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
                  *,
                  requested_doc: dict,
-                 # client_scope_name: str,
+                 client_scope_id: str,
+                 ):
+        assert list(requested_doc.keys()) in [["roles"], []]
+        assert isinstance(requested_doc.get("roles", []), list)
+        self._client_scope_id = client_scope_id
+        super().__init__(keycloak_api, realm, datadir, requested_doc=requested_doc)
+
+
+class ClientClientScopeScopeMappingsRealmManager(BaseClientScopeScopeMappingsRealmManager):
+    _resource_name = "clients/{client_id}/scope-mappings/realm"
+
+    def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
+                 *,
+                 requested_doc: dict,
                  client_id: str,
                  ):
-        # Manager will directly update the links - less REST calls.
-        # A single ClientScopeScopeMappingsRealmCRUD will be enough.
-        clients_api = keycloak_api.build("clients", realm)
-        self.realm_roles_api = keycloak_api.build("roles", realm)
-
-        # self.resource_api = client_scopes_api.scope_mappings_realm_api(client_scope_id=client_scope_id)
-        self.resource_api = KeycloakCRUD.get_child(clients_api, client_id, "scope-mappings/realm")
-
         assert isinstance(requested_doc, list)
         if requested_doc:
             assert isinstance(requested_doc[0], str)
-        self.cssm_realm_doc = requested_doc
+        self._client_id = client_id
+        super().__init__(keycloak_api, realm, datadir, requested_doc=requested_doc)
+
+    def _get_resource_api(self):
+        clients_api = self.keycloak_api.build("clients", self.realm)
+        resource_api = KeycloakCRUD.get_child(clients_api, self._client_id, "scope-mappings/realm")
+        return resource_api
 
     def _object_docs_ids(self):
         return self.cssm_realm_doc
