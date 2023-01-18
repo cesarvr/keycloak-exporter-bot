@@ -5,6 +5,7 @@ from copy import copy
 from glob import glob
 
 import kcapi
+from kcapi.rest.crud import KeycloakCRUD
 from sortedcontainers import SortedDict
 
 from kcloader.resource import SingleResource
@@ -28,13 +29,9 @@ class BaseDefaultClientScopeManager(BaseManager):
         super().__init__(keycloak_api, realm, datadir)
         self.client_scopes_api = keycloak_api.build("client-scopes", realm)
         ## self.realm_roles_api = keycloak_api.build("roles", realm)
-        self.resource_api = self._get_resource_api()
+        ## self.resource_api = self._get_resource_api()
 
-        requested_doc = read_from_json(os.path.join(datadir, realm, f"client-scopes/default/{self._resource_name}.json"))
-        self.requested_doc = requested_doc
-        self.requested_doc = requested_doc
-
-    def publish(self, *, setup_new_links):
+    def publish(self, *, setup_new_links: bool):
         """
         :param setup_new_links: If false, we only remove client_scopes from default client-scopes on the server.
         If true, client_scopes are also added to default client-scopes on the server.
@@ -48,10 +45,7 @@ class BaseDefaultClientScopeManager(BaseManager):
             client_scopes = self.client_scopes_api.all()
             for create_id in create_ids:
                 client_scope = find_in_list(client_scopes, name=create_id)
-                create_obj = dict(
-                    realm=self.realm,
-                    clientScopeId=client_scope["id"],
-                )
+                create_obj = self._get_put_payload(client_scope)
                 self.resource_api.update(client_scope["id"], create_obj).isOk()
                 status_created = True
 
@@ -62,9 +56,16 @@ class BaseDefaultClientScopeManager(BaseManager):
 
         return any([status_created, status_deleted])
 
+    def _get_put_payload(self, client_scope: dict):
+        return dict(
+            realm=self.realm,
+            clientScopeId=client_scope["id"],
+        )
+
     def _object_docs_ids(self):
         # requested_doc contains only client-scope names
-        return self.requested_doc
+        requested_doc = read_from_json(os.path.join(self.datadir, self.realm, f"client-scopes/default/{self._resource_name}.json"))
+        return requested_doc
 
 
 class DefaultDefaultClientScopeManager(BaseDefaultClientScopeManager):
@@ -73,3 +74,49 @@ class DefaultDefaultClientScopeManager(BaseDefaultClientScopeManager):
 
 class DefaultOptionalClientScopeManager(BaseDefaultClientScopeManager):
     _resource_name = "default-optional-client-scopes"
+
+
+# Reuse this to also manage client client-scopes - PUT {realm}/clients/{client_id}/default-client-scopes.
+class BaseClientXClientScopeManager(BaseDefaultClientScopeManager):
+    # _resource_name = "default-client-scopes"
+
+    def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
+                 *, client_id: str, client_filepath: str):
+        """
+        requested_doc is like '["ci0-client-scope", "email", ...]'
+        """
+        self._client_id = client_id
+        super().__init__(keycloak_api, realm, datadir)
+        self._client_filepath = client_filepath
+        self.client_scopes_api = keycloak_api.build("client-scopes", realm)
+        ## self.realm_roles_api = keycloak_api.build("roles", realm)
+        self.resource_api = self._get_resource_api()
+
+    def _get_put_payload(self, client_scope: dict):
+        return dict(
+            realm=self.realm,
+            client=self._client_id,
+            clientScopeId=client_scope["id"],
+        )
+
+    def _get_resource_api(self):
+        assert self._resource_name != ''
+        clients_api = self.keycloak_api.build("clients", self.realm)
+        resource_api = KeycloakCRUD.get_child(clients_api, self._client_id, self._resource_name)
+        return resource_api
+
+    def _object_docs_ids(self):
+        # requested_doc contains only client-scope names
+        client_dirname = os.path.dirname(self._client_filepath)
+        object_filepath = os.path.join(client_dirname, f"client-scopes/{self._resource_name}.json")
+        requested_doc = read_from_json(object_filepath)
+        # self.requested_doc = requested_doc
+        return requested_doc
+
+
+class ClientDefaultClientScopeManager(BaseClientXClientScopeManager):
+    _resource_name = "default-client-scopes"
+
+
+class ClientOptionalClientScopeManager(BaseClientXClientScopeManager):
+    _resource_name = "optional-client-scopes"

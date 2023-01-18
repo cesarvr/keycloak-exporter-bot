@@ -1,12 +1,13 @@
 import logging
 import os
 from glob import glob
-from copy import copy
+from copy import copy, deepcopy
 from sortedcontainers import SortedDict
 
 import kcapi
 
 from kcloader.resource import SingleResource, ResourcePublisher, UpdatePolicy
+from kcloader.resource.default_client_scope_resource import ClientOptionalClientScopeManager, ClientDefaultClientScopeManager
 from kcloader.resource.role_resource import find_sub_role, BaseRoleManager, BaseRoleResource
 from kcloader.tools import lookup_child_resource, read_from_json, find_in_list, get_path
 
@@ -97,7 +98,10 @@ class SingleClientResource(SingleResource):
         })
         self.datadir = resource['datadir']
 
-        self.client_role_manager = None  # we do not have client id yet...
+        # we do not have client id yet, managers cannot be created
+        self.client_role_manager = None
+        self.client_default_client_scope_manager = None
+        self.client_optional_client_scope_manager = None
 
     def publish_scopes(self):
         state = True
@@ -160,6 +164,14 @@ class SingleClientResource(SingleResource):
             self.keycloak_api, self.realm_name, self.datadir,
             clientId=self.body["clientId"], client_id=client["id"], client_filepath=self.resource_path,
         )
+        self.client_default_client_scope_manager = ClientDefaultClientScopeManager(
+            self.keycloak_api, self.realm_name, self.datadir,
+            client_id=client["id"], client_filepath=self.resource_path,
+        )
+        self.client_optional_client_scope_manager = ClientOptionalClientScopeManager(
+            self.keycloak_api, self.realm_name, self.datadir,
+            client_id=client["id"], client_filepath=self.resource_path,
+        )
 
         return state
 
@@ -167,7 +179,10 @@ class SingleClientResource(SingleResource):
         state = self.publish_self()
         state_roles = self.client_role_manager.publish(include_composite=include_composite)
         state_scopes = self.publish_scopes()
-        return any([state, state_roles, state_scopes])
+        setup_new_links = include_composite
+        state_default_client_scopes = self.client_default_client_scope_manager.publish(setup_new_links=setup_new_links)
+        state_optional_client_scopes = self.client_optional_client_scope_manager.publish(setup_new_links=setup_new_links)
+        return any([state, state_roles, state_scopes, state_default_client_scopes, state_optional_client_scopes])
 
     def is_equal(self, obj):
         """
@@ -175,15 +190,15 @@ class SingleClientResource(SingleResource):
         :return: True if content in self.body is same as in obj
         """
         # self.body is already sorted
-        obj1 = copy(self.body)
-        obj2 = copy(obj)
+        obj1 = deepcopy(self.body)
+        obj2 = deepcopy(obj)
         for oo in [obj1, obj2]:
             oo.pop("id", None)
-            # authenticationFlowBindingOverrides is not implemented yet, ignore it
+            # TODO authenticationFlowBindingOverrides is not implemented yet, ignore it
             oo["authenticationFlowBindingOverrides"] = {}
-            # sort scopes
-            oo["defaultClientScopes"] = sorted(oo["defaultClientScopes"])
-            oo["optionalClientScopes"] = sorted(oo["optionalClientScopes"])
+            # defaultClientScopes/optionalClientScopes are intentionally not stored by kcfetcher
+            oo.pop("defaultClientScopes", None)
+            oo.pop("optionalClientScopes", None)
             if "protocolMappers" in oo:
                 # remove id from protocolMappers
                 for protocol_mapper in oo["protocolMappers"]:

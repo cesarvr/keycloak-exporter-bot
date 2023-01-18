@@ -116,16 +116,13 @@ class TestRealmRoleManager(TestCaseBase):
             # self.assertTrue(creation_state)
             pass
         else:
-            # .composite flag is wrong - TODO fix code to exclude .composite in comparison
-            self.assertTrue(creation_state)
+            # .composite flag is different in json and what is on server,
+            # but this is ingored if include_composite==False
+            self.assertFalse(creation_state)
         #
         # after 2nd .publish(), composites should be correct, and creation_state=False.
         creation_state = manager.publish(include_composite=include_composite)
-        if include_composite:
-            self.assertFalse(creation_state)
-        else:
-            # .composite flag is wrong - TODO fix code to exclude .composite in comparison
-            self.assertTrue(creation_state)
+        self.assertFalse(creation_state)
         #
         roles = realm_roles_api.all()
         self.assertEqual(

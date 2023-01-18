@@ -1,0 +1,19 @@
+{
+    "access": {
+        "manage": true,
+        "manageMembership": true,
+        "view": true
+    },
+    "attributes": {
+        "ci0-group-key0": [
+            "ci0-group-value0"
+        ]
+    },
+    "clientRoles": {},
+    "name": "ci0-group",
+    "path": "/ci0-group",
+    "realmRoles": [
+        "ci0-role-0"
+    ],
+    "subGroups": []
+}

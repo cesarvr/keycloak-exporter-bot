@@ -1,0 +1,14 @@
+{
+    "attributes": {},
+    "clientRole": true,
+    "composite": true,
+    "composites": [
+        {
+            "clientRole": true,
+            "containerName": "ci0-realm-realm",
+            "name": "query-clients"
+        }
+    ],
+    "description": "${role_view-clients}",
+    "name": "view-clients"
+}
