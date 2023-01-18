@@ -26,11 +26,14 @@ class BaseClientScopeScopeMappingsRealmManager(BaseManager):
                  *,
                  requested_doc: dict,
                  ):
+        assert isinstance(requested_doc, list)
+        if requested_doc:
+            assert isinstance(requested_doc[0], str)
         super().__init__(keycloak_api, realm, datadir)
         # Manager will directly update the links - less REST calls.
         # A single ClientScopeScopeMappingsRealmCRUD will be enough.
         self.realm_roles_api = keycloak_api.build("roles", realm)
-        self.cssm_realm_doc = requested_doc
+        self._cssm_realm_doc = requested_doc
 
     def _get_resource_api(self):
         client_scopes_api = self.keycloak_api.build("client-scopes", self.realm)
@@ -57,8 +60,8 @@ class BaseClientScopeScopeMappingsRealmManager(BaseManager):
         return any([status_created, status_deleted])
 
     def _object_docs_ids(self):
-        file_ids = self.cssm_realm_doc.get("roles", [])
-        return file_ids
+        return self._cssm_realm_doc
+
 
 class RealmClientScopeScopeMappingsRealmManager(BaseClientScopeScopeMappingsRealmManager):
     _resource_name = "client-scopes/{client_scope_id}/scope-mappings/realm"
@@ -71,8 +74,6 @@ class RealmClientScopeScopeMappingsRealmManager(BaseClientScopeScopeMappingsReal
                  requested_doc: dict,
                  client_scope_id: str,
                  ):
-        assert list(requested_doc.keys()) in [["roles"], []]
-        assert isinstance(requested_doc.get("roles", []), list)
         self._client_scope_id = client_scope_id
         super().__init__(keycloak_api, realm, datadir, requested_doc=requested_doc)
 
@@ -85,9 +86,6 @@ class ClientClientScopeScopeMappingsRealmManager(BaseClientScopeScopeMappingsRea
                  requested_doc: dict,
                  client_id: str,
                  ):
-        assert isinstance(requested_doc, list)
-        if requested_doc:
-            assert isinstance(requested_doc[0], str)
         self._client_id = client_id
         super().__init__(keycloak_api, realm, datadir, requested_doc=requested_doc)
 
@@ -95,9 +93,6 @@ class ClientClientScopeScopeMappingsRealmManager(BaseClientScopeScopeMappingsRea
         clients_api = self.keycloak_api.build("clients", self.realm)
         resource_api = KeycloakCRUD.get_child(clients_api, self._client_id, "scope-mappings/realm")
         return resource_api
-
-    def _object_docs_ids(self):
-        return self.cssm_realm_doc
 
 
 class RealmClientScopeScopeMappingsAllClientsManager:

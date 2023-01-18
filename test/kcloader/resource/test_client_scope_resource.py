@@ -379,14 +379,9 @@ class TestClientScopeProtocolMapperResource(TestCaseBase):
         self.client_scopes_api = testbed.kc.build("client-scopes", testbed.REALM)
         self.client_scope_name = "ci0-client-scope"
         self.client_scope_filepath = os.path.join(self.testbed.DATADIR, f"ci0-realm/client-scopes/{self.client_scope_name}.json")
-        client_scope_resource = ClientScopeResource({
-            'path': self.client_scope_filepath,
-            'keycloak_api': self.testbed.kc,
-            'realm': self.testbed.REALM,
-            'datadir': self.testbed.DATADIR,
-        })
-        creation_state = client_scope_resource.publish(include_scope_mappings=False)
-        self.assertTrue(creation_state)
+        client_scope_doc = read_from_json(self.client_scope_filepath)
+        # self.protocol_mapper_docs = client_scope_doc["protocolMappers"]
+        self.client_scopes_api.create(client_scope_doc).isOk()
         client_scopes = self.client_scopes_api.all()
         # self.client_scope = find_in_list(client_scopes, name=self.client_scope_name)
 

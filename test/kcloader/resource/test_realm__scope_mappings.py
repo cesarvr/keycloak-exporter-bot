@@ -42,14 +42,14 @@ class TestRealmClientScopeScopeMappingsRealmManager(TestCaseBase):
         with open(self.client_scope_filepath) as ff:
             self.expected_client_scope = json.load(ff)
             self.expected_client_scope_scope_mappings_realm = self.expected_client_scope["scopeMappings"]["roles"]
-        self.client_scope_resource = ClientScopeResource({
-            'path': self.client_scope_filepath,
-            'keycloak_api': self.testbed.kc,
-            'realm': self.testbed.REALM,
-            'datadir': self.testbed.DATADIR,
-        })
-        creation_state = self.client_scope_resource.publish_self()
-        self.assertTrue(creation_state)
+        #
+        # do not use ClientScopeResource to create required client-scope
+        client_scopes_api.create(dict(
+            name=client_scope_name,
+            description=client_scope_name + "---CI-INJECTED",
+            protocol="openid-connect",
+        )).isOk()
+        #
         client_scopes = client_scopes_api.all()
         self.assertEqual(9 + 1, len(client_scopes))  # there are 9 default client scopes
         self.client_scope = find_in_list(client_scopes, name=client_scope_name)
@@ -89,7 +89,7 @@ class TestRealmClientScopeScopeMappingsRealmManager(TestCaseBase):
             self.testbed.kc,
             self.testbed.REALM,
             self.testbed.DATADIR,
-            requested_doc=self.expected_client_scope["scopeMappings"],
+            requested_doc=self.expected_client_scope["scopeMappings"].get("roles", []),
             client_scope_id=self.client_scope["id"],
         )
         creation_state = cssm_realm_manager.publish()

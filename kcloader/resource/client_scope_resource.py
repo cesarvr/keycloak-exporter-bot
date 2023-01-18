@@ -42,7 +42,7 @@ class ClientScopeResource(SingleResource):
             self.keycloak_api,
             self.realm_name,
             self.datadir,
-            requested_doc=self.body.get("scopeMappings", {}),
+            requested_doc=self.body.get("scopeMappings", {}).get("roles", []),
             client_scope_id=client_scope["id"],
         )
         self.scope_mappings_clients_manager = RealmClientScopeScopeMappingsAllClientsManager(
