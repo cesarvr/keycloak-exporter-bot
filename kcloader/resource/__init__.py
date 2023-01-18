@@ -10,10 +10,11 @@ from .client_scope_resource import ClientScopeResource, \
     ClientScopeProtocolMapperResource, ClientScopeProtocolMapperManager, \
     ClientScopeManager
 from .scope_mappings import \
-    RealmClientScopeScopeMappingsRealmManager,\
-    RealmClientScopeScopeMappingsClientManager,\
-    RealmClientScopeScopeMappingsAllClientsManager, \
-    ClientClientScopeScopeMappingsRealmManager
+    ClientScopeScopeMappingsRealmManager,\
+    ClientScopeScopeMappingsClientManager,\
+    ClientScopeScopeMappingsAllClientsManager, \
+    ClientScopeMappingsRealmManager, \
+    ClientScopeMappingsClientManager
 from .default_client_scope_resource import DefaultDefaultClientScopeManager, DefaultOptionalClientScopeManager, \
     ClientDefaultClientScopeManager, ClientOptionalClientScopeManager
 from .identity_provider_resource import IdentityProviderResource, IdentityProviderMapperResource

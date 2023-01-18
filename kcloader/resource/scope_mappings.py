@@ -16,8 +16,9 @@ from kcloader.resource.base_manager import BaseManager
 logger = logging.getLogger(__name__)
 
 
-class BaseClientScopeScopeMappingsRealmManager(BaseManager):
+class BaseScopeMappingsRealmManager(BaseManager):
     # _resource_name = "client-scopes/{client_scope_id}/scope-mappings/realm"
+    # _resource_name = "clients/{client_id}/scope-mappings/realm"
     _resource_id = "name"
     _resource_delete_id = "id"
     _resource_id_blacklist = []
@@ -58,7 +59,7 @@ class BaseClientScopeScopeMappingsRealmManager(BaseManager):
         return self._cssm_realm_doc
 
 
-class RealmClientScopeScopeMappingsRealmManager(BaseClientScopeScopeMappingsRealmManager):
+class ClientScopeScopeMappingsRealmManager(BaseScopeMappingsRealmManager):
     _resource_name = "client-scopes/{client_scope_id}/scope-mappings/realm"
 
     def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
@@ -75,7 +76,7 @@ class RealmClientScopeScopeMappingsRealmManager(BaseClientScopeScopeMappingsReal
         return resource_api
 
 
-class ClientClientScopeScopeMappingsRealmManager(BaseClientScopeScopeMappingsRealmManager):
+class ClientScopeMappingsRealmManager(BaseScopeMappingsRealmManager):
     _resource_name = "clients/{client_id}/scope-mappings/realm"
 
     def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
@@ -92,7 +93,7 @@ class ClientClientScopeScopeMappingsRealmManager(BaseClientScopeScopeMappingsRea
         return resource_api
 
 
-class RealmClientScopeScopeMappingsAllClientsManager:
+class BaseScopeMappingsAllClientsManager:
     def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
                  *,
                  requested_doc: dict,  # dict read from json files, only part relevant clients mappings
@@ -106,7 +107,7 @@ class RealmClientScopeScopeMappingsAllClientsManager:
         clients_api = keycloak_api.build("clients", realm)
         clients = clients_api.all()
         self.resources = [
-            RealmClientScopeScopeMappingsClientManager(
+            ClientScopeScopeMappingsClientManager(
                 keycloak_api,
                 realm,
                 datadir,
@@ -139,7 +140,20 @@ class RealmClientScopeScopeMappingsAllClientsManager:
         raise NotImplementedError()
 
 
-class BaseClientScopeScopeMappingsClientManager(BaseManager):
+class ClientScopeScopeMappingsAllClientsManager(BaseScopeMappingsAllClientsManager):
+    def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
+                 *,
+                 requested_doc: dict,  # dict read from json files, only part relevant clients mappings
+                 client_scope_id: int,
+                 ):
+        super().__init__(keycloak_api, realm, datadir, requested_doc=requested_doc, client_scope_id=client_scope_id)
+
+
+# class ClientScopeMappingsAllClientsManager(BaseClientScopeScopeMappingsAllClientsManager):
+#---------------------------
+
+
+class BaseScopeMappingsClientManager(BaseManager):
     # _resource_name = "client-scopes/{client_scope_id}/scope-mappings/clients/{src_client_id}"
     # _resource_name = "clients/{dest_client_id}/scope-mappings/clients/{src_client_id}"
     _resource_id = "name"
@@ -185,7 +199,7 @@ class BaseClientScopeScopeMappingsClientManager(BaseManager):
         return self._requested_doc
 
 
-class RealmClientScopeScopeMappingsClientManager(BaseClientScopeScopeMappingsClientManager):
+class ClientScopeScopeMappingsClientManager(BaseScopeMappingsClientManager):
     _resource_name = "client-scopes/{client_scope_id}/scope-mappings/clients/{src_client_id}"
 
     def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
@@ -203,4 +217,22 @@ class RealmClientScopeScopeMappingsClientManager(BaseClientScopeScopeMappingsCli
             client_scope_id=self._client_scope_id,
             client_id=self._src_client_id,
         )
+        return resource_api
+
+
+class ClientScopeMappingsClientManager(BaseScopeMappingsClientManager):
+    _resource_name = "clients/{dest_client_id}/scope-mappings/clients/{src_client_id}"
+
+    def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
+                 *,
+                 requested_doc: dict,  # dict read from json files, only part relevant for this client-scope - client mapping
+                 dest_client_id: int,
+                 src_client_id: int,
+                 ):
+        self._dest_client_id = dest_client_id
+        super().__init__(keycloak_api, realm, datadir, requested_doc=requested_doc, src_client_id=src_client_id)
+
+    def _get_resource_api(self):
+        clients_api = self.keycloak_api.build("clients", self.realm)
+        resource_api = KeycloakCRUD.get_child(clients_api, self._dest_client_id, f"scope-mappings/clients/{self._src_client_id}")
         return resource_api

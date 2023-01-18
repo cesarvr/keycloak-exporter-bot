@@ -5,9 +5,9 @@ import unittest
 from glob import glob
 from copy import copy
 
-from kcloader.resource import ClientScopeResource, RealmClientScopeScopeMappingsRealmManager, \
+from kcloader.resource import ClientScopeResource, ClientScopeScopeMappingsRealmManager, \
     ClientScopeProtocolMapperResource, ClientScopeProtocolMapperManager, \
-    RealmClientScopeScopeMappingsClientManager, RealmClientScopeScopeMappingsAllClientsManager, \
+    ClientScopeScopeMappingsClientManager, ClientScopeScopeMappingsAllClientsManager, \
     ClientScopeManager
 from kcloader.tools import read_from_json, find_in_list
 from ...helper import TestBed, remove_field_id, TestCaseBase

@@ -7,15 +7,16 @@ from copy import copy
 
 from kcapi.rest.crud import KeycloakCRUD
 
-from kcloader.resource import ClientScopeResource, ClientClientScopeScopeMappingsRealmManager, \
-    RealmClientScopeScopeMappingsClientManager, RealmClientScopeScopeMappingsAllClientsManager
+from kcloader.resource import ClientScopeResource, ClientScopeMappingsRealmManager, \
+    ClientScopeScopeMappingsClientManager, ClientScopeScopeMappingsAllClientsManager, \
+    ClientScopeMappingsClientManager
 from kcloader.tools import read_from_json, find_in_list
 from ...helper import TestBed, remove_field_id, TestCaseBase
 
 logger = logging.getLogger(__name__)
 
 
-class TestClientClientScopeScopeMappingsRealmManager(TestCaseBase):
+class TestClientScopeMappingsRealmManager(TestCaseBase):
     # Test Client--ClientScope--ScopeMappings--Realm Manager
     def setUp(self):
         super().setUp()
@@ -80,7 +81,7 @@ class TestClientClientScopeScopeMappingsRealmManager(TestCaseBase):
         self.assertEqual([], this_client_scopeMappings_realm_api.all())
 
         # create/update
-        manager = ClientClientScopeScopeMappingsRealmManager(
+        manager = ClientScopeMappingsRealmManager(
             self.testbed.kc,
             self.testbed.REALM,
             self.testbed.DATADIR,
@@ -109,3 +110,92 @@ class TestClientClientScopeScopeMappingsRealmManager(TestCaseBase):
         self.assertFalse(creation_state)
         _check_state()
 
+
+class TestClientScopeMappingsClientManager(TestCaseBase):
+    # Test Client--ClientScope--ScopeMappings--Client Manager
+    # managed client is
+    def setUp(self):
+        super().setUp()
+        testbed = self.testbed
+
+        # We will assign roles from src_client to dest_client scope_mappings
+        self.dest_client_clientId = "ci0-client-0"
+        self.src_client_clientId = "account"
+        self.clients_api = testbed.kc.build("clients", testbed.REALM)
+        # self.realm_roles_api = testbed.kc.build("roles", testbed.REALM)
+        # self.roles_by_id_api = testbed.kc.build("roles-by-id", testbed.REALM)
+        # self.client_scopes_api = testbed.kc.build("client-scopes", testbed.REALM)
+
+        # create required client
+        clients_all = self.clients_api.all()
+        self.assertEqual(len(clients_all), 6 + 0)
+        self.clients_api.create(dict(
+            clientId="ci0-client-0",
+            description="ci0-client-0---CI-INJECTED",
+            protocol="openid-connect",
+            fullScopeAllowed=False,  # this makes client:scopes configurable
+        )).isOk()
+        clients_all = self.clients_api.all()
+        self.assertEqual(len(clients_all), 6 + 1)
+        self.dest_client = find_in_list(clients_all, clientId=self.dest_client_clientId)
+
+        self.src_client = find_in_list(clients_all, clientId=self.src_client_clientId)
+
+        # find src_client roles
+        src_client_roles_api = self.clients_api.roles({'key': 'id', 'value': self.src_client["id"]})
+        src_client_roles = src_client_roles_api.all()
+        self.src_role_0 = find_in_list(src_client_roles, name="view-consent")
+        self.src_role_1 = find_in_list(src_client_roles, name="view-profile")
+
+        # GET /{realm}/clients/{client_id}/scope-mappings/realm
+        self.dest_client_scopeMappings_client_api = KeycloakCRUD.get_child(self.clients_api, self.dest_client["id"], f"scope-mappings/clients/{self.src_client['id']}")
+
+    def test_publish(self):
+        def _check_state():
+            client_scopeMappings_client_b = dest_client_scopeMappings_client_api.all()
+            self.assertEqual(client_scopeMappings_client_a[0]["id"], client_scopeMappings_client_b[0]["id"])
+            self.assertEqual(client_scopeMappings_client_a, client_scopeMappings_client_b)
+            client_scopeMappings_client_names = [rr["name"] for rr in client_scopeMappings_client_b]
+            self.assertEqual(
+                expected_client_scopeMappings_client_names,
+                client_scopeMappings_client_names,
+            )
+            # -------------------------------------------
+
+        dest_client_scopeMappings_client_api = self.dest_client_scopeMappings_client_api
+        # requested_client_scopeMappings_client_names - needs to be computed
+        # from ci0-realm/clients/client-0/scope-mappings.json
+        requested_client_scopeMappings_client_names = ["view-consent"]
+        expected_client_scopeMappings_client_names = ["view-consent"]
+
+        # check initial state
+        self.assertEqual([], dest_client_scopeMappings_client_api.all())
+
+        # create/update
+        manager = ClientScopeMappingsClientManager(
+            self.testbed.kc,
+            self.testbed.REALM,
+            self.testbed.DATADIR,
+            requested_doc=requested_client_scopeMappings_client_names,
+            dest_client_id=self.dest_client["id"],
+            src_client_id=self.src_client["id"],
+        )
+        creation_state = manager.publish()
+        self.assertTrue(creation_state)
+        client_scopeMappings_client_a = dest_client_scopeMappings_client_api.all()
+        _check_state()
+        creation_state = manager.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # add one extra mapping, it needs to be removed
+        self.assertEqual(1, len(dest_client_scopeMappings_client_api.all()))
+        dest_client_scopeMappings_client_api.create([self.src_role_1]).isOk()
+        self.assertEqual(2, len(dest_client_scopeMappings_client_api.all()))
+        #
+        creation_state = manager.publish()
+        self.assertTrue(creation_state)
+        _check_state()
+        creation_state = manager.publish()
+        self.assertFalse(creation_state)
+        _check_state()

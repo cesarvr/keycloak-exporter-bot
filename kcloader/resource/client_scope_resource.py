@@ -10,7 +10,7 @@ from sortedcontainers import SortedDict
 from kcloader.resource import SingleResource
 from kcloader.tools import find_in_list, read_from_json
 from kcloader.resource.base_manager import BaseManager
-from kcloader.resource.scope_mappings import RealmClientScopeScopeMappingsRealmManager, RealmClientScopeScopeMappingsAllClientsManager
+from kcloader.resource.scope_mappings import ClientScopeScopeMappingsRealmManager, ClientScopeScopeMappingsAllClientsManager
 
 logger = logging.getLogger(__name__)
 
@@ -38,14 +38,14 @@ class ClientScopeResource(SingleResource):
         client_scope_name = self.body["name"]
         client_scope = self.resource.resource_api.findFirstByKV("name", client_scope_name)
         # self._client_scope_id = client_scope["id"]
-        self.scope_mappings_realm_manager = RealmClientScopeScopeMappingsRealmManager(
+        self.scope_mappings_realm_manager = ClientScopeScopeMappingsRealmManager(
             self.keycloak_api,
             self.realm_name,
             self.datadir,
             requested_doc=self.body.get("scopeMappings", {}).get("roles", []),
             client_scope_id=client_scope["id"],
         )
-        self.scope_mappings_clients_manager = RealmClientScopeScopeMappingsAllClientsManager(
+        self.scope_mappings_clients_manager = ClientScopeScopeMappingsAllClientsManager(
             self.keycloak_api,
             self.realm_name,
             self.datadir,
