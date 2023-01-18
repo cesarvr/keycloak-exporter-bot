@@ -23,7 +23,7 @@ from .identity_provider_resource import IdentityProviderManager, IdentityProvide
 from .user_federation_resource import UserFederationResource, UserFederationManager
 from .realm_resource import RealmResource
 
-from .many_resources import ManyResources, MultipleResourceInFolders
+from .many_resources import ManyResources
 
 
 __all__ = [
@@ -41,6 +41,5 @@ __all__ = [
     UserFederationManager,
 
     ManyResources,
-    MultipleResourceInFolders,
 ]
 #
