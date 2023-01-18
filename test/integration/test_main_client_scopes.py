@@ -6,10 +6,6 @@ from glob import glob
 from copy import copy
 from collections import namedtuple
 
-from kcloader.resource import ClientScopeResource, ClientScopeScopeMappingsRealmManager, \
-    ClientScopeProtocolMapperResource, ClientScopeProtocolMapperManager, \
-    ClientScopeScopeMappingsClientManager, ClientScopeScopeMappingsAllClientsManager, \
-    ClientScopeManager
 from kcloader.tools import read_from_json, find_in_list
 from ..helper import TestBed, remove_field_id, TestCaseBase
 from main import main

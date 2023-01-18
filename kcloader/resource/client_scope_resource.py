@@ -10,6 +10,7 @@ from sortedcontainers import SortedDict
 from kcloader.resource import SingleResource
 from kcloader.tools import find_in_list, read_from_json
 from kcloader.resource.base_manager import BaseManager
+from kcloader.resource.scope_mappings import ClientScopeScopeMappingsRealmManager, ClientScopeScopeMappingsAllClientsManager
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ class ClientScopeResource(SingleResource):
             self.keycloak_api,
             self.realm_name,
             self.datadir,
-            requested_doc=self.body.get("scopeMappings", {}),
+            requested_doc=self.body.get("scopeMappings", {}).get("roles", []),
             client_scope_id=client_scope["id"],
         )
         self.scope_mappings_clients_manager = ClientScopeScopeMappingsAllClientsManager(
@@ -136,150 +137,6 @@ class ClientScopeManager(BaseManager):
         return object_docs
 
 
-class ClientScopeScopeMappingsRealmManager(BaseManager):
-    _resource_name = "client-scopes/{client_scope_id}/scope-mappings/realm"
-    _resource_id = "name"
-    _resource_delete_id = "id"
-    _resource_id_blacklist = []
-
-    def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
-                 *,
-                 requested_doc: dict,
-                 # client_scope_name: str,
-                 client_scope_id: str,
-                 ):
-        # Manager will directly update the links - less REST calls.
-        # A single ClientScopeScopeMappingsRealmCRUD will be enough.
-        client_scopes_api = keycloak_api.build("client-scopes", realm)
-        self.realm_roles_api = keycloak_api.build("roles", realm)
-        self.resource_api = client_scopes_api.scope_mappings_realm_api(client_scope_id=client_scope_id)
-        assert list(requested_doc.keys()) in [["roles"], []]
-        assert isinstance(requested_doc.get("roles", []), list)
-        self.cssm_realm_doc = requested_doc
-
-    def publish(self):
-        create_ids, delete_objs = self._difference_ids()
-
-        realm_roles = self.realm_roles_api.all(
-            params=dict(briefRepresentation=True)
-        )
-        create_roles = [rr for rr in realm_roles if rr["name"] in create_ids]
-        status_created = False
-        if create_roles:
-            self.resource_api.create(create_roles).isOk()
-            status_created = True
-
-        status_deleted = False
-        if delete_objs:
-            self.resource_api.remove(None, delete_objs).isOk()
-            status_deleted = True
-
-        return any([status_created, status_deleted])
-
-    def _object_docs_ids(self):
-        file_ids = self.cssm_realm_doc.get("roles", [])
-        return file_ids
-
-
-class ClientScopeScopeMappingsAllClientsManager:
-    def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
-                 *,
-                 requested_doc: dict,  # dict read from json files, only part relevant clients mappings
-                 client_scope_id: int,
-                 ):
-        assert isinstance(requested_doc, dict)
-        # self._client_scope_id = client_scope_id
-        # self._cssm_clients_doc = requested_doc
-
-        # create a manager for each client
-        clients_api = keycloak_api.build("clients", realm)
-        clients = clients_api.all()
-        self.resources = [
-            ClientScopeScopeMappingsClientManager(
-                keycloak_api,
-                realm,
-                datadir,
-                requested_doc=requested_doc.get(client["clientId"], []),
-                client_scope_id=client_scope_id,
-                client_id=client["id"],
-                )
-            for client in clients
-        ]
-
-        # We assume all clients were already created.
-        # If there is in json file some unknown clientId - it will be ignored.
-        # Write this to logfile.
-        clientIds = [client["clientId"] for client in clients]
-        for doc_clientId in requested_doc:
-            if doc_clientId not in clientIds:
-                msg = f"clientID={doc_clientId} not present on server"
-                logger.error(msg)
-                raise Exception(msg)
-
-    def publish(self):
-        status_created = [
-            resource.publish()
-            for resource in self.resources
-        ]
-        return any(status_created)
-
-    def _difference_ids(self):
-        # Not needed for this class.
-        raise NotImplementedError()
-
-
-class ClientScopeScopeMappingsClientManager(BaseManager):
-    _resource_name = "client-scopes/{client_scope_id}/scope-mappings/clients/{client_id}"
-    _resource_id = "name"
-    _resource_delete_id = "id"
-    _resource_id_blacklist = []
-
-    def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
-                 *,
-                 requested_doc: dict,  # dict read from json files, only part relevant for this client-scope - client mapping
-                 client_scope_id: int,
-                 client_id: int,
-                 ):
-        # self._client_scope_doc = client_scope_doc
-        self._client_scope_id = client_scope_id
-        self._client_id = client_id
-
-        # Manager will directly update the links - less REST calls.
-        # A single ClientScopeScopeMappingsRealmCRUD will be enough.
-        client_scopes_api = keycloak_api.build("client-scopes", realm)
-        clients_api = keycloak_api.build("clients", realm)
-        client_query = dict(key="id", value=client_id)
-        self._this_client_roles_api = clients_api.roles(client_query)
-
-        self.resource_api = client_scopes_api.scope_mappings_client_api(client_scope_id=client_scope_id, client_id=client_id)
-        assert isinstance(requested_doc, list)
-        if requested_doc:
-            assert isinstance(requested_doc[0], str)
-        self.cssm_client_doc = requested_doc  # list of client role names
-
-    def publish(self):
-        create_ids, delete_objs = self._difference_ids()
-
-        client_roles = self._this_client_roles_api.all()
-        create_roles = [rr for rr in client_roles if rr["name"] in create_ids]
-        status_created = False
-        if create_roles:
-            self.resource_api.create(create_roles).isOk()
-            status_created = True
-
-        status_deleted = False
-        if delete_objs:
-            self.resource_api.remove(None, delete_objs).isOk()
-            status_deleted = True
-
-        return any([status_created, status_deleted])
-
-    def _object_docs_ids(self):
-        # we already have role names, just return the list
-        file_ids = self.cssm_client_doc
-        return file_ids
-
-
 class ClientScopeProtocolMapperResource(SingleResource):
     def __init__(
             self,
@@ -359,50 +216,3 @@ class ClientScopeProtocolMapperManager(BaseManager):
         client_scopes_api = self.keycloak_api.build("client-scopes", self.realm)
         protocol_mapper_api = client_scopes_api.protocol_mapper_api(client_scope_id=self._client_scope_id)
         return protocol_mapper_api
-
-
-class ClientScopeResource___old(SingleResource):
-    def publish_scope_mappings(self):
-        state = self.publish_scope_mappings_realm()
-        state = state and self.publish_scope_mappings_client()
-
-    def publish_scope_mappings_client(self):
-        clients_api = self.keycloak_api.build('clients', self.realm_name)
-        clients = clients_api.all()
-
-        client_scopes_api = self.keycloak_api.build('client-scopes', self.realm_name)
-        this_client_scope = client_scopes_api.findFirstByKV("name", self.body["name"])  # .verify().resp().json()
-
-        for clientId in self.body["clientScopeMappings"]:
-            client = find_in_list(clients, clientId=clientId)
-            client_roles_api = clients_api.get_child(clients_api, client["id"], "roles")
-            client_roles = client_roles_api.all()
-            this_client_scope_scope_mappings_client_api = client_scopes_api.get_child(
-                client_scopes_api,
-                this_client_scope["id"],
-                f"scope-mappings/clients/{client['id']}"
-            )
-            for role_name in self.body["clientScopeMappings"][clientId]:
-                role = find_in_list(client_roles, name=role_name)
-                if not role:
-                    logger.error(f"scopeMappings clientId={clientId} client role {role_name} not found")
-                this_client_scope_scope_mappings_client_api.create([role])
-        return True
-
-    def publish_scope_mappings_realm(self):
-        if "scopeMappings" not in self.body:
-            return True
-
-        client_scopes_api = self.keycloak_api.build('client-scopes', self.realm_name)
-        this_client_scope = client_scopes_api.findFirstByKV("name", self.body["name"])  # .verify().resp().json()
-        this_client_scope_scope_mappings_realm_api = client_scopes_api.get_child(client_scopes_api, this_client_scope["id"], "scope-mappings/realm")
-
-        realm_roles_api = self.keycloak_api.build('roles', self.realm_name)
-        realm_roles = realm_roles_api.all()
-
-        for role_name in self.body["scopeMappings"]["roles"]:
-            role = find_in_list(realm_roles, name=role_name)
-            if not role:
-                logger.error(f"scopeMappings realm role {role_name} not found")
-            this_client_scope_scope_mappings_realm_api.create([role])
-        return True

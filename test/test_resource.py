@@ -1,7 +1,7 @@
 import unittest
 import os
 from .helper import TestBed, SAMPLES_PATH, SAMPLE_PAYLOADS_PATH
-from kcloader.resource import SingleResource, ManyResources, SingleClientResource, MultipleResourceInFolders, \
+from kcloader.resource import SingleResource, ManyResources, SingleClientResource, \
     SingleCustomAuthenticationResource
 from kcloader.tools import add_trailing_slash, read_from_json, get_json_docs_from_folder
 
@@ -100,23 +100,6 @@ class RHSSOExporterMain(unittest.TestCase):
 
         self.assertEqual(2, len(roles), "Incorrect number of roles found in this client dc/roles")
         self.assertListEqual(sorted(expected_role_names), sorted(role_names), "Cloud and Local should have the same roles")
-
-    def testing_publishing_multiple_nodes(self):
-        params = {
-            'name': 'clients',
-            'id': 'clientId',
-            'keycloak_api': self.keycloak_api,
-            'realm': self.testbed.realm,
-            'datadir': SAMPLE_PAYLOADS_PATH,
-        }
-        clients_path = os.path.join(SAMPLE_PAYLOADS_PATH, 'clients/')
-
-        multi = MultipleResourceInFolders(params=params, path=clients_path, ResourceClass=SingleClientResource)
-        states = multi.publish()
-
-        for state in states:
-            self.assertTrue(state, "The client should be published")
-
 
     def testing_custom_flow_publishing(self):
         authentication_folder = os.path.join(SAMPLE_PAYLOADS_PATH, 'authentication/my_custom_http_challenge/my_custom_http_challenge.json')
