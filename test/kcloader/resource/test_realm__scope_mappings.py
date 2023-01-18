@@ -163,7 +163,7 @@ class TestRealmClientScopeScopeMappingsClientManager(TestCaseBase):
             self.testbed.DATADIR,
             requested_doc=requested_client_role_names,  # this is normally read from json file
             client_scope_id=self.client_scope["id"],
-            client_id=self.client["id"],
+            src_client_id=self.client["id"],
         )
 
         # check initial state - no roles assigned

@@ -112,7 +112,7 @@ class RealmClientScopeScopeMappingsAllClientsManager:
                 datadir,
                 requested_doc=requested_doc.get(client["clientId"], []),
                 client_scope_id=client_scope_id,
-                client_id=client["id"],
+                src_client_id=client["id"],
                 )
             for client in clients
         ]
@@ -139,8 +139,9 @@ class RealmClientScopeScopeMappingsAllClientsManager:
         raise NotImplementedError()
 
 
-class RealmClientScopeScopeMappingsClientManager(BaseManager):
-    _resource_name = "client-scopes/{client_scope_id}/scope-mappings/clients/{client_id}"
+class BaseClientScopeScopeMappingsClientManager(BaseManager):
+    # _resource_name = "client-scopes/{client_scope_id}/scope-mappings/clients/{src_client_id}"
+    # _resource_name = "clients/{dest_client_id}/scope-mappings/clients/{src_client_id}"
     _resource_id = "name"
     _resource_delete_id = "id"
     _resource_id_blacklist = []
@@ -148,30 +149,24 @@ class RealmClientScopeScopeMappingsClientManager(BaseManager):
     def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
                  *,
                  requested_doc: dict,  # dict read from json files, only part relevant for this client-scope - client mapping
-                 client_scope_id: int,
-                 client_id: int,
+                 src_client_id: int,
                  ):
-        # self._client_scope_doc = client_scope_doc
-        self._client_scope_id = client_scope_id
-        self._client_id = client_id
-
-        # Manager will directly update the links - less REST calls.
-        # A single ClientScopeScopeMappingsRealmCRUD will be enough.
-        client_scopes_api = keycloak_api.build("client-scopes", realm)
-        clients_api = keycloak_api.build("clients", realm)
-        client_query = dict(key="id", value=client_id)
-        self._this_client_roles_api = clients_api.roles(client_query)
-
-        self.resource_api = client_scopes_api.scope_mappings_client_api(client_scope_id=client_scope_id, client_id=client_id)
+        # requested_doc is a list of client role names
         assert isinstance(requested_doc, list)
         if requested_doc:
             assert isinstance(requested_doc[0], str)
-        self.cssm_client_doc = requested_doc  # list of client role names
+        self._requested_doc = requested_doc
+        self._src_client_id = src_client_id
+        super().__init__(keycloak_api, realm, datadir)
+
+        clients_api = keycloak_api.build("clients", realm)
+        src_client_query = dict(key="id", value=self._src_client_id)
+        self._src_client_roles_api = clients_api.roles(src_client_query)
 
     def publish(self):
         create_ids, delete_objs = self._difference_ids()
 
-        client_roles = self._this_client_roles_api.all()
+        client_roles = self._src_client_roles_api.all()
         create_roles = [rr for rr in client_roles if rr["name"] in create_ids]
         status_created = False
         if create_roles:
@@ -187,7 +182,25 @@ class RealmClientScopeScopeMappingsClientManager(BaseManager):
 
     def _object_docs_ids(self):
         # we already have role names, just return the list
-        file_ids = self.cssm_client_doc
-        return file_ids
+        return self._requested_doc
 
 
+class RealmClientScopeScopeMappingsClientManager(BaseClientScopeScopeMappingsClientManager):
+    _resource_name = "client-scopes/{client_scope_id}/scope-mappings/clients/{src_client_id}"
+
+    def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
+                 *,
+                 requested_doc: dict,  # dict read from json files, only part relevant for this client-scope - client mapping
+                 client_scope_id: int,
+                 src_client_id: int,
+                 ):
+        self._client_scope_id = client_scope_id
+        super().__init__(keycloak_api, realm, datadir, requested_doc=requested_doc, src_client_id=src_client_id)
+
+    def _get_resource_api(self):
+        client_scopes_api = self.keycloak_api.build("client-scopes", self.realm)
+        resource_api = client_scopes_api.scope_mappings_client_api(
+            client_scope_id=self._client_scope_id,
+            client_id=self._src_client_id,
+        )
+        return resource_api
