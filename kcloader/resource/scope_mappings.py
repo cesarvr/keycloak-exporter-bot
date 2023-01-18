@@ -5,6 +5,8 @@ import logging
 # from glob import glob
 
 import kcapi
+from kcapi.rest.crud import KeycloakCRUD
+
 # from sortedcontainers import SortedDict
 #
 # from kcloader.resource import SingleResource
@@ -57,6 +59,30 @@ class RealmClientScopeScopeMappingsRealmManager(BaseManager):
     def _object_docs_ids(self):
         file_ids = self.cssm_realm_doc.get("roles", [])
         return file_ids
+
+
+class ClientClientScopeScopeMappingsRealmManager(RealmClientScopeScopeMappingsRealmManager):
+    def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
+                 *,
+                 requested_doc: dict,
+                 # client_scope_name: str,
+                 client_id: str,
+                 ):
+        # Manager will directly update the links - less REST calls.
+        # A single ClientScopeScopeMappingsRealmCRUD will be enough.
+        clients_api = keycloak_api.build("clients", realm)
+        self.realm_roles_api = keycloak_api.build("roles", realm)
+
+        # self.resource_api = client_scopes_api.scope_mappings_realm_api(client_scope_id=client_scope_id)
+        self.resource_api = KeycloakCRUD.get_child(clients_api, client_id, "scope-mappings/realm")
+
+        assert isinstance(requested_doc, list)
+        if requested_doc:
+            assert isinstance(requested_doc[0], str)
+        self.cssm_realm_doc = requested_doc
+
+    def _object_docs_ids(self):
+        return self.cssm_realm_doc
 
 
 class RealmClientScopeScopeMappingsAllClientsManager:

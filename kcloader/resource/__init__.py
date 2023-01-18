@@ -12,7 +12,8 @@ from .client_scope_resource import ClientScopeResource, \
 from .scope_mappings import \
     RealmClientScopeScopeMappingsRealmManager,\
     RealmClientScopeScopeMappingsClientManager,\
-    RealmClientScopeScopeMappingsAllClientsManager
+    RealmClientScopeScopeMappingsAllClientsManager, \
+    ClientClientScopeScopeMappingsRealmManager
 from .default_client_scope_resource import DefaultDefaultClientScopeManager, DefaultOptionalClientScopeManager, \
     ClientDefaultClientScopeManager, ClientOptionalClientScopeManager
 from .identity_provider_resource import IdentityProviderResource, IdentityProviderMapperResource

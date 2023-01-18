@@ -6,9 +6,7 @@ from glob import glob
 from copy import copy
 
 from kcloader.resource import ClientScopeResource, RealmClientScopeScopeMappingsRealmManager, \
-    ClientScopeProtocolMapperResource, ClientScopeProtocolMapperManager, \
-    RealmClientScopeScopeMappingsClientManager, RealmClientScopeScopeMappingsAllClientsManager, \
-    ClientScopeManager
+    RealmClientScopeScopeMappingsClientManager, RealmClientScopeScopeMappingsAllClientsManager
 from kcloader.tools import read_from_json, find_in_list
 from ...helper import TestBed, remove_field_id, TestCaseBase
 
