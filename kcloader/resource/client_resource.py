@@ -111,7 +111,7 @@ class SingleClientResource(SingleResource):
         state_clients_roles = self.client__scope_mappings__allclients_manager.publish()
         return any([state_realm_roles, state_clients_roles])
 
-    def publish_self(self):
+    def publish_self(self, *, include_composite=False):
         """
         If client has configured "defaultRoles", then client role with such name will be
         magically created by server. All other role attributes will be wrong.
@@ -147,35 +147,46 @@ class SingleClientResource(SingleResource):
             client_id=client["id"], client_filepath=self.resource_path,
         )
 
-        # Here we need to compute requested_doc - we cannot just use part of json file.
-        # TODO - kcfethcer should output directly readable json file(s).
-        logger.debug(f"client {self.resource_path}")
-        client_dirname = os.path.dirname(self.resource_path)
-        scope_mappings_filepath = os.path.join(client_dirname, "scope-mappings.json")
-        scope_mappings_doc = read_from_json(scope_mappings_filepath)
-        requested_doc_realm = [rr["name"] for rr in scope_mappings_doc if rr["clientRole"] is False]
-        requested_doc_allclients = {}
-        for rr in scope_mappings_doc:
-            if rr["clientRole"] is False:
-                continue
-            if rr["containerName"] not in requested_doc_allclients:
-                requested_doc_allclients[rr["containerName"]] = []
-            requested_doc_allclients[rr["containerName"]].append(rr["name"])
-        self.client__scope_mappings__realm_manager = ClientScopeMappingsRealmManager(
-            self.keycloak_api, self.realm_name, self.datadir,
-            client_id=client["id"], requested_doc=requested_doc_realm,
-        )
-        self.client__scope_mappings__allclients_manager = ClientScopeMappingsAllClientsManager(
-            self.keycloak_api, self.realm_name, self.datadir,
-            client_id=client["id"], requested_doc=requested_doc_allclients,
-        )
+        if include_composite:
+            # Only in second pass all clients are available, and we can create
+            # ClientScopeMappingsRealmManager/ClientScopeMappingsAllClientsManager instances.
+
+            # Here we need to compute requested_doc - we cannot just use part of json file.
+            # TODO - kcfethcer should output directly readable json file(s).
+            logger.debug(f"client {self.resource_path}")
+            client_dirname = os.path.dirname(self.resource_path)
+            scope_mappings_filepath = os.path.join(client_dirname, "scope-mappings.json")
+            scope_mappings_doc = read_from_json(scope_mappings_filepath)
+            requested_doc_realm = [rr["name"] for rr in scope_mappings_doc if rr["clientRole"] is False]
+            requested_doc_allclients = {}
+            for rr in scope_mappings_doc:
+                if rr["clientRole"] is False:
+                    continue
+                if rr["containerName"] not in requested_doc_allclients:
+                    requested_doc_allclients[rr["containerName"]] = []
+                requested_doc_allclients[rr["containerName"]].append(rr["name"])
+            self.client__scope_mappings__realm_manager = ClientScopeMappingsRealmManager(
+                self.keycloak_api, self.realm_name, self.datadir,
+                client_id=client["id"], requested_doc=requested_doc_realm,
+            )
+            self.client__scope_mappings__allclients_manager = ClientScopeMappingsAllClientsManager(
+                self.keycloak_api, self.realm_name, self.datadir,
+                client_id=client["id"], requested_doc=requested_doc_allclients,
+            )
 
         return state
 
     def publish(self, *, include_composite=True):
-        state = self.publish_self()
+        state = self.publish_self(include_composite=include_composite)
         state_roles = self.client_role_manager.publish(include_composite=include_composite)
-        state_scope_mappings = self.publish_scope_mappings()
+        if include_composite:
+            # Other clients might not be yet created in first pass (new server bootstrap).
+            # Setup scope_mappings in second pass.
+            # Assigned role can be removed even if it is assigned to some client scope-mappings -
+            # we do not need two-stage publish.
+            state_scope_mappings = self.publish_scope_mappings()
+        else:
+            state_scope_mappings = False
         setup_new_links = include_composite
         state_default_client_scopes = self.client_default_client_scope_manager.publish(setup_new_links=setup_new_links)
         state_optional_client_scopes = self.client_optional_client_scope_manager.publish(setup_new_links=setup_new_links)
