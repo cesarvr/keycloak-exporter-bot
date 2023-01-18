@@ -25,7 +25,9 @@ class TestingHelperAlgorithms(unittest.TestCase):
         Clients = os.path.join(SAMPLE_PAYLOADS_PATH, 'clients/')
         success = [
             os.path.join(SAMPLE_PAYLOADS_PATH, 'clients/client-1/marvel.json'),
+            os.path.join(SAMPLE_PAYLOADS_PATH, 'clients/client-1/scope-mappings.json'),
             os.path.join(SAMPLE_PAYLOADS_PATH, 'clients/client-0/dc.json'),
+            os.path.join(SAMPLE_PAYLOADS_PATH, 'clients/client-0/scope-mappings.json'),
         ]
         res = bfs_folder(Clients)
         self.assertListEqual(sorted(success),sorted(res))

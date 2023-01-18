@@ -304,7 +304,7 @@ class TestClientResource(TestCaseBase):
 
         # publish same data again - idempotence
         creation_state = client0_resource.publish(include_composite=False)
-        self.assertTrue(creation_state)  # TODO - should be False if defaultClientScopes would contain ci0-client-scope
+        self.assertFalse(creation_state)
         # check content is not modified
         clients_all = clients_api.all()
         self.assertEqual(len(clients_all), default_client_count + 1)
