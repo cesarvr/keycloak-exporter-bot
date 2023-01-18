@@ -1,5 +1,7 @@
 # import json
 import logging
+import sys
+
 # import os
 # from copy import copy
 # from glob import glob
@@ -94,50 +96,12 @@ class ClientScopeMappingsRealmManager(BaseScopeMappingsRealmManager):
 
 
 class BaseScopeMappingsAllClientsManager:
-    def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
-                 *,
-                 requested_doc: dict,  # dict read from json files, only part relevant clients mappings
-                 client_scope_id: int,
-                 ):
-        assert isinstance(requested_doc, dict)
-        # self._client_scope_id = client_scope_id
-        # self._cssm_clients_doc = requested_doc
-
-        # create a manager for each client
-        clients_api = keycloak_api.build("clients", realm)
-        clients = clients_api.all()
-        self.resources = [
-            ClientScopeScopeMappingsClientManager(
-                keycloak_api,
-                realm,
-                datadir,
-                requested_doc=requested_doc.get(client["clientId"], []),
-                client_scope_id=client_scope_id,
-                src_client_id=client["id"],
-                )
-            for client in clients
-        ]
-
-        # We assume all clients were already created.
-        # If there is in json file some unknown clientId - it will be ignored.
-        # Write this to logfile.
-        clientIds = [client["clientId"] for client in clients]
-        for doc_clientId in requested_doc:
-            if doc_clientId not in clientIds:
-                msg = f"clientID={doc_clientId} not present on server"
-                logger.error(msg)
-                raise Exception(msg)
-
     def publish(self):
         status_created = [
             resource.publish()
             for resource in self.resources
         ]
         return any(status_created)
-
-    def _difference_ids(self):
-        # Not needed for this class.
-        raise NotImplementedError()
 
 
 class ClientScopeScopeMappingsAllClientsManager(BaseScopeMappingsAllClientsManager):
@@ -146,11 +110,65 @@ class ClientScopeScopeMappingsAllClientsManager(BaseScopeMappingsAllClientsManag
                  requested_doc: dict,  # dict read from json files, only part relevant clients mappings
                  client_scope_id: int,
                  ):
-        super().__init__(keycloak_api, realm, datadir, requested_doc=requested_doc, client_scope_id=client_scope_id)
+        # super().__init__(keycloak_api, realm, datadir)  #, requested_doc=requested_doc, client_scope_id=client_scope_id)
+        assert isinstance(requested_doc, dict)
+
+        # Create a manager for each client.
+        clients_api = keycloak_api.build("clients", realm)
+        clients = clients_api.all()
+        self.resources = [
+            ClientScopeScopeMappingsClientManager(
+                keycloak_api,
+                realm,
+                datadir,
+                requested_doc=requested_doc.get(src_client["clientId"], []),
+                client_scope_id=client_scope_id,
+                src_client_id=src_client["id"],
+                )
+            for src_client in clients
+        ]
+        # List of clients is retrieved from server (not from json files) -
+        # code assumes all clients were already created on server!
+        # If there is in json file some unknown clientId - report to log, and exit with error.
+        clientIds = [client["clientId"] for client in clients]
+        for doc_clientId in requested_doc:
+            if doc_clientId not in clientIds:
+                msg = f"clientID={doc_clientId} not present on server"
+                logger.error(msg)
+                raise Exception(msg)
 
 
-# class ClientScopeMappingsAllClientsManager(BaseClientScopeScopeMappingsAllClientsManager):
-#---------------------------
+class ClientScopeMappingsAllClientsManager(BaseScopeMappingsAllClientsManager):
+    def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
+                 *,
+                 requested_doc: dict,  # dict read from json files, only part relevant clients mappings
+                 client_id: int,
+                 ):
+        assert isinstance(requested_doc, dict)
+
+        # Create a manager for each client.
+        clients_api = keycloak_api.build("clients", realm)
+        clients = clients_api.all()
+        self.resources = [
+            ClientScopeMappingsClientManager(
+                keycloak_api,
+                realm,
+                datadir,
+                requested_doc=requested_doc.get(src_client["clientId"], []),
+                dest_client_id=client_id,
+                src_client_id=src_client["id"],
+                )
+            for src_client in clients
+        ]
+        # List of clients is retrieved from server (not from json files) -
+        # code assumes all clients were already created on server!
+        # If there is in json file some unknown clientId - report to log, and exit with error.
+        clientIds = [client["clientId"] for client in clients]
+        for doc_clientId in requested_doc:
+            if doc_clientId not in clientIds:
+                msg = f"clientID={doc_clientId} not present on server"
+                logger.error(msg)
+                raise Exception(msg)
 
 
 class BaseScopeMappingsClientManager(BaseManager):
@@ -182,6 +200,14 @@ class BaseScopeMappingsClientManager(BaseManager):
 
         client_roles = self._src_client_roles_api.all()
         create_roles = [rr for rr in client_roles if rr["name"] in create_ids]
+        if len(create_roles) != len(create_ids):
+            to_be_created_ids = [rr["name"] for rr in create_roles]
+            missing_role_ids = set(create_ids) - set(to_be_created_ids)
+            ## extra_msg = f" GET URL: " + str(self.resource_api.targets.targets["read"])
+            extra_msg = f" GET URL: " + str(self._src_client_roles_api.targets.targets["read"])
+            logger.error(f"scope-mappings setup cannot assign roles {missing_role_ids} - they are missing." + extra_msg)
+            # likely this would work on second pass. But make problem obvious.
+            sys.exit(1)
         status_created = False
         if create_roles:
             self.resource_api.create(create_roles).isOk()
