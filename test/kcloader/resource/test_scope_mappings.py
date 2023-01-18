@@ -5,9 +5,9 @@ import unittest
 from glob import glob
 from copy import copy
 
-from kcloader.resource import ClientScopeResource, ClientScopeScopeMappingsRealmManager, \
+from kcloader.resource import ClientScopeResource, RealmClientScopeScopeMappingsRealmManager, \
     ClientScopeProtocolMapperResource, ClientScopeProtocolMapperManager, \
-    ClientScopeScopeMappingsClientManager, ClientScopeScopeMappingsAllClientsManager, \
+    RealmClientScopeScopeMappingsClientManager, RealmClientScopeScopeMappingsAllClientsManager, \
     ClientScopeManager
 from kcloader.tools import read_from_json, find_in_list
 from ...helper import TestBed, remove_field_id, TestCaseBase
@@ -15,7 +15,7 @@ from ...helper import TestBed, remove_field_id, TestCaseBase
 logger = logging.getLogger(__name__)
 
 
-class TestClientScopeScopeMappingsRealmManager(TestCaseBase):
+class TestRealmClientScopeScopeMappingsRealmManager(TestCaseBase):
     def setUp(self):
         super().setUp()
         testbed = self.testbed
@@ -87,7 +87,7 @@ class TestClientScopeScopeMappingsRealmManager(TestCaseBase):
         # create/update
         # self.client_scope_resource.body["scopeMappings"]
         # client_scope_scope_mappings == cssm
-        cssm_realm_manager = ClientScopeScopeMappingsRealmManager(
+        cssm_realm_manager = RealmClientScopeScopeMappingsRealmManager(
             self.testbed.kc,
             self.testbed.REALM,
             self.testbed.DATADIR,
@@ -116,7 +116,7 @@ class TestClientScopeScopeMappingsRealmManager(TestCaseBase):
         _check_state()
 
 
-class TestClientScopeScopeMappingsClientManager(TestCaseBase):
+class TestRealmClientScopeScopeMappingsClientManager(TestCaseBase):
     def setUp(self):
         super().setUp()
         testbed = self.testbed
@@ -159,7 +159,7 @@ class TestClientScopeScopeMappingsClientManager(TestCaseBase):
         cssm_client_api = self.cssm_client_api
         requested_client_role_names = [self.client_role_name]
         expected_client_roles = [self.client_role]
-        cssm_client_manager = ClientScopeScopeMappingsClientManager(
+        cssm_client_manager = RealmClientScopeScopeMappingsClientManager(
             self.testbed.kc,
             self.testbed.REALM,
             self.testbed.DATADIR,
@@ -200,7 +200,7 @@ class TestClientScopeScopeMappingsClientManager(TestCaseBase):
         _check_state()
 
 
-class TestClientScopeScopeMappingsAllClientsManager(TestCaseBase):
+class TestRealmClientScopeScopeMappingsAllClientsManager(TestCaseBase):
     def setUp(self):
         super().setUp()
         testbed = self.testbed
@@ -266,7 +266,7 @@ class TestClientScopeScopeMappingsAllClientsManager(TestCaseBase):
                 }
             }
         }
-        cssm_clients_manager = ClientScopeScopeMappingsAllClientsManager(
+        cssm_clients_manager = RealmClientScopeScopeMappingsAllClientsManager(
             self.testbed.kc,
             self.testbed.REALM,
             self.testbed.DATADIR,

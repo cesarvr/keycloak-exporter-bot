@@ -14,7 +14,7 @@ from kcloader.resource.base_manager import BaseManager
 logger = logging.getLogger(__name__)
 
 
-class ClientScopeScopeMappingsRealmManager(BaseManager):
+class RealmClientScopeScopeMappingsRealmManager(BaseManager):
     _resource_name = "client-scopes/{client_scope_id}/scope-mappings/realm"
     _resource_id = "name"
     _resource_delete_id = "id"
@@ -59,7 +59,7 @@ class ClientScopeScopeMappingsRealmManager(BaseManager):
         return file_ids
 
 
-class ClientScopeScopeMappingsAllClientsManager:
+class RealmClientScopeScopeMappingsAllClientsManager:
     def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
                  *,
                  requested_doc: dict,  # dict read from json files, only part relevant clients mappings
@@ -73,7 +73,7 @@ class ClientScopeScopeMappingsAllClientsManager:
         clients_api = keycloak_api.build("clients", realm)
         clients = clients_api.all()
         self.resources = [
-            ClientScopeScopeMappingsClientManager(
+            RealmClientScopeScopeMappingsClientManager(
                 keycloak_api,
                 realm,
                 datadir,
@@ -106,7 +106,7 @@ class ClientScopeScopeMappingsAllClientsManager:
         raise NotImplementedError()
 
 
-class ClientScopeScopeMappingsClientManager(BaseManager):
+class RealmClientScopeScopeMappingsClientManager(BaseManager):
     _resource_name = "client-scopes/{client_scope_id}/scope-mappings/clients/{client_id}"
     _resource_id = "name"
     _resource_delete_id = "id"
