@@ -14,7 +14,8 @@ from kcloader.resource import ResourcePublisher, ManyResources, SingleResource, 
     SingleClientResource, SingleCustomAuthenticationResource, ClientScopeResource, \
     IdentityProviderResource, IdentityProviderMapperResource, UserFederationResource, \
     RealmResource, ClientScopeManager, \
-    DefaultDefaultClientScopeManager, DefaultOptionalClientScopeManager
+    DefaultDefaultClientScopeManager, DefaultOptionalClientScopeManager, \
+    UserFederationManager
 from kcloader.resource import IdentityProviderManager, ClientManager, RealmRoleManager
 from kcloader.tools import read_from_json
 
@@ -180,6 +181,7 @@ def main(args):
             }).isOk()
 
     idp_manager = IdentityProviderManager(keycloak_api, realm_name, datadir)
+    uf_manager = UserFederationManager(keycloak_api, realm_name, datadir)
     realm_role_manager = RealmRoleManager(keycloak_api, realm_name, datadir)
     client_manager = ClientManager(keycloak_api, realm_name, datadir)
     client_scope_manager = ClientScopeManager(keycloak_api, realm_name, datadir)
@@ -187,6 +189,7 @@ def main(args):
     default_optional_client_scope_manager = DefaultOptionalClientScopeManager(keycloak_api, realm_name, datadir)
 
     creation_state = idp_manager.publish()
+    creation_state = uf_manager.publish()
     creation_state = realm_role_manager.publish(include_composite=False)
     creation_state = client_manager.publish(include_composite=False)
     # new client_scopes are not yet created, we need setup_new_links=False.
