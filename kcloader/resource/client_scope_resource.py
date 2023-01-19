@@ -137,19 +137,22 @@ class ClientScopeManager(BaseManager):
         return object_docs
 
 
-class ClientScopeProtocolMapperResource(SingleResource):
+# BaseProtocolMapperResource
+class BaseProtocolMapperResource(SingleResource):
+    # _resource_name = "client-scopes/{client_scope_id}/protocol-mappers/models"
+
     def __init__(
             self,
             resource: dict,
             *,
             body: dict,
-            client_scope_id,
-            client_scopes_api,
     ):
-        protocol_mapper_api = client_scopes_api.protocol_mapper_api(client_scope_id=client_scope_id)
+        self.keycloak_api = resource["keycloak_api"]
+        self.realm_name = resource['realm']
+        protocol_mapper_api = self._get_resource_api()
         super().__init__(
             {
-                "name": "client-scopes/{client_scope_id}/protocol-mappers/models",
+                "name": self._resource_name,
                 "id": "name",
                 **resource,
             },
@@ -175,6 +178,25 @@ class ClientScopeProtocolMapperResource(SingleResource):
         body = copy(self.body)
         body["id"] = obj["id"]
         return body
+
+
+class ClientScopeProtocolMapperResource(BaseProtocolMapperResource):
+    _resource_name = "client-scopes/{client_scope_id}/protocol-mappers/models"
+
+    def __init__(
+            self,
+            resource: dict,
+            *,
+            body: dict,
+            client_scope_id,
+    ):
+        self._client_scope_id = client_scope_id
+        super().__init__(resource, body=body)
+
+    def _get_resource_api(self):
+        client_scopes_api = self.keycloak_api.build("client-scopes", self.realm_name)
+        protocol_mapper_api = client_scopes_api.protocol_mapper_api(client_scope_id=self._client_scope_id)
+        return protocol_mapper_api
 
 
 class ClientScopeProtocolMapperManager(BaseManager):
@@ -204,7 +226,6 @@ class ClientScopeProtocolMapperManager(BaseManager):
                 },
                 body=pm_doc,
                 client_scope_id=client_scope_id,
-                client_scopes_api=client_scopes_api,
             )
             for pm_doc in self._protocol_mapper_docs
         ]

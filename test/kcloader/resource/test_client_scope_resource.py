@@ -447,7 +447,6 @@ class TestClientScopeProtocolMapperResource(TestCaseBase):
             },
             body=protocol_mapper_docs[0],
             client_scope_id=client_scope_a["id"],
-            client_scopes_api=client_scopes_api,
         )
 
         # publish data - 1st time, protocol mapper was already created when client scope was created
