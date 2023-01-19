@@ -11,6 +11,7 @@ from kcloader.resource.default_client_scope_resource import ClientOptionalClient
 from kcloader.resource.role_resource import find_sub_role, BaseRoleManager, BaseRoleResource
 from kcloader.tools import lookup_child_resource, read_from_json, find_in_list, get_path
 from kcloader.resource.scope_mappings import ClientScopeMappingsAllClientsManager, ClientScopeMappingsRealmManager
+from kcloader.resource.protocol_mapper import ClientProtocolMapperManager
 
 logger = logging.getLogger(__name__)
 
@@ -105,11 +106,16 @@ class SingleClientResource(SingleResource):
         self.client_optional_client_scope_manager = None
         self.client__scope_mappings__allclients_manager = None
         self.client__scope_mappings__realm_manager = None
+        self.client__protocol_mapper__manager = None
 
     def publish_scope_mappings(self):
         state_realm_roles = self.client__scope_mappings__realm_manager.publish()
         state_clients_roles = self.client__scope_mappings__allclients_manager.publish()
         return any([state_realm_roles, state_clients_roles])
+
+    def publish_protocol_mappers(self):
+        state_protocol_mapper = self.client__protocol_mapper__manager.publish()
+        return state_protocol_mapper
 
     def publish_self(self, *, include_composite=False):
         """
@@ -146,6 +152,10 @@ class SingleClientResource(SingleResource):
             self.keycloak_api, self.realm_name, self.datadir,
             client_id=client["id"], client_filepath=self.resource_path,
         )
+        self.client__protocol_mapper__manager = ClientProtocolMapperManager(
+            self.keycloak_api, self.realm_name, self.datadir,
+            client_id=client["id"], requested_doc=self.body.get("protocolMappers", []),
+        )
 
         if include_composite:
             # Only in second pass all clients are available, and we can create
@@ -177,7 +187,7 @@ class SingleClientResource(SingleResource):
         return state
 
     def publish(self, *, include_composite=True):
-        state = self.publish_self(include_composite=include_composite)
+        state_self = self.publish_self(include_composite=include_composite)
         state_roles = self.client_role_manager.publish(include_composite=include_composite)
         if include_composite:
             # Other clients might not be yet created in first pass (new server bootstrap).
@@ -190,7 +200,15 @@ class SingleClientResource(SingleResource):
         setup_new_links = include_composite
         state_default_client_scopes = self.client_default_client_scope_manager.publish(setup_new_links=setup_new_links)
         state_optional_client_scopes = self.client_optional_client_scope_manager.publish(setup_new_links=setup_new_links)
-        return any([state, state_roles, state_scope_mappings, state_default_client_scopes, state_optional_client_scopes])
+        state_protocol_mappers = self.publish_protocol_mappers()
+        return any([
+            state_self,
+            state_roles,
+            state_scope_mappings,
+            state_default_client_scopes,
+            state_optional_client_scopes,
+            state_protocol_mappers,
+        ])
 
     def is_equal(self, obj):
         """
