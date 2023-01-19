@@ -124,11 +124,6 @@ class BaseProtocolMapperManager(BaseManager):
     def _object_docs(self):
         return self._requested_doc
 
-    def _get_resource_api(self):
-        client_scopes_api = self.keycloak_api.build("client-scopes", self.realm)
-        protocol_mapper_api = client_scopes_api.protocol_mapper_api(client_scope_id=self._client_scope_id)
-        return protocol_mapper_api
-
 
 class ClientScopeProtocolMapperManager(BaseProtocolMapperManager):
     # _resource_name = "/{realm}/client-scopes/{id}/protocol-mappers/models"
@@ -159,6 +154,41 @@ class ClientScopeProtocolMapperManager(BaseProtocolMapperManager):
             for pm_doc in self._requested_doc
         ]
 
+    def _get_resource_api(self):
+        client_scopes_api = self.keycloak_api.build("client-scopes", self.realm)
+        protocol_mapper_api = client_scopes_api.protocol_mapper_api(client_scope_id=self._client_scope_id)
+        return protocol_mapper_api
+
 
 class ClientProtocolMapperManager(BaseProtocolMapperManager):
-    pass
+    # _resource_name = "/{realm}/clients/{id}/protocol-mappers/models"
+    def __init__(
+            self,
+            keycloak_api: kcapi.sso.Keycloak,
+            realm: str,
+            datadir: str,
+            *,
+            requested_doc: dict,
+            client_id: str,
+    ):
+        self._client_id = client_id
+        super().__init__(keycloak_api, realm, datadir, requested_doc=requested_doc)
+
+        self.resources = [
+            ClientProtocolMapperResource(
+                {
+                    'path': "client_scope_filepath--todo",
+                    'keycloak_api': keycloak_api,
+                    'realm': realm,
+                    'datadir': datadir,
+                },
+                body=pm_doc,
+                client_id=client_id,
+            )
+            for pm_doc in self._requested_doc
+        ]
+
+    def _get_resource_api(self):
+        clients_api = self.keycloak_api.build("clients", self.realm)
+        protocol_mapper_api = KeycloakCRUD.get_child(clients_api, self._client_id, "protocol-mappers/models")
+        return protocol_mapper_api

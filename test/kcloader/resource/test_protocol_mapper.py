@@ -378,7 +378,7 @@ class TestClientProtocolMapperManager(TestCaseBase):
         def _check_state():
             protocol_mappers_b = client_protocol_mappers_api.all()
             protocol_mappers_b = sorted(protocol_mappers_b, key=lambda obj: obj["name"])
-            self.assertEqual(1, len(protocol_mappers_b))
+            self.assertEqual(2, len(protocol_mappers_b))
             self.assertEqual(protocol_mappers_a, protocol_mappers_b)
 
             for ii in range(len(protocol_mappers_a)):
@@ -390,7 +390,6 @@ class TestClientProtocolMapperManager(TestCaseBase):
 
             # -------------------------------------
 
-        return
         self.maxDiff = None
         # desired objects
         protocol_mappers_doc = [
@@ -444,13 +443,10 @@ class TestClientProtocolMapperManager(TestCaseBase):
         self.assertEqual([], client_protocol_mappers_api.all())
 
         manager = ClientProtocolMapperManager(
-            {
-                'path': "self.client_filepath---but-is-ignored",
-                'keycloak_api': self.testbed.kc,
-                'realm': self.testbed.REALM,
-                'datadir': self.testbed.DATADIR,
-            },
-            body=protocol_mappers_doc,
+            self.testbed.kc,
+            self.testbed.REALM,
+            self.testbed.DATADIR,
+            requested_doc=protocol_mappers_doc,
             client_id=self.client["id"],
         )
 
@@ -458,6 +454,7 @@ class TestClientProtocolMapperManager(TestCaseBase):
         creation_state = manager.publish()
         self.assertTrue(creation_state)
         protocol_mappers_a = client_protocol_mappers_api.all()
+        protocol_mappers_a = sorted(protocol_mappers_a, key=lambda obj: obj["name"])
         protocol_mapper_0_id = find_in_list(protocol_mappers_a, name=protocol_mappers_doc[0]["name"])["id"]
         _check_state()
         # publish data - 2nd time, idempotence
