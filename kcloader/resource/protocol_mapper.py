@@ -97,39 +97,32 @@ class ClientProtocolMapperResource(BaseProtocolMapperResource):
         return protocol_mapper_api
 
 
-class ClientScopeProtocolMapperManager(BaseManager):
+class BaseProtocolMapperManager(BaseManager):
     # _resource_name = "/{realm}/client-scopes/{id}/protocol-mappers/models"
+    # _resource_name = "/{realm}/clients/{id}/protocol-mappers/models"
     _resource_id = "name"
     _resource_delete_id = "id"
     _resource_id_blacklist = []
 
-    def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
-                 *, client_scope_name: str, client_scope_id: str, client_scope_filepath: str):
-        self._client_scope_name = client_scope_name
-        self._client_scope_id = client_scope_id
-        self._client_scope_filepath = client_scope_filepath
+    def __init__(
+            self,
+            keycloak_api: kcapi.sso.Keycloak,
+            realm: str,
+            datadir: str,
+            *,
+            requested_doc: dict,
+    ):
+        assert isinstance(requested_doc, list)
+        if requested_doc:
+            assert isinstance(requested_doc[0], dict)
+            assert "name" in requested_doc[0]
+            assert "config" in requested_doc[0]
+        self._requested_doc = requested_doc
         super().__init__(keycloak_api, realm, datadir)
-
-        client_scopes_api = keycloak_api.build("client-scopes", realm)
-        client_scope_doc = read_from_json(client_scope_filepath)
-        self._protocol_mapper_docs = client_scope_doc.get("protocolMappers", [])
-
-        self.resources = [
-            ClientScopeProtocolMapperResource(
-                {
-                    'path': client_scope_filepath,
-                    'keycloak_api': keycloak_api,
-                    'realm': realm,
-                    'datadir': datadir,
-                },
-                body=pm_doc,
-                client_scope_id=client_scope_id,
-            )
-            for pm_doc in self._protocol_mapper_docs
-        ]
+        self.resources = []
 
     def _object_docs(self):
-        return self._protocol_mapper_docs
+        return self._requested_doc
 
     def _get_resource_api(self):
         client_scopes_api = self.keycloak_api.build("client-scopes", self.realm)
@@ -137,5 +130,35 @@ class ClientScopeProtocolMapperManager(BaseManager):
         return protocol_mapper_api
 
 
-class ClientProtocolMapperManager(BaseManager):
+class ClientScopeProtocolMapperManager(BaseProtocolMapperManager):
+    # _resource_name = "/{realm}/client-scopes/{id}/protocol-mappers/models"
+
+    def __init__(
+            self,
+            keycloak_api: kcapi.sso.Keycloak,
+            realm: str,
+            datadir: str,
+            *,
+            requested_doc: dict,
+            client_scope_id: str,
+    ):
+        self._client_scope_id = client_scope_id
+        super().__init__(keycloak_api, realm, datadir, requested_doc=requested_doc)
+
+        self.resources = [
+            ClientScopeProtocolMapperResource(
+                {
+                    'path': "client_scope_filepath--todo",
+                    'keycloak_api': keycloak_api,
+                    'realm': realm,
+                    'datadir': datadir,
+                },
+                body=pm_doc,
+                client_scope_id=client_scope_id,
+            )
+            for pm_doc in self._requested_doc
+        ]
+
+
+class ClientProtocolMapperManager(BaseProtocolMapperManager):
     pass

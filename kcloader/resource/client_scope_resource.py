@@ -57,9 +57,8 @@ class ClientScopeResource(SingleResource):
             self.keycloak_api,
             self.realm_name,
             self.datadir,
-            client_scope_name=client_scope_name,
+            requested_doc=self.body.get("protocolMappers", []),
             client_scope_id=client_scope["id"],
-            client_scope_filepath=self.resource_path,
         )
 
         return creation_state

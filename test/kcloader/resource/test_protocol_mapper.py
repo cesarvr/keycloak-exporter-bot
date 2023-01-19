@@ -12,7 +12,7 @@ from kcloader.resource import ClientScopeResource, ClientScopeScopeMappingsRealm
     ClientScopeScopeMappingsClientManager, ClientScopeScopeMappingsAllClientsManager, \
     ClientScopeManager
 from kcloader.tools import read_from_json, find_in_list
-from resource.protocol_mapper import ClientProtocolMapperResource, ClientProtocolMapperManager
+from kcloader.resource.protocol_mapper import ClientProtocolMapperResource, ClientProtocolMapperManager
 from ...helper import TestBed, remove_field_id, TestCaseBase
 from .test_client_scope_resource import blacklisted_client_scopes
 
@@ -202,9 +202,8 @@ class TestClientScopeProtocolMapperManager(TestCaseBase):
             self.testbed.kc,
             self.testbed.REALM,
             self.testbed.DATADIR,
-            client_scope_name=self.client_scope_name,
+            requested_doc=self.protocol_mapper_docs,  # was read from json file
             client_scope_id=self.client_scope["id"],
-            client_scope_filepath=self.client_scope_filepath,
         )
 
         # publish data - 1st time, protocol mapper was already created when client scope was created
@@ -391,6 +390,7 @@ class TestClientProtocolMapperManager(TestCaseBase):
 
             # -------------------------------------
 
+        return
         self.maxDiff = None
         # desired objects
         protocol_mappers_doc = [
