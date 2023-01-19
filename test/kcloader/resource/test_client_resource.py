@@ -4,6 +4,8 @@ import unittest
 from glob import glob
 from copy import copy, deepcopy
 
+from kcapi.rest.crud import KeycloakCRUD
+
 from kcloader.resource import SingleClientResource, \
     ClientManager, ClientRoleManager, ClientRoleResource
 from kcloader.tools import read_from_json, find_in_list
@@ -92,6 +94,7 @@ class TestClientResource(TestCaseBase):
         assert len(self.clients_api.all()) == 6  # 6 default clients
 
     def create_needed_objects(self):
+        clients_api = self.clients_api
         realm_roles_api = self.realm_roles_api
         client_scopes_api = self.client_scopes_api
         # create required client-scope
@@ -123,6 +126,20 @@ class TestClientResource(TestCaseBase):
         self.assertEqual(2 + 2, len(realm_roles_api.all()))
 
         # client role ci0-client0-role0 will be auto-created on client POST
+
+        # ci0-client-0 also uses role ci0-client1-role0 from ci0-client-1
+        clients_api.create(dict(
+            clientId="ci0-client-1",
+            description="ci0-client-1---CI-INJECTED",
+            protocol="openid-connect",
+        )).isOk()
+        client1 = clients_api.findFirstByKV("clientId", "ci0-client-1")
+        client1_query = dict(key="id", value=client1["id"])
+        client1_roles_api = clients_api.roles(client1_query)
+        client1_roles_api.create(dict(
+            name="ci0-client1-role0",
+            description="ci0-client1-role0---CI-INJECTED",
+        )).isOk()
 
     @staticmethod
     def _remove_id(obj):
@@ -180,7 +197,102 @@ class TestClientResource(TestCaseBase):
         _check_state()
 
     def test_publish_client_scopes(self):
-        return
+        def _check_state():
+            clients = clients_api.all()
+            self.assertEqual(default_client_count + 2, len(clients))
+            client_x = find_in_list(clients, id=client_a["id"])
+            # check objects are not recreated without reason.
+            self.assertEqual(client_a["id"], client_x["id"])
+            self.assertEqual(client_a, client_x)
+            this_client_default_client_scopes_b = this_client_default_client_scopes_api.all()
+            this_client_default_client_scopes_b = sorted(this_client_default_client_scopes_b, key=lambda obj: obj["name"])
+            self.assertEqual(this_client_default_client_scopes_a, this_client_default_client_scopes_b)
+            this_client_optional_client_scopes_b = this_client_optional_client_scopes_api.all()
+            this_client_optional_client_scopes_b = sorted(this_client_optional_client_scopes_b, key=lambda obj: obj["name"])
+            self.assertEqual(this_client_optional_client_scopes_a, this_client_optional_client_scopes_b)
+
+        self.maxDiff = None
+        default_client_count = 6  # newly created realm has 6 clients
+        client0_resource = self.client0_resource
+        clients_api = self.clients_api
+        client0_clientId = self.client0_clientId
+        realm_roles_api = self.realm_roles_api
+        client_scopes_api = self.client_scopes_api
+
+        self.create_needed_objects()
+        client_scope_0_name = "ci0-client-scope"
+        client_scope_0 = client_scopes_api.findFirstByKV("name", client_scope_0_name)
+        client_scope_extra_name = "ci0-client-scope-EXTRA"
+        client_scope_extra = client_scopes_api.findFirstByKV("name", client_scope_extra_name)
+
+        # initial state
+        clients_all = clients_api.all()
+        self.assertEqual(default_client_count + 1, len(clients_all))
+
+        # create client
+        creation_state = client0_resource.publish(include_composite=False)
+        self.assertTrue(creation_state)
+        # client - client-scope links are setup only if include_composite=True
+        creation_state = client0_resource.publish(include_composite=True)
+        self.assertTrue(creation_state)
+        client_a = clients_api.findFirstByKV("clientId", client0_clientId)
+        this_client_default_client_scopes_api = KeycloakCRUD.get_child(clients_api, client_a["id"], "default-client-scopes")
+        this_client_optional_client_scopes_api = KeycloakCRUD.get_child(clients_api, client_a["id"], "optional-client-scopes")
+        this_client_default_client_scopes_a = this_client_default_client_scopes_api.all()
+        this_client_default_client_scopes_a = sorted(this_client_default_client_scopes_a, key=lambda obj: obj["name"])
+        this_client_optional_client_scopes_a = this_client_optional_client_scopes_api.all()
+        this_client_optional_client_scopes_a = sorted(this_client_optional_client_scopes_a, key=lambda obj: obj["name"])
+        _check_state()
+        # publish same data again
+        creation_state = client0_resource.publish(include_composite=True)
+        self.assertFalse(creation_state)
+        _check_state()
+        creation_state = client0_resource.publish(include_composite=True)
+        self.assertFalse(creation_state)  # 3rd publish is idempotent
+        _check_state()
+
+        # modify something - optional-client-scopes, remove one expected client_scope, add one extra client_scope
+        self.assertEqual(5, len(this_client_default_client_scopes_api.all()))
+        this_client_default_client_scopes_api.remove(client_scope_0["id"], None).isOk()
+        self.assertEqual(4, len(this_client_default_client_scopes_api.all()))
+        payload = dict(
+            realm=self.testbed.REALM,
+            client=client_a["id"],
+            clientScopeId=client_scope_extra["id"],
+        )
+        this_client_default_client_scopes_api.update(client_scope_extra["id"], payload).isOk()
+        self.assertEqual(5, len(this_client_default_client_scopes_api.all()))
+        #
+        # publish same data again
+        creation_state = client0_resource.publish(include_composite=True)
+        self.assertTrue(creation_state)
+        _check_state()
+        creation_state = client0_resource.publish(include_composite=True)
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify something - default-client-scopes, remove one expected client_scope, add one extra client_scope
+        client_scope_address = client_scopes_api.findFirstByKV("name", "address")
+        self.assertEqual(4, len(this_client_optional_client_scopes_api.all()))
+        this_client_optional_client_scopes_api.remove(client_scope_address["id"], None).isOk()
+        self.assertEqual(3, len(this_client_optional_client_scopes_api.all()))
+        payload = dict(
+            realm=self.testbed.REALM,
+            client=client_a["id"],
+            clientScopeId=client_scope_extra["id"],
+        )
+        this_client_optional_client_scopes_api.update(client_scope_extra["id"], payload).isOk()
+        self.assertEqual(4, len(this_client_optional_client_scopes_api.all()))
+        #
+        # publish same data again
+        creation_state = client0_resource.publish(include_composite=True)
+        self.assertTrue(creation_state)
+        _check_state()
+        creation_state = client0_resource.publish(include_composite=True)
+        self.assertFalse(creation_state)
+        _check_state()
+
+    def test_publish_protocol_mappers(self):
         def _check_state():
             clients = clients_api.all()
             self.assertEqual(len(clients), default_client_count + 1)
@@ -301,7 +413,6 @@ class TestClientResource(TestCaseBase):
             # TODO
             # TEMP - .publish_roles() is broken, and destroys defaultRoles
             expected_client0_b.pop("defaultRoles")
-
 
         # publish same data again - idempotence
         creation_state = client0_resource.publish(include_composite=False)
