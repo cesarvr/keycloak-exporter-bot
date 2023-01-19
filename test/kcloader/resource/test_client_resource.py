@@ -274,8 +274,8 @@ class TestClientResource(TestCaseBase):
         client_a = clients_api.findFirstByKV("clientId", client0_clientId)
         self.assertEqual(client_a, client_a | expected_client0_a)
         # check roles
-        roles_api = client0_resource.resource.resource_api.roles({'key': 'id', 'value': client_a["id"]})
-        roles_a = roles_api.all()
+        this_client_roles_api = client0_resource.resource.resource_api.roles({'key': 'id', 'value': client_a["id"]})
+        roles_a = this_client_roles_api.all()
         roles_a_names = sorted([role["name"] for role in roles_a])
         self.assertEqual(roles_a_names, expected_role_names)
 
@@ -294,13 +294,14 @@ class TestClientResource(TestCaseBase):
             self.assertEqual(client_a["id"], client_b["id"])
             self.assertEqual(client_b, client_b | expected_client0_b)
             # check roles
-            roles_b = roles_api.all()
+            roles_b = this_client_roles_api.all()
             roles_b_names = sorted([role["name"] for role in roles_a])
             self.assertEqual(roles_b_names, expected_role_names)
 
             # TODO
             # TEMP - .publish_roles() is broken, and destroys defaultRoles
             expected_client0_b.pop("defaultRoles")
+
 
         # publish same data again - idempotence
         creation_state = client0_resource.publish(include_composite=False)
@@ -313,7 +314,7 @@ class TestClientResource(TestCaseBase):
         self.assertEqual(client_a["id"], client_b["id"])
         self.assertEqual(client_b, client_b | expected_client0_b)
         # check roles
-        roles_b = roles_api.all()
+        roles_b = this_client_roles_api.all()
         roles_b_names = sorted([role["name"] for role in roles_a])
         self.assertEqual(roles_b_names, expected_role_names)
 
