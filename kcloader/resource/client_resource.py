@@ -200,14 +200,14 @@ class SingleClientResource(SingleResource):
         setup_new_links = include_composite
         state_default_client_scopes = self.client_default_client_scope_manager.publish(setup_new_links=setup_new_links)
         state_optional_client_scopes = self.client_optional_client_scope_manager.publish(setup_new_links=setup_new_links)
-        # state_protocol_mappers = self.publish_protocol_mappers()
+        state_protocol_mappers = self.publish_protocol_mappers()
         return any([
             state_self,
             state_roles,
             state_scope_mappings,
             state_default_client_scopes,
             state_optional_client_scopes,
-            # state_protocol_mappers,
+            state_protocol_mappers,
         ])
 
     def is_equal(self, obj):
