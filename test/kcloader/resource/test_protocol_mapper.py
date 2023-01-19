@@ -5,11 +5,14 @@ import unittest
 from glob import glob
 from copy import copy
 
+from kcapi.rest.crud import KeycloakCRUD
+
 from kcloader.resource import ClientScopeResource, ClientScopeScopeMappingsRealmManager, \
     ClientScopeProtocolMapperResource, ClientScopeProtocolMapperManager, \
     ClientScopeScopeMappingsClientManager, ClientScopeScopeMappingsAllClientsManager, \
     ClientScopeManager
 from kcloader.tools import read_from_json, find_in_list
+from resource.protocol_mapper import ClientProtocolMapperResource
 from ...helper import TestBed, remove_field_id, TestCaseBase
 from .test_client_scope_resource import blacklisted_client_scopes
 
@@ -147,14 +150,6 @@ class TestClientScopeProtocolMapperManager(TestCaseBase):
         client_scope_doc = read_from_json(self.client_scope_filepath)
         self.protocol_mapper_docs = client_scope_doc["protocolMappers"]
         self.client_scopes_api.create(client_scope_doc).isOk()
-        # client_scope_resource = ClientScopeResource({
-        #     'path': self.client_scope_filepath,
-        #     'keycloak_api': self.testbed.kc,
-        #     'realm': self.testbed.REALM,
-        #     'datadir': self.testbed.DATADIR,
-        # })
-        # creation_state = client_scope_resource.publish(include_scope_mappings=False)
-        # self.assertTrue(creation_state)
 
         client_scopes = self.client_scopes_api.all()
         self.client_scope = find_in_list(client_scopes, name=self.client_scope_name)
@@ -265,5 +260,130 @@ class TestClientScopeProtocolMapperManager(TestCaseBase):
         _check_state()
         # publish data - 2nd time, idempotence
         creation_state = cs_pm_manager.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
+
+class TestClientProtocolMapperResource(TestCaseBase):
+    def setUp(self):
+        super().setUp()
+        testbed = self.testbed
+
+        self.clients_api = testbed.kc.build("clients", testbed.REALM)
+        self.client_clientId = "ci0-client-0"
+        self.clients_api.create(dict(
+            clientId=self.client_clientId,
+            description=self.client_clientId + "---CI-INJECTED",
+            protocol="openid-connect",
+            fullScopeAllowed=False,  # this makes client:scopes configurable
+        )).isOk()
+        clients = self.clients_api.all()
+        self.client = find_in_list(clients, clientId=self.client_clientId)
+        self.client_protocol_mappers_api = KeycloakCRUD.get_child(self.clients_api, self.client["id"], "protocol-mappers/models")
+
+    def test_publish(self):
+        def _check_state():
+            protocol_mappers_b = client_protocol_mappers_api.all()
+            protocol_mappers_b = sorted(protocol_mappers_b, key=lambda obj: obj["name"])
+            self.assertEqual(1, len(protocol_mappers_b))
+            self.assertEqual(protocol_mappers_a, protocol_mappers_b)
+
+            for ii in range(len(protocol_mappers_a)):
+                self.assertEqual(protocol_mappers_a[ii]["id"], protocol_mappers_b[ii]["id"])
+            protocol_mappers_min = copy(protocol_mappers_b)
+            for pm in protocol_mappers_min:
+                pm.pop("id")
+            self.assertEqual([protocol_mapper_doc], protocol_mappers_min)
+
+            # -------------------------------------
+
+        self.maxDiff = None
+        protocol_mapper_doc = {
+            "config": {
+                "access.token.claim": "true",
+                "claim.name": "ci-claim-name",
+                "id.token.claim": "true",
+                "jsonType.label": "String",
+                "user.attribute": "ci-user-property-name",
+                "userinfo.token.claim": "true"
+            },
+            "consentRequired": False,
+            "name": "ci0-client0-mapper-1",
+            "protocol": "openid-connect",
+            "protocolMapper": "oidc-usermodel-property-mapper"
+        }
+
+        # protocol_mappers_doc = [
+        #     {
+        #         "config": {
+        #             "access.token.claim": "true",
+        #             "claim.name": "ci-claim-name",
+        #             "id.token.claim": "true",
+        #             "jsonType.label": "String",
+        #             "user.attribute": "ci-user-property-name",
+        #             "userinfo.token.claim": "true"
+        #         },
+        #         "consentRequired": False,
+        #         "name": "ci0-client0-mapper-1",
+        #         "protocol": "openid-connect",
+        #         "protocolMapper": "oidc-usermodel-property-mapper"
+        #     },
+        #     {
+        #         "config": {
+        #             "access.token.claim": "true",
+        #             "claim.name": "gender",
+        #             "id.token.claim": "true",
+        #             "jsonType.label": "String",
+        #             "user.attribute": "gender",
+        #             "userinfo.token.claim": "true"
+        #         },
+        #         "consentRequired": False,
+        #         "name": "gender",
+        #         "protocol": "openid-connect",
+        #         "protocolMapper": "oidc-usermodel-attribute-mapper"
+        #     }
+        # ]
+
+        # check initial state
+        client_protocol_mappers_api = self.client_protocol_mappers_api
+        self.assertEqual([], client_protocol_mappers_api.all())
+
+        client_protocol_mapper = ClientProtocolMapperResource(
+            {
+                'path': "self.client_filepath---but-is-ignored",
+                'keycloak_api': self.testbed.kc,
+                'realm': self.testbed.REALM,
+                'datadir': self.testbed.DATADIR,
+            },
+            body=protocol_mapper_doc,
+            client_id=self.client["id"],
+        )
+
+        # publish data - 1st time
+        creation_state = client_protocol_mapper.publish()
+        self.assertTrue(creation_state)
+        protocol_mappers_a = client_protocol_mappers_api.all()
+        protocol_mapper_id = find_in_list(protocol_mappers_a, name=protocol_mapper_doc["name"])
+        _check_state()
+        # publish data - 2nd time, idempotence
+        creation_state = client_protocol_mapper.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify something
+        data = client_protocol_mappers_api.get_one(protocol_mapper_id)
+        data["config"].update({
+            'claim.name': 'birthdate-NEW-a',
+            'user.attribute': 'birthdate-NEW-b',
+        })
+        client_protocol_mappers_api.update(protocol_mapper_id, data)
+        data2 = client_protocol_mappers_api.get_one(protocol_mapper_id)
+        self.assertEqual(data, data2)
+        #
+        # .publish must revert change
+        creation_state = client_protocol_mapper.publish()
+        self.assertTrue(creation_state)
+        _check_state()
+        creation_state = client_protocol_mapper.publish()
         self.assertFalse(creation_state)
         _check_state()
