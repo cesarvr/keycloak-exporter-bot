@@ -295,58 +295,84 @@ class TestClientResource(TestCaseBase):
     def test_publish_protocol_mappers(self):
         def _check_state():
             clients = clients_api.all()
-            self.assertEqual(len(clients), default_client_count + 1)
+            self.assertEqual(default_client_count + 2, len(clients))
             client_x = find_in_list(clients, id=client_a["id"])
+            _sort_client_object(client_x)
+
             # check objects are not recreated without reason.
             self.assertEqual(client_a["id"], client_x["id"])
             self.assertEqual(client_a, client_x)
+            this_client_protocol_mappers_b = this_client_protocol_mappers_api.all()
+            this_client_protocol_mappers_b = sorted(this_client_protocol_mappers_b, key=lambda obj: obj["name"])
+            self.assertEqual(this_client_protocol_mappers_a, this_client_protocol_mappers_b)
 
         self.maxDiff = None
+        protocol_mapper_extra_doc = {
+            "name": "family name",
+            "protocol": "openid-connect",
+            "protocolMapper": "oidc-usermodel-property-mapper",
+            "consentRequired": False,
+            "config": {
+                "userinfo.token.claim": "true",
+                "user.attribute": "lastName",
+                "id.token.claim": "true",
+                "access.token.claim": "true",
+                "claim.name": "family_name",
+                "jsonType.label": "String"
+            }
+        }
         default_client_count = 6  # newly created realm has 6 clients
         client0_resource = self.client0_resource
         clients_api = self.clients_api
         client0_clientId = self.client0_clientId
-        realm_roles_api = self.realm_roles_api
-        client_scopes_api = self.client_scopes_api
 
         self.create_needed_objects()
-        client_scope_0_name = "ci0-client-scope"
-        client_scope_0 = client_scopes_api.findFirstByKV("name", client_scope_0_name)
-        client_scope_extra_name = "ci0-client-scope-EXTRA"
-        client_scope_extra = client_scopes_api.findFirstByKV("name", client_scope_extra_name)
-
         # initial state
         clients_all = clients_api.all()
-        self.assertEqual(len(clients_all), default_client_count)
+        self.assertEqual(default_client_count + 1, len(clients_all))
 
         # create client
         creation_state = client0_resource.publish(include_composite=False)
         self.assertTrue(creation_state)
         client_a = clients_api.findFirstByKV("clientId", client0_clientId)
-        this_client_client_scopes_api = KeycloakCRUD.get_child(clients_api, client_a["id"], "client-scopes")
+        _sort_client_object(client_a)
+        this_client_protocol_mappers_api = KeycloakCRUD.get_child(clients_api, client_a["id"], "protocol-mappers/models")
+        this_client_protocol_mappers_a = this_client_protocol_mappers_api.all()
+        this_client_protocol_mappers_a = sorted(this_client_protocol_mappers_a, key=lambda obj: obj["name"])
         _check_state()
         # publish same data again
         creation_state = client0_resource.publish(include_composite=False)
-        self.assertTrue(creation_state)  # TODO should be false, but...
+        self.assertFalse(creation_state)
         _check_state()
         creation_state = client0_resource.publish(include_composite=False)
         self.assertFalse(creation_state)  # 3rd publish is idempotent
         _check_state()
 
-        # modify something - remove one required client_scope, add one extra client_scope
-        self.assertEqual(4, len(this_client_client_scopes_api.all))
-        this_client_client_scopes_api.remove(client_scope["id"], None).isOk()
-        self.assertEqual(4 -1, len(this_client_client_scopes_api.all))
-        payload = dict(
-            realm=self.testbed.REALM,
-            client=client_a["id"],
-            clientScopeId=client_scope_extra["id"],
-        )
-        self.assertEqual(4, len(this_client_client_scopes_api.all))
+        # modify something - add one extra protocol mapper
+        self.assertEqual(2, len(this_client_protocol_mappers_api.all()))
+        this_client_protocol_mappers_api.create(protocol_mapper_extra_doc).isOk()
+        self.assertEqual(3, len(this_client_protocol_mappers_api.all()))
         #
-        # publish same data again
         creation_state = client0_resource.publish(include_composite=False)
         self.assertTrue(creation_state)
+        _check_state()
+        creation_state = client0_resource.publish(include_composite=False)
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify something - remove one expected protocol mapper
+        self.assertEqual(2, len(this_client_protocol_mappers_api.all()))
+        protocol_mapper_0_id_old = this_client_protocol_mappers_a[0]["id"]
+        this_client_protocol_mappers_api.remove(protocol_mapper_0_id_old).isOk()
+        self.assertEqual(1, len(this_client_protocol_mappers_api.all()))
+        #
+        creation_state = client0_resource.publish(include_composite=False)
+        self.assertTrue(creation_state)
+        # one uuid is different
+        protocol_mapper_0_id_new = this_client_protocol_mappers_api.findFirstByKV("name", this_client_protocol_mappers_a[0]["name"])["id"]
+        # now "fix" expected data
+        this_client_protocol_mappers_a[0]["id"] = protocol_mapper_0_id_new
+        client_a["protocoMappers"][0]["id"] = protocol_mapper_0_id_new
         _check_state()
         creation_state = client0_resource.publish(include_composite=False)
         self.assertFalse(creation_state)
@@ -432,6 +458,12 @@ class TestClientResource(TestCaseBase):
         # modify something
 
 
+def _sort_client_object(obj):
+    obj["defaultRoles"] = sorted(obj["defaultRoles"])
+    if "protocolMappers" in obj:
+        obj["protocolMappers"] = sorted(obj["protocolMappers"], key=lambda obj: obj["name"])
+    return obj
+
 class TestClientResourceManager(TestCaseBase):
     def setUp(self):
         super().setUp()
@@ -439,10 +471,6 @@ class TestClientResourceManager(TestCaseBase):
         self.clients_api = testbed.kc.build("clients", testbed.REALM)
         # check clean start
         assert len(self.clients_api.all()) == 6  # 6 default clients
-
-    def _sort_client_object(self, obj):
-        obj["defaultRoles"] = sorted(obj["defaultRoles"])
-        return obj
 
     def test_publish(self):
         default_client_clientIds = [
@@ -583,7 +611,7 @@ class TestClientResourceManager(TestCaseBase):
             clients_all = clients_api.all()
             self.assertEqual(len(clients_all), expected_client_count)
             client_b = clients_api.findFirstByKV("clientId", client_clientId)
-            self._sort_client_object(client_b)
+            _sort_client_object(client_b)
             self.assertEqual(expected_client_default_roles, client_b["defaultRoles"])
 
             # check objects are not recreated without reason.
@@ -622,7 +650,7 @@ class TestClientResourceManager(TestCaseBase):
         roles_a = this_client_roles_api.all()
         roles_a_names = sorted([role["name"] for role in roles_a])
         self.assertEqual(roles_a_names, expected_client_role_names)
-        self._sort_client_object(client_a)
+        _sort_client_object(client_a)
         self.assertEqual(expected_client_default_roles, client_a["defaultRoles"])
         _check_state()
         #
@@ -636,10 +664,10 @@ class TestClientResourceManager(TestCaseBase):
         data1.update({
             "defaultRoles": wrong_client_default_roles,
         })
-        data1 = self._sort_client_object(data1)
+        data1 = _sort_client_object(data1)
         clients_api.update(client_a["id"], data1).isOk()
         data2 = clients_api.findFirstByKV("clientId", client_clientId)
-        data2 = self._sort_client_object(data2)
+        data2 = _sort_client_object(data2)
         self.assertEqual(data1, data2)
 
         # New expected state depends on client being custom or builtin.
