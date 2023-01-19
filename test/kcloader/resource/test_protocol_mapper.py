@@ -12,7 +12,7 @@ from kcloader.resource import ClientScopeResource, ClientScopeScopeMappingsRealm
     ClientScopeScopeMappingsClientManager, ClientScopeScopeMappingsAllClientsManager, \
     ClientScopeManager
 from kcloader.tools import read_from_json, find_in_list
-from resource.protocol_mapper import ClientProtocolMapperResource
+from resource.protocol_mapper import ClientProtocolMapperResource, ClientProtocolMapperManager
 from ...helper import TestBed, remove_field_id, TestCaseBase
 from .test_client_scope_resource import blacklisted_client_scopes
 
@@ -313,37 +313,6 @@ class TestClientProtocolMapperResource(TestCaseBase):
             "protocolMapper": "oidc-usermodel-property-mapper"
         }
 
-        # protocol_mappers_doc = [
-        #     {
-        #         "config": {
-        #             "access.token.claim": "true",
-        #             "claim.name": "ci-claim-name",
-        #             "id.token.claim": "true",
-        #             "jsonType.label": "String",
-        #             "user.attribute": "ci-user-property-name",
-        #             "userinfo.token.claim": "true"
-        #         },
-        #         "consentRequired": False,
-        #         "name": "ci0-client0-mapper-1",
-        #         "protocol": "openid-connect",
-        #         "protocolMapper": "oidc-usermodel-property-mapper"
-        #     },
-        #     {
-        #         "config": {
-        #             "access.token.claim": "true",
-        #             "claim.name": "gender",
-        #             "id.token.claim": "true",
-        #             "jsonType.label": "String",
-        #             "user.attribute": "gender",
-        #             "userinfo.token.claim": "true"
-        #         },
-        #         "consentRequired": False,
-        #         "name": "gender",
-        #         "protocol": "openid-connect",
-        #         "protocolMapper": "oidc-usermodel-attribute-mapper"
-        #     }
-        # ]
-
         # check initial state
         client_protocol_mappers_api = self.client_protocol_mappers_api
         self.assertEqual([], client_protocol_mappers_api.all())
@@ -385,5 +354,145 @@ class TestClientProtocolMapperResource(TestCaseBase):
         self.assertTrue(creation_state)
         _check_state()
         creation_state = client_protocol_mapper.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
+
+class TestClientProtocolMapperManager(TestCaseBase):
+    def setUp(self):
+        super().setUp()
+        testbed = self.testbed
+
+        self.clients_api = testbed.kc.build("clients", testbed.REALM)
+        self.client_clientId = "ci0-client-0"
+        self.clients_api.create(dict(
+            clientId=self.client_clientId,
+            description=self.client_clientId + "---CI-INJECTED",
+            protocol="openid-connect",
+            fullScopeAllowed=False,  # this makes client:scopes configurable
+        )).isOk()
+        clients = self.clients_api.all()
+        self.client = find_in_list(clients, clientId=self.client_clientId)
+        self.client_protocol_mappers_api = KeycloakCRUD.get_child(self.clients_api, self.client["id"], "protocol-mappers/models")
+
+    def test_publish(self):
+        def _check_state():
+            protocol_mappers_b = client_protocol_mappers_api.all()
+            protocol_mappers_b = sorted(protocol_mappers_b, key=lambda obj: obj["name"])
+            self.assertEqual(1, len(protocol_mappers_b))
+            self.assertEqual(protocol_mappers_a, protocol_mappers_b)
+
+            for ii in range(len(protocol_mappers_a)):
+                self.assertEqual(protocol_mappers_a[ii]["id"], protocol_mappers_b[ii]["id"])
+            protocol_mappers_min = copy(protocol_mappers_b)
+            for pm in protocol_mappers_min:
+                pm.pop("id")
+            self.assertEqual(protocol_mappers_doc, protocol_mappers_min)
+
+            # -------------------------------------
+
+        self.maxDiff = None
+        # desired objects
+        protocol_mappers_doc = [
+            {
+                "config": {
+                    "access.token.claim": "true",
+                    "claim.name": "ci-claim-name",
+                    "id.token.claim": "true",
+                    "jsonType.label": "String",
+                    "user.attribute": "ci-user-property-name",
+                    "userinfo.token.claim": "true"
+                },
+                "consentRequired": False,
+                "name": "ci0-client0-mapper-1",
+                "protocol": "openid-connect",
+                "protocolMapper": "oidc-usermodel-property-mapper"
+            },
+            {
+                "config": {
+                    "access.token.claim": "true",
+                    "claim.name": "gender",
+                    "id.token.claim": "true",
+                    "jsonType.label": "String",
+                    "user.attribute": "gender",
+                    "userinfo.token.claim": "true"
+                },
+                "consentRequired": False,
+                "name": "gender",
+                "protocol": "openid-connect",
+                "protocolMapper": "oidc-usermodel-attribute-mapper"
+            }
+        ]
+        # extra object, manager must remove it
+        protocol_mapper_extra_doc = {
+            "config": {
+                "access.token.claim": "true",
+                "claim.name": "ci-claim-name-EXTRA",
+                "id.token.claim": "true",
+                "jsonType.label": "String",
+                "user.attribute": "ci-user-property-name-EXTRA",
+                "userinfo.token.claim": "true"
+            },
+            "consentRequired": False,
+            "name": "ci0-client0-mapper-EXTRA",
+            "protocol": "openid-connect",
+            "protocolMapper": "oidc-usermodel-property-mapper"
+        }
+
+        # check initial state
+        client_protocol_mappers_api = self.client_protocol_mappers_api
+        self.assertEqual([], client_protocol_mappers_api.all())
+
+        manager = ClientProtocolMapperManager(
+            {
+                'path': "self.client_filepath---but-is-ignored",
+                'keycloak_api': self.testbed.kc,
+                'realm': self.testbed.REALM,
+                'datadir': self.testbed.DATADIR,
+            },
+            body=protocol_mappers_doc,
+            client_id=self.client["id"],
+        )
+
+        # publish data - 1st time
+        creation_state = manager.publish()
+        self.assertTrue(creation_state)
+        protocol_mappers_a = client_protocol_mappers_api.all()
+        protocol_mapper_0_id = find_in_list(protocol_mappers_a, name=protocol_mappers_doc[0]["name"])["id"]
+        _check_state()
+        # publish data - 2nd time, idempotence
+        creation_state = manager.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify something - remove one mapper
+        self.assertEqual(2, len(client_protocol_mappers_api.all()))
+        client_protocol_mappers_api.remove(protocol_mapper_0_id).isOk()
+        self.assertEqual(1, len(client_protocol_mappers_api.all()))
+        #
+        # .publish must revert change
+        creation_state = manager.publish()
+        self.assertTrue(creation_state)
+        #
+        # protocol_mapper_0_id is now different, change protocol_mappers_a
+        protocol_mapper_0_id_new = find_in_list(client_protocol_mappers_api.all(), name=protocol_mappers_doc[0]["name"])["id"]
+        protocol_mapper_0 = find_in_list(protocol_mappers_a, name=protocol_mappers_doc[0]["name"])
+        protocol_mapper_0["id"] = protocol_mapper_0_id_new
+        #
+        _check_state()
+        creation_state = manager.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify something - add one extra mapper
+        self.assertEqual(2, len(client_protocol_mappers_api.all()))
+        client_protocol_mappers_api.create(protocol_mapper_extra_doc).isOk()
+        self.assertEqual(3, len(client_protocol_mappers_api.all()))
+        #
+        # .publish must revert change
+        creation_state = manager.publish()
+        self.assertTrue(creation_state)
+        _check_state()
+        creation_state = manager.publish()
         self.assertFalse(creation_state)
         _check_state()

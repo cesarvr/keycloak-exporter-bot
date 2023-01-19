@@ -135,3 +135,7 @@ class ClientScopeProtocolMapperManager(BaseManager):
         client_scopes_api = self.keycloak_api.build("client-scopes", self.realm)
         protocol_mapper_api = client_scopes_api.protocol_mapper_api(client_scope_id=self._client_scope_id)
         return protocol_mapper_api
+
+
+class ClientProtocolMapperManager(BaseManager):
+    pass
