@@ -363,7 +363,7 @@ class TestClientProtocolMapperResource(TestCaseBase):
         creation_state = client_protocol_mapper.publish()
         self.assertTrue(creation_state)
         protocol_mappers_a = client_protocol_mappers_api.all()
-        protocol_mapper_id = find_in_list(protocol_mappers_a, name=protocol_mapper_doc["name"])
+        protocol_mapper_id = find_in_list(protocol_mappers_a, name=protocol_mapper_doc["name"])["id"]
         _check_state()
         # publish data - 2nd time, idempotence
         creation_state = client_protocol_mapper.publish()

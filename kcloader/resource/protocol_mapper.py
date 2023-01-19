@@ -5,6 +5,7 @@ from copy import copy
 from glob import glob
 
 import kcapi
+from kcapi.rest.crud import KeycloakCRUD
 from sortedcontainers import SortedDict
 
 from kcloader.resource import SingleResource
@@ -57,6 +58,7 @@ class BaseProtocolMapperResource(SingleResource):
 
 
 class ClientScopeProtocolMapperResource(BaseProtocolMapperResource):
+    # ClientScope ProtocolMapper
     _resource_name = "client-scopes/{client_scope_id}/protocol-mappers/models"
 
     def __init__(
@@ -64,7 +66,7 @@ class ClientScopeProtocolMapperResource(BaseProtocolMapperResource):
             resource: dict,
             *,
             body: dict,
-            client_scope_id,
+            client_scope_id: str,
     ):
         self._client_scope_id = client_scope_id
         super().__init__(resource, body=body)
@@ -72,6 +74,26 @@ class ClientScopeProtocolMapperResource(BaseProtocolMapperResource):
     def _get_resource_api(self):
         client_scopes_api = self.keycloak_api.build("client-scopes", self.realm_name)
         protocol_mapper_api = client_scopes_api.protocol_mapper_api(client_scope_id=self._client_scope_id)
+        return protocol_mapper_api
+
+
+class ClientProtocolMapperResource(BaseProtocolMapperResource):
+    # Client ProtocolMapper
+    _resource_name = "client/{client_id}/protocol-mappers/models"
+
+    def __init__(
+            self,
+            resource: dict,
+            *,
+            body: dict,
+            client_id: str,
+    ):
+        self._client_id = client_id
+        super().__init__(resource, body=body)
+
+    def _get_resource_api(self):
+        clients_api = self.keycloak_api.build("clients", self.realm_name)
+        protocol_mapper_api = KeycloakCRUD.get_child(clients_api, self._client_id, "protocol-mappers/models")
         return protocol_mapper_api
 
 
