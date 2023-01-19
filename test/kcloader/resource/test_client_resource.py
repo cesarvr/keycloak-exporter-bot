@@ -372,7 +372,7 @@ class TestClientResource(TestCaseBase):
         protocol_mapper_0_id_new = this_client_protocol_mappers_api.findFirstByKV("name", this_client_protocol_mappers_a[0]["name"])["id"]
         # now "fix" expected data
         this_client_protocol_mappers_a[0]["id"] = protocol_mapper_0_id_new
-        client_a["protocoMappers"][0]["id"] = protocol_mapper_0_id_new
+        client_a["protocolMappers"][0]["id"] = protocol_mapper_0_id_new
         _check_state()
         creation_state = client0_resource.publish(include_composite=False)
         self.assertFalse(creation_state)
