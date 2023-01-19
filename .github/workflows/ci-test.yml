@@ -1,6 +1,7 @@
 name: CI tests
 on:
   - push
+
 jobs:
 
   unittest:
@@ -13,21 +14,31 @@ jobs:
       # install dependencies mentioned in pyproject.toml
       - run: pip install .
       - name: Wait on keycloak to be up
-        run: curl -k --connect-timeout 60 --retry 60 --retry-delay 1 --retry-connrefused --retry-max-time 60 https://keycloak:8443 -v
+        run: curl -k --connect-timeout 60 --retry 60 --retry-delay 1 --retry-connrefused --retry-max-time 60 $KC_ENDPOINT -v
       # At least it should not crash
       - run: python -m unittest
     env:
-      KEYCLOAK_API_CA_BUNDLE:
-      KC_ENDPOINT: https://keycloak:8443
+      # KEYCLOAK_API_CA_BUNDLE:
+      # KC_ENDPOINT: https://keycloak:8443
+      KC_ENDPOINT: http://keycloak:8080
       KC_USER: admin
       KC_PASSWORD: admin
       KC_REALM: testing
     services:
+#      keycloak0:
+#        image: quay.io/keycloak/keycloak:9.0.3
+#        env:
+#          KEYCLOAK_USER: admin
+#          KEYCLOAK_PASSWORD: admin
       keycloak:
-        image: quay.io/keycloak/keycloak:9.0.3
+        image: registry.redhat.io/rh-sso-7/sso74-openshift-rhel8:7.4-45
         env:
-          KEYCLOAK_USER: admin
-          KEYCLOAK_PASSWORD: admin
+          SSO_ADMIN_USERNAME: admin
+          SSO_ADMIN_PASSWORD: admin
+          # SSO_HOSTNAME: localhost
+        credentials:
+          username: ${{ secrets.REGISTRY_REDHAT_IO_USERNAME }}
+          password: ${{ secrets.REGISTRY_REDHAT_IO_TOKEN }}
 
   integration-tests:
     runs-on: ubuntu-22.04
