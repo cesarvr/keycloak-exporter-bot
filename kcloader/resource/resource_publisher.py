@@ -10,18 +10,19 @@ class UpdatePolicy:
 
 
 class ResourcePublisher:
-    def __init__(self, key='key', body='', single_resource=None):
+    def __init__(self, key='key', body='', single_resource=None, params=None):
         # assert isinstance(single_resource, (SingleResource, None))
         self.key = key
         self.body = body
         self.single_resource = single_resource
+        self.params = params
 
     def get_id(self, resource_api):
         # TODO resource should know what is the 'key'
         # Return server-side unique id of the resource
         # For authentication flow has unique alias (string), this function returns corresponding id (uuid).
         assert self.body
-        obj = resource_api.findFirstByKV(self.key, self.body[self.key])
+        obj = resource_api.findFirstByKV(self.key, self.body[self.key], self.params)
         if not obj:
             return None, None
         key = self.key
