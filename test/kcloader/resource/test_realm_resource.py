@@ -86,9 +86,13 @@ class TestRealmResource(TestCaseBase):
         self.assertFalse(creation_state)
         _check_state()
 
-    def test_publish_default_realm_roles(self):
+    def test_publish__default_realm_roles__auth_bindings(self):
         # Only default realm roles are tested here.
         # Default client roles are part of client config.
+        #
+        # Menu authentication > bindings, what is seen there is stored in realm.json
+        # Auth flow can be assigned only if it already exists.
+        # Test bindings are correctly created/updated.
         def _check_state():
             realm_objs_b = self.realms_api.all()
             realm_obj_b = find_in_list(realm_objs_b, realm=realm_name)
@@ -207,9 +211,3 @@ class TestRealmResource(TestCaseBase):
         creation_state = realm_resource.publish(minimal_representation=True)
         self.assertFalse(creation_state)
         _check_state()
-
-
-
-
-
-
