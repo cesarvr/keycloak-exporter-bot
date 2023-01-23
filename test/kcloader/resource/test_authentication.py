@@ -127,6 +127,111 @@ class TestAuthenticationFlowResource(TestCaseBase):
         #
 
 
+class TestAuthenticationExecutionsFlowResource(TestCaseBase):
+    def setUp(self):
+        super().setUp()
+        testbed = self.testbed
+
+        self.authentication_flows_api = testbed.kc.build("authentication", testbed.REALM)
+        self.flow0_alias = "ci0-auth-flow-generic"
+        self.authentication_flows_api.create({
+            "alias": self.flow0_alias,
+            "authenticationExecutions": [],
+            "builtIn": False,
+            "description": self.flow0_alias + "-desc",
+            "providerId": "basic-flow",
+            "topLevel": True,
+        }).isOk()
+
+        self.flow0 = self.authentication_flows_api.findFirstByKV("alias", "ci0-auth-flow-generic")
+        self.flow0_executions_api = KeycloakCRUD.get_child(self.authentication_flows_api, self.flow0_alias, "executions")
+        self.flow0_executions_execution_api = self.authentication_flows_api.executions(self.flow0)
+        self.flow0_executions_flow_api = self.authentication_flows_api.flows(self.flow0)
+
+
+    def test_publish_self(self):
+        def _check_state():
+            flow0_executions_b = flow0_executions_api.all()
+            self.assertEqual(1, len(flow0_executions_b))
+            execution_b_noid = copy(flow0_executions_b[0])
+            execution_b_noid.pop("id")
+            self.assertEqual(execution_doc, execution_b_noid)
+            self.assertEqual(flow0_executions_a, flow0_executions_b)
+
+        testbed = self.testbed
+        # click 'add flow', flow type = generic, provider = registration-page-form
+        # POST payload, {"alias":"aa1","type":"basic-flow","description":"aa2","provider":"registration-page-form"}
+        # Returned data at ci0-realm/authentication/flows/ci0-auth-flow-generic/executions
+        flow0_a_doc = {
+            # "id": "62cd0d9f-83da-41a8-80b2-7ec42f1999d0",
+            "requirement": "DISABLED",
+            "displayName": "aa1",
+            "requirementChoices": [
+                "REQUIRED",
+                "ALTERNATIVE",
+                "DISABLED",
+                "CONDITIONAL"
+            ],
+            "configurable": False,
+            "authenticationFlow": True,
+            # "flowId": "97cb1b49-4187-47ec-82b3-ad2a6bdffd90",
+            "level": 0,
+            "index": 0
+        }
+        flow0_a_doc_inline = {
+            "authenticator": "registration-page-form",
+            "authenticatorFlow": True,
+            "requirement": "DISABLED",
+            "priority": 0,
+            "flowAlias": "aa1",
+            "userSetupAllowed": False,
+            "autheticatorFlow": True
+        }
+        # click 'add flow', flow type = form, provider = registration-page-form
+        # POST paylaod {"alias":"bb1","type":"form-flow","description":"bb2","provider":"registration-page-form"}
+        # Returned data at ci0-realm/authentication/flows/ci0-auth-flow-generic/executions
+        flow_b_doc = {
+            # "id": "e3dc18e5-ece6-4b16-9d8a-549145b4ce6f",
+            "requirement": "DISABLED",
+            "displayName": "bb1",
+            "requirementChoices": [
+                "REQUIRED",
+                "DISABLED"
+            ],
+            "configurable": False,
+            "authenticationFlow": True,
+            "providerId": "registration-page-form",
+            # "flowId": "97930c79-78ec-42e9-a4c5-ed32f8d34f6f",
+            "level": 0,
+            "index": 1
+        }
+        flow_b_doc_inline = {
+            "authenticator": "registration-page-form",
+            "authenticatorFlow": True,
+            "requirement": "DISABLED",
+            "priority": 1,
+            "flowAlias": "bb1",
+            "userSetupAllowed": False,
+            "autheticatorFlow": True
+        }
+
+        flow0_executions_api = self.flow0_executions_api
+
+        # flow0_a_resource = AuthenticationExecutionsFlowResource(
+        #     {
+        #         'path': "flow0_filepath---ignore",
+        #         'keycloak_api': testbed.kc,
+        #         'realm': testbed.REALM,
+        #         'datadir': testbed.DATADIR,
+        #     },
+        #     body=flow0_a_doc,
+        #     flow_alias=self.flow0_alias,
+        # )
+
+        # publish data - 1st time
+
+
+# TODO test also with configurable execution
 class TestAuthenticationExecutionsExecutionResource(TestCaseBase):
     def setUp(self):
         super().setUp()
