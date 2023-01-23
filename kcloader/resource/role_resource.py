@@ -117,8 +117,8 @@ class BaseRoleResource(SingleResource):
 
     def get_create_payload(self):
         body = copy(self.body)
-        if not self._include_composite:
-            body.pop("composites", None)
+        # always remove "composites" - it contains containerName (not containerId)
+        body.pop("composites", None)
         return body
 
     def publish(self, *, include_composite=True):
