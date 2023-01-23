@@ -18,6 +18,7 @@ from kcloader.resource import ResourcePublisher, ManyResources, SingleResource, 
     UserFederationManager
 from kcloader.resource import IdentityProviderManager, ClientManager, RealmRoleManager
 from kcloader.tools import read_from_json
+from kcloader.resource.custom_authentication_resource import AuthenticationFlowResource
 
 _level = logging.INFO
 _level = logging.DEBUG
@@ -164,7 +165,7 @@ def main(args):
                 'realm': realm_name,
             })
             creation_state = auth_flow_res.publish()
-    else:
+    elif 0:
         # temporal workaround
         auth_flow_alias = "ci0-auth-flow-generic"  # used for realm resetCredentialsFlow
         logger.error(f"Creating a fake authentication flow {auth_flow_alias}")
@@ -179,6 +180,18 @@ def main(args):
                 "topLevel": True,
                 "builtIn": False
             }).isOk()
+    else:
+        # new code
+        auth_flow_filepaths = glob(os.path.join(datadir, f"{realm_name}/authentication/flows/*/*.json"))
+        for auth_flow_filepath in auth_flow_filepaths:
+            auth_flow_res = AuthenticationFlowResource({
+                'path': auth_flow_filepath,
+                # 'name': 'authentication',
+                # 'id': 'alias',
+                'keycloak_api': keycloak_api,
+                'realm': realm_name,
+            })
+            creation_state = auth_flow_res.publish_self()
 
     idp_manager = IdentityProviderManager(keycloak_api, realm_name, datadir)
     uf_manager = UserFederationManager(keycloak_api, realm_name, datadir)
