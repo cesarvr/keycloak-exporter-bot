@@ -9,7 +9,12 @@
             "ci0-group-value0"
         ]
     },
-    "clientRoles": {},
+    "clientRoles": {
+        "ci0-client-0": [
+            "ci0-client0-role0",
+            "ci0-client0-role1b"
+        ]
+    },
     "name": "ci0-group",
     "path": "/ci0-group",
     "realmRoles": [
