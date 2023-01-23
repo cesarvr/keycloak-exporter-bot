@@ -33,19 +33,10 @@ class RealmResource(SingleResource):
         will not be configured in keycloak if they are not already present.
         :return:
         """
-        body = copy(self.body)
-        if minimal_representation:
-            self._minimal_representation = True  # should be contex manager (with A() as a: ...)
-            # TODO be smart, figure out if really need to drop roles and outh flows.
-            # This is a must - we need to avoid temporal inconsistent states.
-            # But for today, be stupid.
-            for unsafe_attr in self._unsafe_attrs:
-                body.pop(unsafe_attr)
-        else:
-            self._minimal_representation = False
-
+        # self._minimal_representation should be contex manager (with A() as a: ...)
+        self._minimal_representation = minimal_representation
         # return super().publish(body)
-        state = self.resource.publish_object(body, self)
+        state = self.resource.publish_object(self.body, self)
         self._minimal_representation = None
         return state
 
@@ -80,4 +71,14 @@ class RealmResource(SingleResource):
                 body.pop(unsafe_attr, None)  # TODO TEMP - assumes minimal_representation=True !!!!!!
                 if unsafe_attr in obj:
                     body[unsafe_attr] = obj[unsafe_attr]
+        return body
+
+    def get_create_payload(self):
+        body = copy(self.body)
+        if self._minimal_representation:
+            # TODO be smart, figure out if really need to drop roles and outh flows.
+            # This is a must - we need to avoid temporal inconsistent states.
+            # But for today, be stupid.
+            for unsafe_attr in self._unsafe_attrs:
+                body.pop(unsafe_attr, None)
         return body
