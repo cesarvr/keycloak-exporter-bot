@@ -127,5 +127,11 @@ class ResourcePublisher:
                 http_ok = resource_api.create(self.body).isOk()
                 return True
         else:
-            http_ok = resource_api.create(self.body).isOk()
+            if self.single_resource:
+                create_payload = self.single_resource.get_create_payload()
+            else:
+                # old code, when there was no self.single_resource.
+                # TODO remove when it is not used anymore
+                create_payload = self.body
+            http_ok = resource_api.create(create_payload).isOk()
             return True

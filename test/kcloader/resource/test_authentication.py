@@ -3,7 +3,7 @@ import json
 import os
 import unittest
 from glob import glob
-from copy import copy
+from copy import copy, deepcopy
 
 from kcapi.rest.crud import KeycloakCRUD
 
@@ -12,6 +12,8 @@ from kcloader.tools import read_from_json, find_in_list
 from ...helper import TestBed, remove_field_id, TestCaseBase
 
 from kcloader.resource import ClientRoleManager, ClientRoleResource, SingleClientResource
+from kcloader.resource.custom_authentication_resource import AuthenticationFlowResource, \
+    AuthenticationExecutionsExecutionResource
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +69,151 @@ DELETE /{realm}/authentication/required-actions/{alias}
 POST /{realm}/authentication/required-actions/{alias}/lower-priority
 POST /{realm}/authentication/required-actions/{alias}/raise-priority
 """
+
+
+class TestAuthenticationFlowResource(TestCaseBase):
+    def setUp(self):
+        super().setUp()
+        testbed = self.testbed
+
+        # '/flows' is magically added to "authentication"
+        self.authentication_flows_api = testbed.kc.build("authentication", testbed.REALM)
+
+        self.flow0_alias = "ci0-auth-flow-generic"
+        flow0_filepath = os.path.join(testbed.DATADIR, f"{testbed.REALM}/authentication/flows/ci0-auth-flow-generic/ci0-auth-flow-generic.json")
+        self.flow0_resource = AuthenticationFlowResource({
+            'path': flow0_filepath,
+            'keycloak_api': testbed.kc,
+            'realm': testbed.REALM,
+            'datadir': testbed.DATADIR,
+        })
+
+    def test_publish_self(self):
+        def _check_state():
+            flow0_b = self.authentication_flows_api.findFirstByKV("alias", self.flow0_alias)
+            flow0_noid = deepcopy(flow0_b)
+            flow0_noid.pop("id")
+            self.assertEqual(expected_flow0, flow0_noid)
+            self.assertEqual(flow0_a, flow0_b)
+
+            # -----------------------------------------
+        testbed = self.testbed
+        flow0_resource = self.flow0_resource
+        expected_flow0 = deepcopy(flow0_resource.body)
+        expected_flow0["authenticationExecutions"] = []
+
+        # publish data - 1st time
+        creation_state = flow0_resource.publish_self()
+        self.assertTrue(creation_state)
+        flow_objs_a = self.authentication_flows_api.all()
+        flow0_a = find_in_list(flow_objs_a, alias=self.flow0_alias)
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = flow0_resource.publish_self()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify something
+        return
+        data1 = self.authentication_flows_api.findFirstByKV("alias", self.flow0_alias)
+        data1.update({
+            "description": "ci0-auth-flow-generic-desc---NEW",
+        })
+        # This DOES update description, but with 500 error on RH SSO 7.4.
+        # No need to support this. Description is the only field that could be edited anyway.
+        self.authentication_flows_api.update(data1["id"], data1).isOk()
+        data2 = self.authentication_flows_api.findFirstByKV("alias", self.flow0_alias)
+        self.assertEqual(data1, data2)
+        #
+
+
+class TestAuthenticationExecutionsExecutionResource(TestCaseBase):
+    def setUp(self):
+        super().setUp()
+        testbed = self.testbed
+
+        self.authentication_flows_api = testbed.kc.build("authentication", testbed.REALM)
+        self.flow0_alias = "ci0-auth-flow-generic"
+        self.authentication_flows_api.create({
+            "alias": self.flow0_alias,
+            "authenticationExecutions": [],
+            "builtIn": False,
+            "description": self.flow0_alias + "-desc",
+            "providerId": "basic-flow",
+            "topLevel": True,
+        }).isOk()
+
+        self.flow0 = self.authentication_flows_api.findFirstByKV("alias", "ci0-auth-flow-generic")
+        self.flow0_executions_api = KeycloakCRUD.get_child(self.authentication_flows_api, self.flow0_alias, "executions")
+        self.flow0_executions_execution_api = self.authentication_flows_api.executions(self.flow0)
+        self.flow0_executions_flow_api = self.authentication_flows_api.flows(self.flow0)
+
+    def test_publish_self(self):
+        def _check_state():
+            flow0_executions_b = flow0_executions_api.all()
+            self.assertEqual(1, len(flow0_executions_b))
+            execution_b_noid = copy(flow0_executions_b[0])
+            execution_b_noid.pop("id")
+            self.assertEqual(execution_doc, execution_b_noid)
+            self.assertEqual(flow0_executions_a, flow0_executions_b)
+
+        testbed = self.testbed
+        # POST paylaod, {"provider":"auth-otp-form"}
+        # Created object is
+        execution_doc = {
+            "requirement": "DISABLED",
+            "displayName": "OTP Form",
+            "requirementChoices": [
+                "REQUIRED",
+                "ALTERNATIVE",
+                "DISABLED"
+            ],
+            "configurable": False,
+            "providerId": "auth-otp-form",
+            "level": 0,
+            "index": 0
+        }
+        flow0_executions_api = self.flow0_executions_api
+
+        flow0_execution_resource = AuthenticationExecutionsExecutionResource(
+            {
+                'path': "flow0_filepath---ignore",
+                'keycloak_api': testbed.kc,
+                'realm': testbed.REALM,
+                'datadir': testbed.DATADIR,
+            },
+            body=execution_doc,
+            flow_alias=self.flow0_alias,
+        )
+
+        # publish data - 1st time
+        creation_state = flow0_execution_resource.publish_self()
+        self.assertTrue(creation_state)
+        flow0_executions_a = flow0_executions_api.all()
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = flow0_execution_resource.publish_self()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify something
+        # there is no PUT for "authentication/executions", so use
+        # PUT /{realm}/authentication/flows/{flowAlias}/executions
+        data1 = flow0_executions_api.all()[0]
+        data1.update({
+            "requirement": "ALTERNATIVE",
+        })
+        flow0_executions_api.update(None, data1).isOk()
+        data2 = flow0_executions_api.all()[0]
+        self.assertEqual(data1, data2)
+        #
+        creation_state = flow0_execution_resource.publish_self()
+        self.assertTrue(creation_state)
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = flow0_execution_resource.publish_self()
+        self.assertFalse(creation_state)
+        _check_state()
 
 
 class TestAuthenticationExecutionConfigResource(TestCaseBase):

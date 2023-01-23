@@ -36,3 +36,6 @@ class SingleResource:
         """
         body = copy(self.body)
         return body
+
+    def get_create_payload(self):
+        return self.body
