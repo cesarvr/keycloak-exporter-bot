@@ -23,7 +23,7 @@ export KC_REALM=myrealm
 
 # run code
 alias kcload='./main.py --url=https://172.17.0.2:8443 --username=admin --password=admin'
-kcload --datadir test/data/kcfetcher-0.0.4 --realm-name ci0-realm
+kcload --datadir test/data/kcfetcher-latest --realm-name ci0-realm
 
 # run tests
 python -m unittest
