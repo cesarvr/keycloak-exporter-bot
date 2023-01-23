@@ -3,7 +3,7 @@ from copy import deepcopy, copy
 
 from kcapi.ie import AuthenticationFlowsImporter
 from kcapi.ie.auth_flows import create_child_flow_data
-from kcapi.rest.auth_flows import AuthenticationExecutionsExecutionCRUD
+from kcapi.rest.auth_flows import AuthenticationExecutionsBaseCRUD
 from kcapi.rest.crud import KeycloakCRUD
 from sortedcontainers import SortedDict
 
@@ -96,7 +96,7 @@ class AuthenticationExecutionsExecutionResource(SingleResource):
         auth_api = self.keycloak_api.build("authentication", self.realm_name)
         auth_flow_obj = dict(alias=flow_alias)
         resource_api = auth_api.executions(auth_flow_obj)
-        assert isinstance(resource_api, AuthenticationExecutionsExecutionCRUD)  # unusual .update()
+        assert isinstance(resource_api, AuthenticationExecutionsBaseCRUD)  # unusual .update()
         super().__init__(
             {
                 "name": self._resource_name,
@@ -154,7 +154,7 @@ class AuthenticationExecutionsFlowResource(SingleResource):
         auth_api = self.keycloak_api.build("authentication", self.realm_name)
         auth_flow_obj = dict(alias=flow_alias)
         resource_api = auth_api.flows(auth_flow_obj)
-        # assert isinstance(resource_api, AuthenticationExecutionsExecutionCRUD)  # unusual .update()
+        assert isinstance(resource_api, AuthenticationExecutionsBaseCRUD)  # unusual .update()
         super().__init__(
             {
                 "name": self._resource_name,
@@ -177,11 +177,17 @@ class AuthenticationExecutionsFlowResource(SingleResource):
         for oo in [obj1, obj2]:
             oo.pop("id", None)
             oo.pop("flowId", None)
+            # To create a child flow, POST to {realm}/authentication/flows/{parent_flow_alias}/executions is done.
+            # parent_flow_alias is intermediate parent (might not be topLevel flow).
+            # The GET URL in resource_api is also relative to intermediate parent.
+            # This means index and level in obj are not same is in self.body.
+            # Ignore them here, and reorder object in separate step.
+            oo.pop("index", None)
+            oo.pop("level", None)
         return obj1 == obj2
 
     def get_update_payload(self, obj):
         # PUT /{realm}/authentication/flows/{flowAlias}/executions fails if "id" is not also part of payload.
-        assert 0
         body = copy(self.body)
         body["id"] = obj["id"]
         return body

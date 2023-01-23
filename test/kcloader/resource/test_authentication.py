@@ -259,6 +259,91 @@ class TestAuthenticationExecutionsFlowResource(TestCaseBase):
 
         # modify something - cannot be done in UI
 
+    # flow can have sub-flows
+    def test_publish_self__child_flow(self):
+        def _check_state():
+            flow0_executions_b = flow0_executions_api.all()
+            self.assertEqual(2, len(flow0_executions_b))
+            flow0_executions_b_noid = deepcopy(flow0_executions_b)
+            for oo in flow0_executions_b_noid:
+                oo.pop("id")
+                oo.pop("flowId")  # flowId points back to self; I think.
+                # oo.pop("requirement")  # TEMP
+            # self.assertEqual(flow0_3_doc, flow0_executions_b_noid[0])
+            self.assertEqual(flow0_3_1_doc, flow0_executions_b_noid[1])
+            self.assertEqual(flow0_executions_a, flow0_executions_b)
+
+        self.maxDiff = None
+        testbed = self.testbed
+        flow0_executions_api = self.flow0_executions_api
+        flow0_executions_flow_api = self.flow0_executions_flow_api
+
+
+        flow0_3_doc = {
+            "authenticationFlow": True,
+            "configurable": False,
+            "displayName": "ci0-auth-flow-generic-exec-3-generic-alias",
+            "index": 0,
+            "level": 0,
+            "requirement": "CONDITIONAL",
+            "requirementChoices": [
+                "REQUIRED",
+                "ALTERNATIVE",
+                "DISABLED",
+                "CONDITIONAL"
+            ]
+        }
+        flow0_3_1_doc = {
+            "authenticationFlow": True,
+            "configurable": False,
+            "displayName": "ci0-auth-flow-generic-exec-3-1-flow-alias",
+            "index": 0,
+            "level": 1,
+            "requirement": "ALTERNATIVE",
+            "requirementChoices": [
+                "REQUIRED",
+                "ALTERNATIVE",
+                "DISABLED",
+                "CONDITIONAL"
+            ]
+        }
+
+        # initial state
+        self.assertEqual(0, len(flow0_executions_api.all()))
+
+        # inject parent flow
+        payload = create_child_flow_data(flow0_3_doc)
+        flow0_executions_flow_api.create(payload).isOk()
+        flow0_executions_a = flow0_executions_api.all()
+        self.assertEqual(1, len(flow0_executions_api.all()))
+
+        flow0_3_1__parent_alias = flow0_3_doc["displayName"] # TODO compute from index/level and all docs.
+        flow0_3_1_resource = AuthenticationExecutionsFlowResource(
+            {
+                'path': "flow0_filepath---ignore",
+                'keycloak_api': testbed.kc,
+                'realm': testbed.REALM,
+                'datadir': testbed.DATADIR,
+            },
+            body=flow0_3_1_doc,
+            flow_alias=flow0_3_1__parent_alias,
+        )
+
+        # publish data - 1st time
+        creation_state = flow0_3_1_resource.publish_self()
+        self.assertTrue(creation_state)
+        # flow0_executions_a = flow0_executions_api.all()
+        # _check_state()
+        # publish same data again - still some change needed - requirement is wrong
+        creation_state = flow0_3_1_resource.publish_self()
+        self.assertTrue(creation_state)
+        flow0_executions_a = flow0_executions_api.all()
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = flow0_3_1_resource.publish_self()
+        self.assertFalse(creation_state)
+        _check_state()
+
 
 # TODO test also with configurable execution
 class TestAuthenticationExecutionsExecutionResource(TestCaseBase):
