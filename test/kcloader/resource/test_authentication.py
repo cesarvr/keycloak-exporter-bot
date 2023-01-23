@@ -5,6 +5,7 @@ import unittest
 from glob import glob
 from copy import copy, deepcopy
 
+from kcapi.ie.auth_flows import create_child_flow_data
 from kcapi.rest.crud import KeycloakCRUD
 
 from kcloader.resource import RealmResource, RealmRoleResource
@@ -13,7 +14,7 @@ from ...helper import TestBed, remove_field_id, TestCaseBase
 
 from kcloader.resource import ClientRoleManager, ClientRoleResource, SingleClientResource
 from kcloader.resource.custom_authentication_resource import AuthenticationFlowResource, \
-    AuthenticationExecutionsExecutionResource
+    AuthenticationExecutionsExecutionResource, AuthenticationExecutionsFlowResource
 
 logger = logging.getLogger(__name__)
 
@@ -148,17 +149,7 @@ class TestAuthenticationExecutionsFlowResource(TestCaseBase):
         self.flow0_executions_execution_api = self.authentication_flows_api.executions(self.flow0)
         self.flow0_executions_flow_api = self.authentication_flows_api.flows(self.flow0)
 
-
-    def test_publish_self(self):
-        def _check_state():
-            flow0_executions_b = flow0_executions_api.all()
-            self.assertEqual(1, len(flow0_executions_b))
-            execution_b_noid = copy(flow0_executions_b[0])
-            execution_b_noid.pop("id")
-            self.assertEqual(execution_doc, execution_b_noid)
-            self.assertEqual(flow0_executions_a, flow0_executions_b)
-
-        testbed = self.testbed
+    def test_publish_self_a(self):
         # click 'add flow', flow type = generic, provider = registration-page-form
         # POST payload, {"alias":"aa1","type":"basic-flow","description":"aa2","provider":"registration-page-form"}
         # Returned data at ci0-realm/authentication/flows/ci0-auth-flow-generic/executions
@@ -187,10 +178,13 @@ class TestAuthenticationExecutionsFlowResource(TestCaseBase):
             "userSetupAllowed": False,
             "autheticatorFlow": True
         }
+        self.do_test_publish_self(flow0_a_doc)
+
+    def test_publish_self_b(self):
         # click 'add flow', flow type = form, provider = registration-page-form
         # POST paylaod {"alias":"bb1","type":"form-flow","description":"bb2","provider":"registration-page-form"}
         # Returned data at ci0-realm/authentication/flows/ci0-auth-flow-generic/executions
-        flow_b_doc = {
+        flow0_b_doc = {
             # "id": "e3dc18e5-ece6-4b16-9d8a-549145b4ce6f",
             "requirement": "DISABLED",
             "displayName": "bb1",
@@ -203,32 +197,67 @@ class TestAuthenticationExecutionsFlowResource(TestCaseBase):
             "providerId": "registration-page-form",
             # "flowId": "97930c79-78ec-42e9-a4c5-ed32f8d34f6f",
             "level": 0,
-            "index": 1
+            "index": 0
         }
-        flow_b_doc_inline = {
+        flow0_b_doc_inline = {
             "authenticator": "registration-page-form",
             "authenticatorFlow": True,
             "requirement": "DISABLED",
-            "priority": 1,
+            "priority": 0,
             "flowAlias": "bb1",
             "userSetupAllowed": False,
             "autheticatorFlow": True
         }
+        #
+        # "type":"form-flow" or "type":"basic-flow" - use create_child_flow_data() from kcapi.
+        self.do_test_publish_self(flow0_b_doc)
 
+    def do_test_publish_self(self, flow0_a_doc):
+        def _check_state():
+            flow0_executions_b = flow0_executions_api.all()
+            self.assertEqual(1, len(flow0_executions_b))
+            execution_b_noid = copy(flow0_executions_b[0])
+            execution_b_noid.pop("id")
+            execution_b_noid.pop("flowId")  # flowId points back to self; I think.
+            self.assertEqual(flow0_a_doc, execution_b_noid)
+            self.assertEqual(flow0_executions_a, flow0_executions_b)
+
+        testbed = self.testbed
         flow0_executions_api = self.flow0_executions_api
+        flow0_executions_flow_api = self.flow0_executions_flow_api
 
-        # flow0_a_resource = AuthenticationExecutionsFlowResource(
-        #     {
-        #         'path': "flow0_filepath---ignore",
-        #         'keycloak_api': testbed.kc,
-        #         'realm': testbed.REALM,
-        #         'datadir': testbed.DATADIR,
-        #     },
-        #     body=flow0_a_doc,
-        #     flow_alias=self.flow0_alias,
-        # )
+        # initial state
+        self.assertEqual(0, len(flow0_executions_api.all()))
+
+        if 0:
+            # TEMP
+            payload = create_child_flow_data(flow0_a_doc)
+            flow0_executions_flow_api.create(payload).isOk()
+            flow0_executions_a = flow0_executions_api.all()
+            _check_state()
+
+        flow0_a_resource = AuthenticationExecutionsFlowResource(
+            {
+                'path': "flow0_filepath---ignore",
+                'keycloak_api': testbed.kc,
+                'realm': testbed.REALM,
+                'datadir': testbed.DATADIR,
+            },
+            body=flow0_a_doc,
+            flow_alias=self.flow0_alias,
+        )
 
         # publish data - 1st time
+        creation_state = flow0_a_resource.publish_self()
+        self.assertTrue(creation_state)
+        flow0_executions_a = flow0_executions_api.all()
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = flow0_a_resource.publish_self()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify something - cannot be done in UI
 
 
 # TODO test also with configurable execution

@@ -2,6 +2,7 @@ import logging
 from copy import deepcopy, copy
 
 from kcapi.ie import AuthenticationFlowsImporter
+from kcapi.ie.auth_flows import create_child_flow_data
 from kcapi.rest.auth_flows import AuthenticationExecutionsExecutionCRUD
 from kcapi.rest.crud import KeycloakCRUD
 from sortedcontainers import SortedDict
@@ -129,4 +130,62 @@ class AuthenticationExecutionsExecutionResource(SingleResource):
         payload = {
             "provider": self.body["providerId"],
         }
+        return payload
+
+
+class AuthenticationExecutionsFlowResource(SingleResource):
+    _resource_name = "authentication/executions/{execution_id}"
+    # POST /{realm}/authentication/flows/{flowAlias}/executions/flow  <- this one
+
+    def __init__(
+            self,
+            resource: dict,
+            *,
+            body: dict,
+            flow_alias
+    ):
+        self.keycloak_api = resource["keycloak_api"]
+        self.realm_name = resource['realm']
+
+        # protocol_mapper_api = self._get_resource_api()
+        # clients_api = self.keycloak_api.build("clients", self.realm_name)
+        # protocol_mapper_api = KeycloakCRUD.get_child(clients_api, self._client_id, "protocol-mappers/models")
+        execution_doc = body
+        auth_api = self.keycloak_api.build("authentication", self.realm_name)
+        auth_flow_obj = dict(alias=flow_alias)
+        resource_api = auth_api.flows(auth_flow_obj)
+        # assert isinstance(resource_api, AuthenticationExecutionsExecutionCRUD)  # unusual .update()
+        super().__init__(
+            {
+                "name": self._resource_name,
+                "id": "displayName",
+                **resource,
+            },
+            body=body,
+            resource_api=resource_api,
+        )
+        self.datadir = resource['datadir']
+
+    def publish_self(self):
+        body = copy(self.body)
+        creation_state = self.resource.publish_object(body, self)
+        return creation_state
+
+    def is_equal(self, obj):
+        obj1 = SortedDict(self.body)
+        obj2 = SortedDict(obj)
+        for oo in [obj1, obj2]:
+            oo.pop("id", None)
+            oo.pop("flowId", None)
+        return obj1 == obj2
+
+    def get_update_payload(self, obj):
+        # PUT /{realm}/authentication/flows/{flowAlias}/executions fails if "id" is not also part of payload.
+        assert 0
+        body = copy(self.body)
+        body["id"] = obj["id"]
+        return body
+
+    def get_create_payload(self):
+        payload = create_child_flow_data(self.body)
         return payload
