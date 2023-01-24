@@ -187,14 +187,9 @@ class AuthenticationExecutionsExecutionResource(SingleResource):
         # Create config_manager
         resource_api = self.resource.resource_api
         execution_obj = resource_api.findFirstByKV("displayName", self.body["displayName"])
-        self.config_manager = AuthenticationConfigResource(
-            {
-                'path': "auth_flow_executors_filepath--todo",
-                'keycloak_api': self.keycloak_api,
-                'realm': self.realm_name,
-                'datadir': self.datadir,
-            },
-            body=self.body.get("authenticationConfigData", {}),
+        self.config_manager = AuthenticationConfigManager(
+            self.keycloak_api, self.realm_name, self.datadir,
+            requested_doc=self.body.get("authenticationConfigData", {}),
             execution_id=execution_obj["id"],
         )
 

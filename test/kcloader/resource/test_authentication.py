@@ -566,7 +566,10 @@ class TestAuthenticationExecutionsExecutionResource(TestCaseBase):
         def _check_state2():
             flow0_executions_b = self.flow0_executions_api.all()
             self.assertEqual(1, len(flow0_executions_b))
-            # self.assertEqual(flow0_executions_a, flow0_executions_b)
+            flow0_executions_a_temp = deepcopy(flow0_executions_a)
+            flow0_executions_a_temp[0].pop("authenticationConfig")
+            flow0_executions_a_temp[0].pop("alias")
+            self.assertEqual(flow0_executions_a_temp, flow0_executions_b)
             #
             self.assertNotIn("authenticationConfig", flow0_executions_b[0])
             #
@@ -574,7 +577,9 @@ class TestAuthenticationExecutionsExecutionResource(TestCaseBase):
             execution_id_b = execution_obj_b["id"]
             self.assertNotIn("authenticatorConfig", execution_obj_b)
             self.assertEqual(execution_id_a, execution_id_b)
-            # self.assertEqual(execution_obj_a, execution_obj_b)
+            execution_obj_a_temp = deepcopy(execution_obj_a)
+            execution_obj_a_temp.pop("authenticatorConfig")
+            self.assertEqual(execution_obj_a_temp, execution_obj_b)
             # ---------------------------------------------------------------
 
         # kcfetcher adds to json also authenticationConfigData (it replaces authenticationConfig UUID).
