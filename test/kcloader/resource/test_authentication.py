@@ -127,6 +127,78 @@ class TestAuthenticationFlowResource(TestCaseBase):
         self.assertEqual(data1, data2)
         #
 
+    def test_publish_child_executions_flows(self):
+        def _check_state():
+            flow0_b = self.authentication_flows_api.findFirstByKV("alias", self.flow0_alias)
+            flow0_noid = deepcopy(flow0_b)
+            flow0_noid.pop("id")
+            self.assertEqual(expected_flow0, flow0_noid)
+            self.assertEqual(flow0_a, flow0_b)
+
+            # -----------------------------------------
+        self.maxDiff = None
+        testbed = self.testbed
+        flow0_resource = self.flow0_resource
+        expected_flow0 = deepcopy(flow0_resource.body)
+        # old test data from KC 9.0 have "autheticatorFlow", but miss "authenticatorFlow".
+        for execution in expected_flow0["authenticationExecutions"]:
+            if "authenticatorFlow" not in execution:
+                execution["authenticatorFlow"] = execution["autheticatorFlow"]\
+
+        # prepare parent top-level flow
+        creation_state = flow0_resource.publish_self()
+        self.assertTrue(creation_state)
+
+        # publish data - 1st time
+        creation_state = flow0_resource.publish_executions()
+        self.assertTrue(creation_state)
+        flow_objs_a = self.authentication_flows_api.all()
+        flow0_a = find_in_list(flow_objs_a, alias=self.flow0_alias)
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = flow0_resource.publish_executions()
+        self.assertFalse(creation_state)
+        _check_state()
+
+    def test_find_parent_flow_alias(self):
+        # , top_level_flow_alias:str, executor_docs: List[dict], executor_pos: int):
+        """
+        Input data in executors.json is like:
+        pos     level   index   note
+        0       0       0       direct child of top-level flow, level==0
+        1       0       1
+        2       0       2
+        3       1       0       child of flow at pos=2
+        4       0       3
+        5       1       0       child of flow at pos=4
+        6       1       1
+        7       1       2
+        8       1       3
+        9       2       0       child of flow at pos=8
+        10      2       1
+        11      1       4       child of flow at pos=4
+        """
+        executor_docs = [
+            dict(displayName="p0",  level=0, index=0, expected_parent="top"),
+            dict(displayName="p1",  level=0, index=1, expected_parent="top"),
+            dict(displayName="p2",  level=0, index=2, expected_parent="top"),
+            dict(displayName="p3",  level=1, index=0, expected_parent="p2"),
+            dict(displayName="p4",  level=0, index=3, expected_parent="top"),
+            dict(displayName="p5",  level=1, index=0, expected_parent="p4"),
+            dict(displayName="p6",  level=1, index=1, expected_parent="p4"),
+            dict(displayName="p7",  level=1, index=2, expected_parent="p4"),
+            dict(displayName="p8",  level=1, index=3, expected_parent="p4"),
+            dict(displayName="p9",  level=2, index=0, expected_parent="p8"),
+            dict(displayName="p10", level=2, index=1, expected_parent="p8"),
+            dict(displayName="p11", level=1, index=4, expected_parent="p4"),
+            dict(displayName="p12", level=0, index=4, expected_parent="top"),
+        ]
+        flow0_resource = self.flow0_resource
+        for ii in range(len(executor_docs)):
+            expected_parent_flow_alias = executor_docs[ii]["expected_parent"]
+            parent_flow_alias = flow0_resource._find_parent_flow_alias("top", executor_docs, ii)
+            self.assertEqual(expected_parent_flow_alias, parent_flow_alias)
+
 
 class TestAuthenticationExecutionsFlowResource(TestCaseBase):
     def setUp(self):

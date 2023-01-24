@@ -1,5 +1,8 @@
 import logging
+import os
 from copy import deepcopy, copy
+from glob import glob
+from typing import List
 
 from kcapi.ie import AuthenticationFlowsImporter
 from kcapi.ie.auth_flows import create_child_flow_data
@@ -31,7 +34,63 @@ class SingleCustomAuthenticationResource(SingleResource):
 
 class AuthenticationFlowResource(SingleResource):
     def __init__(self, resource):
-        super().__init__({'name': 'authentication', 'id':'alias', **resource})
+        super().__init__({'name': 'authentication', 'id': 'alias', **resource})
+        self._create_child_executors(resource)
+
+    def _create_child_executors(self, resource):
+        auth_flow_filepath = resource["path"]
+        auth_flow_dirname = os.path.dirname(auth_flow_filepath)
+        executors_filepath = os.path.join(auth_flow_dirname, "executors/executors.json")
+        executor_docs = read_from_json(executors_filepath)
+        self.resources = []
+        for ii in range(len(executor_docs)):
+            child_obj = self._create_child_executor(resource, executor_docs, ii)
+            self.resources.append(child_obj)
+
+    def _create_child_executor(self, resource, executor_docs: List[dict], executor_pos: int):
+        executor_doc = executor_docs[executor_pos]
+        if executor_doc.get("authenticationFlow") is True:
+            authentication_executions_x_resource_class = AuthenticationExecutionsFlowResource
+        else:
+            authentication_executions_x_resource_class = AuthenticationExecutionsExecutionResource
+        # parent_flow_alias is the intermediate parant flow - the node directly above in tree.
+        # It might not be the top-level flow
+        parent_flow_alias = self._find_parent_flow_alias(self.body["alias"], executor_docs, executor_pos)
+        child_obj = authentication_executions_x_resource_class(resource, body=executor_doc, flow_alias=parent_flow_alias)
+        return child_obj
+
+    @staticmethod
+    def _find_parent_flow_alias(top_level_flow_alias:str, executor_docs: List[dict], executor_pos: int):
+        """
+        Input data in executors.json is like:
+        pos     level   index   note
+        0       0       0       direct child of top-level flow, level==0
+        1       0       1
+        2       0       2
+        3       1       0       child of flow at pos=2
+        4       0       3
+        5       1       0       child of flow at pos=4
+        6       1       1
+        7       1       2
+        8       1       3
+        9       2       0       child of flow at pos=8
+        10      2       1
+        11      1       4       child of flow at pos=4
+        """
+        executor_doc = executor_docs[executor_pos]
+        executor_level = executor_doc["level"]
+        if executor_level == 0:
+            return top_level_flow_alias
+        parent_level = executor_level - 1
+        for parent_candidate in reversed(executor_docs[:executor_pos]):
+            if parent_candidate["level"] == parent_level:
+                # executor_docs is a list of executors (executions?)
+                # It is not a list of flows (maybe kcfetcher should be refactored).
+                # The displayName is same as corresponding flow alias.
+                return parent_candidate["displayName"]
+            # between this child and parent should be only child flows with same level,
+            # or their childs.
+            assert parent_candidate["level"] >= executor_level
 
     def publish(self):
         state_self = self.publish_self()
@@ -55,6 +114,10 @@ class AuthenticationFlowResource(SingleResource):
         # auth_flow_importer = AuthenticationFlowsImporter(authentication_api)
         # auth_flow_importer.update(root_node=self.body, flows=executors_doc)
         # return True
+
+    def publish_executions(self):
+        state_all = [resource.publish_self() for resource in self.resources]
+        return any(state_all)
 
     def is_equal(self, obj):
         obj1 = deepcopy(self.body)
