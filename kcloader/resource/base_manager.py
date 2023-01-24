@@ -74,13 +74,17 @@ class BaseManager(ABC):
         file_ids = [doc[self._resource_id] for doc in file_docs]
         return file_ids
 
+    def _get_server_objects(self):
+        server_objs = self.resource_api.all()
+        return server_objs
+
     def _difference_ids(self):
         """
         If object is present on server but missing in datadir, then it needs to be removed.
         This function will return list of ids (alias-es, clientId-s, etc.) that needs to be removed.
         """
         file_ids = self._object_docs_ids()
-        server_objs = self.resource_api.all()
+        server_objs = self._get_server_objects()
         server_ids = [obj[self._resource_id] for obj in server_objs]
 
         # do not try to create/remove/modify blacklisted objects

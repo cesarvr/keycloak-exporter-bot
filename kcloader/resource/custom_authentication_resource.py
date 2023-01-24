@@ -4,6 +4,7 @@ from copy import deepcopy, copy
 from glob import glob
 from typing import List
 
+import kcapi
 from kcapi.ie import AuthenticationFlowsImporter
 from kcapi.ie.auth_flows import create_child_flow_data
 from kcapi.rest.auth_flows import AuthenticationExecutionsBaseCRUD
@@ -12,6 +13,7 @@ from sortedcontainers import SortedDict
 
 from kcloader.resource import SingleResource
 from kcloader.tools import lookup_child_resource, read_from_json
+from kcloader.resource.base_manager import BaseManager
 
 logger = logging.getLogger(__name__)
 
@@ -171,10 +173,21 @@ class AuthenticationExecutionsExecutionResource(SingleResource):
         )
         self.datadir = resource['datadir']
 
+    def publish(self):
+        state_self = self.publish_self()
+        state_config = self.publish_config()
+        return any([state_self, state_config])
+
     def publish_self(self):
         body = copy(self.body)
         creation_state = self.resource.publish_object(body, self)
         return creation_state
+
+    def publish_config(self):
+        return False
+        # body = copy(self.body)
+        # creation_state = self.resource.publish_object(body, self)
+        # return creation_state
 
     def is_equal(self, obj):
         obj1 = SortedDict(self.body)
@@ -233,6 +246,10 @@ class AuthenticationExecutionsFlowResource(SingleResource):
         )
         self.datadir = resource['datadir']
 
+    def publish(self):
+        state_self = self.publish_self()
+        return state_self
+
     def publish_self(self):
         body = copy(self.body)
         creation_state = self.resource.publish_object(body, self)
@@ -265,6 +282,64 @@ class AuthenticationExecutionsFlowResource(SingleResource):
 
     def is_update_after_create_needed(self):
         return True
+
+
+class AuthenticationConfigManager(BaseManager):
+    # _resource_name = "authentication/executions/{execution_id}/config"
+    # _resource_name = "authentication/config/{id}"
+    _resource_id = "alias"
+    _resource_delete_id = "id"
+
+    def __init__(
+            self,
+            keycloak_api: kcapi.sso.Keycloak,
+            realm: str,
+            datadir: str,
+            *,
+            requested_doc: dict,
+            execution_id: str,
+    ):
+        super().__init__(keycloak_api, realm, datadir)
+        self._requested_doc = requested_doc
+        self._execution_id = execution_id
+        #
+        self._auth_executions_api = self.keycloak_api.build("authentication/executions", self.realm)
+        # self._auth_executions_api.get_one(execution_id)
+        # self._execution_config__create_api = KeycloakCRUD.get_child(self._auth_executions_api, execution_id, "config")  # POST {realm}/authentication/executions/{executionId}/config
+        self._auth_config_api = self.keycloak_api.build("authentication/config", self.realm)
+
+        self.resources = []
+        if self._requested_doc:
+            config_resource = AuthenticationConfigResource(
+                {
+                    'path': "flow0_filepath---ignore",
+                    'keycloak_api': self.keycloak_api,
+                    'realm': self.realm,
+                    'datadir': self.datadir,
+                },
+                body=self._requested_doc,
+                execution_id=execution_id,
+            )
+            self.resources = [config_resource]
+
+    def _object_docs_ids(self):
+        if self._requested_doc:
+            return [self._requested_doc["alias"]]
+        else:
+            return []
+
+    def _get_server_objects(self):
+        execution = self._auth_executions_api.get_one(self._execution_id)
+        config_id = execution.get("authenticatorConfig", None)
+        if not config_id:
+            return []
+        config = self._auth_config_api.get_one(config_id)
+        return [config]
+
+    def _get_resource_api(self):
+        # this one is used to list all objects on server => _get_server_objects() does this,
+        # and it cannot use a single resource_api.
+        return None
 
 
 class AuthenticationConfigResource(SingleResource):
