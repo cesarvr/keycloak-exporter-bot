@@ -265,3 +265,71 @@ class AuthenticationExecutionsFlowResource(SingleResource):
 
     def is_update_after_create_needed(self):
         return True
+
+
+class AuthenticationConfigResource(SingleResource):
+    # POST {realm}/authentication/executions/{execution_id}/config
+    # GET {realm}/authentication/config/{config_id}
+    #
+    # NB: KeycloakCRUD.all() and related functions cannot work with those URLS -
+    # there is not GET for {realm}/authentication/config.
+    # Maybe: do not use this class with ResourcePublisher.
+    _resource_name = "authentication/config/{config_id}"
+    def __init__(
+            self,
+            resource: dict,
+            *,
+            body: dict,
+            execution_id: int,
+    ):
+        self.keycloak_api = resource["keycloak_api"]
+        self.realm_name = resource['realm']
+
+        self._parent_execution_id = execution_id
+        self._auth_executions_api = self.keycloak_api.build("authentication/executions", self.realm_name)
+        # self._auth_executions_api.get_one(execution_id)
+        self._parent_execution_config__create_api = KeycloakCRUD.get_child(self._auth_executions_api, execution_id, "config")  # POST {realm}/authentication/executions/{executionId}/config
+        self._auth_config_api = self.keycloak_api.build("authentication/config", self.realm_name)
+
+        super().__init__(
+            {
+                "name": self._resource_name,
+                "id": "alias",
+                **resource,
+            },
+            body=body,
+            resource_api=None,  # this SHOULD BE a reason why to not derive from SingleResource
+        )
+        self.body = body
+        self.datadir = resource['datadir']
+
+    def publish(self):
+        server_id, server_obj = self._find_server_object()
+        if server_id:
+            if self.is_equal(server_obj):
+                return False
+            payload = self.get_update_payload(server_obj)
+            self._auth_config_api.update(server_id, payload).isOk()
+            return True
+        else:
+            payload = self.get_create_payload()
+            self._parent_execution_config__create_api.create(payload).isOk()
+            return True
+
+    def is_equal(self, obj):
+        obj1 = SortedDict(self.body)
+        obj2 = SortedDict(obj)
+        for oo in [obj1, obj2]:
+            oo.pop("id", None)
+        return obj1 == obj2
+
+    def _find_server_object(self):
+        # equivalent of ResourcePublisher.get_id()
+        execution_obj = self._auth_executions_api.get_one(self._parent_execution_id)
+        # field has name 'authenticationConfig' or 'authenticatorConfig' - depends on used API endpoint
+        if "authenticatorConfig" not in execution_obj:
+            return None, None
+        config_id = execution_obj["authenticatorConfig"]
+        config_obj = self._auth_config_api.get_one(config_id)
+        assert config_id == config_obj["id"]
+        return config_id, config_obj

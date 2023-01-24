@@ -14,7 +14,8 @@ from ...helper import TestBed, remove_field_id, TestCaseBase
 
 from kcloader.resource import ClientRoleManager, ClientRoleResource, SingleClientResource
 from kcloader.resource.custom_authentication_resource import AuthenticationFlowResource, \
-    AuthenticationExecutionsExecutionResource, AuthenticationExecutionsFlowResource
+    AuthenticationExecutionsExecutionResource, AuthenticationExecutionsFlowResource, \
+    AuthenticationConfigResource
 
 logger = logging.getLogger(__name__)
 
@@ -539,231 +540,118 @@ class TestAuthenticationExecutionsExecutionResource(TestCaseBase):
         _check_state()
 
 
-class TestAuthenticationExecutionConfigResource(TestCaseBase):
+class TestAuthenticationConfigResource(TestCaseBase):
+    # POST /{realm}/authentication/executions/{executionId}/config
+    # GET /{realm}/authentication/config/{id}
     def setUp(self):
         super().setUp()
         testbed = self.testbed
 
-        # '/flows' is magically added to "authentication"
         self.authentication_flows_api = testbed.kc.build("authentication", testbed.REALM)
-
-        # create required auth flow
-        self.auth_flow_alias = "ci0-auth-flow-generic"
-        self.auth_flow_doc = {
-            "alias": "ci0-auth-flow-generic",
+        self.authentication_config_api = testbed.kc.build("authentication/config", testbed.REALM)
+        self.flow0_alias = "ci0-auth-flow-generic"
+        self.authentication_flows_api.create({
+            "alias": self.flow0_alias,
             "authenticationExecutions": [],
             "builtIn": False,
-            "description": "ci0-auth-flow-generic-desc",
+            "description": self.flow0_alias + "-desc",
             "providerId": "basic-flow",
-            "topLevel": True
+            "topLevel": True,
+        }).isOk()
+
+        self.flow0 = self.authentication_flows_api.findFirstByKV("alias", "ci0-auth-flow-generic")
+        self.flow0_executions_api = KeycloakCRUD.get_child(self.authentication_flows_api, self.flow0_alias, "executions")
+        self.flow0_executions_execution_api = self.authentication_flows_api.executions(self.flow0)
+        self.flow0_executions_flow_api = self.authentication_flows_api.flows(self.flow0)
+
+        self.execution_doc = {
+            # "alias": "ci0-auth-flow-generic-exec-20-alias",
+            # "authenticationConfigData": {...}
+            "configurable": True,
+            "displayName": "Conditional OTP Form",
+            "index": 0,
+            "level": 0,
+            "providerId": "auth-conditional-otp-form",
+            "requirement": "ALTERNATIVE",
+            "requirementChoices": [
+                "REQUIRED",
+                "ALTERNATIVE",
+                "DISABLED"
+            ]
         }
-        self.authentication_flows_api.create(self.auth_flow_doc).isOk()
-        self.this_authentication_flow_executions_api = self.authentication_flows_api.executions(self.auth_flow_doc)
-
-        # # configuration not possible for "direct-grant-validate-username",
-        # self.this_authentication_flow_executions_api.create({
-        #     # RH SSO 7.4
-        #     "provider": "direct-grant-validate-username",
-        #     #
-        #     # KC 9.0 - does is use different data for POST?
-        #     # "authenticator": "direct-grant-validate-username",
-        #     # "autheticatorFlow": False,
-        #     # "priority": 0,
-        #     # "requirement": "REQUIRED",
-        #     # "userSetupAllowed": False
-        # }).isOk()
-
-        #  "Condition - User Role" - this execution is configurable
-        self.this_authentication_flow_executions_api.create({
-            "provider": "conditional-user-role",
+        self.flow0_executions_execution_api.create({
+            "provider":"auth-conditional-otp-form",
         })
-        self.this_authentication_flow_execution = self.this_authentication_flow_executions_api.findFirstByKV(
-            "providerId", "conditional-user-role"
+
+        self.config_doc = {
+            "alias": "ci0-auth-flow-generic-exec-20-alias",
+            "config": {
+                "defaultOtpOutcome": "skip",
+                "forceOtpForHeaderPattern": "ci0-force-header",
+                "forceOtpRole": "ci0-client-0.ci0-client0-role0",
+                "noOtpRequiredForHeaderPattern": "ci0-skip-header",
+                "otpControlAttribute": "user-attr",
+                "skipOtpRole": "ci0-role-1"
+            }
+        }
+        # config_create_payload = {"config":{"noOtpRequiredForHeaderPattern":"","forceOtpForHeaderPattern":""},"alias":"aaa"}
+        # POST ci0-realm/authentication/executions/{execution_id}/config
+        # GET ci0-realm/authentication/config/{config_id}
+
+    def test_publish(self):
+        def _check_state():
+            flow0_executions_b = self.flow0_executions_api.all()
+            self.assertEqual(1, len(flow0_executions_b))
+            config_id_b = flow0_executions_b[0]["authenticationConfig"]
+            config_obj_b = authentication_config_api.get_one(config_id_b)
+            self.assertEqual(flow0_executions_a, flow0_executions_b)
+            self.assertEqual(config_obj_a, config_obj_b)
+            # ---------------------------------------------------------------
+
+        testbed = self.testbed
+        flow0_executions_api = self.flow0_executions_api
+        authentication_config_api = self.authentication_config_api
+        flow0_executions = flow0_executions_api.all()
+        self.assertEqual(1, len(flow0_executions))
+        execution_id = flow0_executions[0]["id"]
+
+        config_resource = AuthenticationConfigResource(
+            {
+                'path': "flow0_filepath---ignore",
+                'keycloak_api': testbed.kc,
+                'realm': testbed.REALM,
+                'datadir': testbed.DATADIR,
+            },
+            body=self.config_doc,
+            execution_id=execution_id,
         )
 
-        # return
-        # POST {realm}/authentication/executions/{execution_id}/config
-        # PUT {realm}/authentication/config/{config_id}
-        # xx = self.this_authentication_flow_executions_api.get_child(self.this_authentication_flow_execution["id"], "config", "")
-        xx = KeycloakCRUD.get_child(self.this_authentication_flow_executions_api, self.this_authentication_flow_execution["id"], "config")
-        xx = xx
-
-    def test_noop(self):
-        def _check_state():
-            pass
-
-    def x_test_publish_minimal_representation(self):
-        return
-        def _check_state():
-            realm_objs_b = self.realms_api.all()
-            realm_obj_b = find_in_list(realm_objs_b, realm=realm_name)
-            self.assertEqual(realm_obj_a["id"], realm_obj_b["id"])
-            self.assertEqual(realm_obj_a, realm_obj_b)
-
-        realm_roles_api = self.realm_roles_api
-        testbed = self.testbed
-        realms_api = self.realms_api
-        realm_name = testbed.REALM
-        realm_resource = RealmResource({
-            'path': self.realm_filepath,
-            'keycloak_api': testbed.kc,
-            'realm': realm_name,
-        })
-
         # publish data - 1st time
-        creation_state = realm_resource.publish(minimal_representation=True)
+        creation_state = config_resource.publish()
         self.assertTrue(creation_state)
-        realm_objs_a = self.realms_api.all()
-        realm_obj_a = find_in_list(realm_objs_a, realm=realm_name)
+        flow0_executions_a = flow0_executions_api.all()
+        config_id_a = flow0_executions_a[0]["authenticationConfig"]
+        config_obj_a = authentication_config_api.get_one(config_id_a)
         _check_state()
         # publish same data again - idempotence
-        creation_state = realm_resource.publish(minimal_representation=True)
+        creation_state = config_resource.publish()
         self.assertFalse(creation_state)
         _check_state()
 
         # modify something
-        data1 = realms_api.findFirstByKV("realm", realm_name)
-        data1.update({
-            "displayName": "ci0-realm-display-NEW",
-            "verifyEmail": True,
+        data1 = authentication_config_api.get_one(config_id_a)
+        self.assertEqual(config_obj_a, data1)
+        data1["config"].update({
+            "forceOtpForHeaderPattern": "ci0-force-header-NEW",
         })
-        realms_api.update(realm_name, data1)
-        data2 = realms_api.findFirstByKV("realm", realm_name)
+        authentication_config_api.update(config_id_a, data1)
+        data2 = authentication_config_api.get_one(config_id_a)
         self.assertEqual(data1, data2)
         #
-        # publish must revert changes
-        creation_state = realm_resource.publish(minimal_representation=True)
+        creation_state = config_resource.publish()
         self.assertTrue(creation_state)
         _check_state()
         # publish same data again - idempotence
-        creation_state = realm_resource.publish(minimal_representation=True)
-        self.assertFalse(creation_state)
-        _check_state()
-
-    def x_test_publish__default_realm_roles__auth_bindings(self):
-        return
-        # Only default realm roles are tested here.
-        # Default client roles are part of client config.
-        #
-        # Menu authentication > bindings, what is seen there is stored in realm.json
-        # Auth flow can be assigned only if it already exists.
-        # Test bindings are correctly created/updated.
-        def _check_state():
-            realm_objs_b = self.realms_api.all()
-            realm_obj_b = find_in_list(realm_objs_b, realm=realm_name)
-            self.assertEqual(realm_obj_a["id"], realm_obj_b["id"])
-            self.assertEqual(realm_obj_a, realm_obj_b)
-            self.assertEqual(
-                expected_default_role_names,
-                sorted(realm_obj_a["defaultRoles"]),
-            )
-            self.assertEqual("ci0-auth-flow-generic", realm_obj_a["resetCredentialsFlow"])
-            # --------------------------------------------------------------------------------
-        return
-
-        our_roles_names = sorted([
-            "ci0-role-0",
-            # "ci0-role-1",
-            # "ci0-role-1a",
-            # "ci0-role-1b",
-        ])
-        blacklisted_roles_names = sorted([
-            "offline_access",
-            "uma_authorization",
-        ])
-        expected_default_role_names = sorted(our_roles_names + blacklisted_roles_names)
-        realm_roles_api = self.realm_roles_api
-        authentication_flows_api = self.authentication_flows_api
-        testbed = self.testbed
-        realms_api = self.realms_api
-        realm_name = testbed.REALM
-        realm_resource = RealmResource({
-            'path': self.realm_filepath,
-            'keycloak_api': testbed.kc,
-            'realm': realm_name,
-        })
-
-        # prepare - create unconfigured realm
-        realms = realms_api.all()
-        realm_names = [rr["realm"] for rr in realms]
-        self.assertNotIn(realm_name, realm_names)
-        realms_api.create({
-            "realm": realm_name,
-            "displayName": "ci0-realm-display-NOT-CONFIGURED",
-        }).isOk()
-        realms = realms_api.all()
-        realm_names = [rr["realm"] for rr in realms]
-        self.assertIn(realm_name, realm_names)
-
-        # prepare - create other required objects - realm roles, auth flows, etc
-        realm_role_name = "ci0-role-0"
-        realm_roles_api.create({
-            "name": realm_role_name,
-            "description": realm_role_name + "---CI-INJECTED",
-        }).isOk()
-        #
-        auth_flow_alias = "ci0-auth-flow-generic"  # used for realm resetCredentialsFlow
-        auth_flows = authentication_flows_api.all()
-        auth_flow_aliases = [auth_flow["alias"] for auth_flow in auth_flows]
-        self.assertNotIn(auth_flow_alias, auth_flow_aliases)
-        authentication_flows_api.create({
-            "alias": auth_flow_alias,
-            "providerId": "basic-flow",
-            "description": auth_flow_alias + "---TEMP-INJECTED",
-            "topLevel": True,
-            "builtIn": False
-        }).isOk()
-
-        # publish data - 1st time
-        creation_state = realm_resource.publish(minimal_representation=False)
-        self.assertTrue(creation_state)
-        realm_objs_a = self.realms_api.all()
-        realm_obj_a = find_in_list(realm_objs_a, realm=realm_name)
-        _check_state()
-        # publish same data again - idempotence
-        creation_state = realm_resource.publish(minimal_representation=False)
-        self.assertFalse(creation_state)
-        _check_state()
-
-        # modify something
-        data1 = realms_api.findFirstByKV("realm", realm_name)
-        data1.update({
-            "displayName": "ci0-realm-display-NEW",
-            "verifyEmail": True,
-        })
-        realms_api.update(realm_name, data1)
-        data2 = realms_api.findFirstByKV("realm", realm_name)
-        self.assertEqual(data1, data2)
-        #
-        # publish must revert changes
-        creation_state = realm_resource.publish(minimal_representation=False)
-        self.assertTrue(creation_state)
-        _check_state()
-        # publish same data again - idempotence
-        creation_state = realm_resource.publish(minimal_representation=False)
-        self.assertFalse(creation_state)
-        _check_state()
-
-        # modify default roles, auth-flow
-        data1 = realms_api.findFirstByKV("realm", realm_name)
-        data1.update({
-            "defaultRoles": ["uma_authorization"],
-            "resetCredentialsFlow": "browser",
-        })
-        realms_api.update(realm_name, data1)
-        data2 = realms_api.findFirstByKV("realm", realm_name)
-        self.assertEqual(data1, data2)
-        #
-        # publish must revert changes
-        creation_state = realm_resource.publish(minimal_representation=False)
-        self.assertTrue(creation_state)
-        _check_state()
-        # publish same data again - idempotence
-        creation_state = realm_resource.publish(minimal_representation=False)
-        self.assertFalse(creation_state)
-        _check_state()
-
-        # minimal_representation=True must not misconfigure existing object
-        creation_state = realm_resource.publish(minimal_representation=True)
+        creation_state = config_resource.publish()
         self.assertFalse(creation_state)
         _check_state()
