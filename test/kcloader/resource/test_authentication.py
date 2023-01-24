@@ -434,16 +434,7 @@ class TestAuthenticationExecutionsExecutionResource(TestCaseBase):
         self.flow0_executions_execution_api = self.authentication_flows_api.executions(self.flow0)
         self.flow0_executions_flow_api = self.authentication_flows_api.flows(self.flow0)
 
-    def test_publish_self(self):
-        def _check_state():
-            flow0_executions_b = flow0_executions_api.all()
-            self.assertEqual(1, len(flow0_executions_b))
-            execution_b_noid = copy(flow0_executions_b[0])
-            execution_b_noid.pop("id")
-            self.assertEqual(execution_doc, execution_b_noid)
-            self.assertEqual(flow0_executions_a, flow0_executions_b)
-
-        testbed = self.testbed
+    def test_publish_self__simple(self):
         # POST paylaod, {"provider":"auth-otp-form"}
         # Created object is
         execution_doc = {
@@ -459,8 +450,49 @@ class TestAuthenticationExecutionsExecutionResource(TestCaseBase):
             "level": 0,
             "index": 0
         }
-        flow0_executions_api = self.flow0_executions_api
+        self.do_test_publish_self(execution_doc)
 
+    def test_publish_self__from_json(self):
+        # kcfetcher adds to json also authenticationConfigData.
+        execution_doc = {
+            "alias": "ci0-auth-flow-generic-exec-20-alias",
+            "authenticationConfigData": {
+                "alias": "ci0-auth-flow-generic-exec-20-alias",
+                "config": {
+                    "defaultOtpOutcome": "skip",
+                    "forceOtpForHeaderPattern": "ci0-force-header",
+                    "forceOtpRole": "ci0-client-0.ci0-client0-role0",
+                    "noOtpRequiredForHeaderPattern": "ci0-skip-header",
+                    "otpControlAttribute": "user-attr",
+                    "skipOtpRole": "ci0-role-1"
+                }
+            },
+            "configurable": True,
+            "displayName": "Conditional OTP Form",
+            "index": 0,
+            "level": 0,
+            "providerId": "auth-conditional-otp-form",
+            "requirement": "ALTERNATIVE",
+            "requirementChoices": [
+                "REQUIRED",
+                "ALTERNATIVE",
+                "DISABLED"
+            ]
+        }
+        self.do_test_publish_self(execution_doc)
+
+    def do_test_publish_self(self, execution_doc):
+        def _check_state():
+            flow0_executions_b = flow0_executions_api.all()
+            self.assertEqual(1, len(flow0_executions_b))
+            execution_b_noid = copy(flow0_executions_b[0])
+            execution_b_noid.pop("id")
+            self.assertEqual(expected_execution, execution_b_noid)
+            self.assertEqual(flow0_executions_a, flow0_executions_b)
+
+        self.maxDiff = None
+        testbed = self.testbed
+        flow0_executions_api = self.flow0_executions_api
         flow0_execution_resource = AuthenticationExecutionsExecutionResource(
             {
                 'path': "flow0_filepath---ignore",
@@ -471,6 +503,10 @@ class TestAuthenticationExecutionsExecutionResource(TestCaseBase):
             body=execution_doc,
             flow_alias=self.flow0_alias,
         )
+
+        expected_execution = deepcopy(execution_doc)
+        expected_execution.pop("authenticationConfigData", None)
+        expected_execution.pop("alias", None)
 
         # publish data - 1st time
         creation_state = flow0_execution_resource.publish_self()
@@ -485,9 +521,10 @@ class TestAuthenticationExecutionsExecutionResource(TestCaseBase):
         # modify something
         # there is no PUT for "authentication/executions", so use
         # PUT /{realm}/authentication/flows/{flowAlias}/executions
+        assert execution_doc["requirement"] != "REQUIRED"
         data1 = flow0_executions_api.all()[0]
         data1.update({
-            "requirement": "ALTERNATIVE",
+            "requirement": "REQUIRED",
         })
         flow0_executions_api.update(None, data1).isOk()
         data2 = flow0_executions_api.all()[0]

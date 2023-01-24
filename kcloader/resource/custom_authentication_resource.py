@@ -187,6 +187,7 @@ class AuthenticationExecutionsExecutionResource(SingleResource):
         # PUT /{realm}/authentication/flows/{flowAlias}/executions fails if "id" is not also part of payload.
         body = copy(self.body)
         body["id"] = obj["id"]
+        body.pop("authenticationConfigData", None)  # alias
         return body
 
     def get_create_payload(self):
@@ -194,6 +195,9 @@ class AuthenticationExecutionsExecutionResource(SingleResource):
             "provider": self.body["providerId"],
         }
         return payload
+
+    def is_update_after_create_needed(self):
+        return True
 
 
 class AuthenticationExecutionsFlowResource(SingleResource):
