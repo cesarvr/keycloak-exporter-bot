@@ -186,10 +186,9 @@ def main(args):
         for auth_flow_filepath in auth_flow_filepaths:
             auth_flow_res = AuthenticationFlowResource({
                 'path': auth_flow_filepath,
-                # 'name': 'authentication',
-                # 'id': 'alias',
                 'keycloak_api': keycloak_api,
                 'realm': realm_name,
+                'datadir': datadir,
             })
             creation_state = auth_flow_res.publish_self()
 
