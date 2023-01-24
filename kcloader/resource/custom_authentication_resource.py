@@ -172,6 +172,8 @@ class AuthenticationExecutionsExecutionResource(SingleResource):
             resource_api=resource_api,
         )
         self.datadir = resource['datadir']
+        # config resource creation is delayed until we get execution_id
+        self.config_manager = None
 
     def publish(self):
         state_self = self.publish_self()
@@ -181,19 +183,37 @@ class AuthenticationExecutionsExecutionResource(SingleResource):
     def publish_self(self):
         body = copy(self.body)
         creation_state = self.resource.publish_object(body, self)
+
+        # Create config_manager
+        resource_api = self.resource.resource_api
+        execution_obj = resource_api.findFirstByKV("displayName", self.body["displayName"])
+        self.config_manager = AuthenticationConfigResource(
+            {
+                'path': "auth_flow_executors_filepath--todo",
+                'keycloak_api': self.keycloak_api,
+                'realm': self.realm_name,
+                'datadir': self.datadir,
+            },
+            body=self.body.get("authenticationConfigData", {}),
+            execution_id=execution_obj["id"],
+        )
+
         return creation_state
 
     def publish_config(self):
-        return False
-        # body = copy(self.body)
-        # creation_state = self.resource.publish_object(body, self)
-        # return creation_state
+        creation_state = self.config_manager.publish()
+        return creation_state
 
     def is_equal(self, obj):
         obj1 = SortedDict(self.body)
         obj2 = SortedDict(obj)
         for oo in [obj1, obj2]:
             oo.pop("id", None)
+            # authenticationConfigData, authenticationConfig and alias are created by creating a config sub-object.
+            # AuthenticationConfigManager will handle them.
+            oo.pop("alias", None)
+            oo.pop("authenticationConfig", None)
+            oo.pop("authenticationConfigData", None)
         return obj1 == obj2
 
     def get_update_payload(self, obj):

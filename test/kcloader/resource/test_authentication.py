@@ -424,6 +424,8 @@ class TestAuthenticationExecutionsExecutionResource(TestCaseBase):
         testbed = self.testbed
 
         self.authentication_flows_api = testbed.kc.build("authentication", testbed.REALM)
+        self.authentication_config_api = testbed.kc.build("authentication/config", testbed.REALM)
+        self.authentication_executions_api = testbed.kc.build("authentication/executions", testbed.REALM)
         self.flow0_alias = "ci0-auth-flow-generic"
         self.authentication_flows_api.create({
             "alias": self.flow0_alias,
@@ -543,91 +545,119 @@ class TestAuthenticationExecutionsExecutionResource(TestCaseBase):
         self.assertFalse(creation_state)
         _check_state()
 
-    # def test_publish(self):
-    #     def _check_state():
-    #         flow0_executions_b = flow0_executions_api.all()
-    #         self.assertEqual(1, len(flow0_executions_b))
-    #         execution_b_noid = copy(flow0_executions_b[0])
-    #         execution_b_noid.pop("id")
-    #         execution_config_b_id = execution_b_noid.pop("authenticationConfig")
-    #         self.assertEqual(expected_execution, execution_b_noid)
-    #         self.assertEqual(flow0_executions_a, flow0_executions_b)
-    #
-    #     # kcfetcher adds to json also authenticationConfigData (it replaces authenticationConfig UUID).
-    #     # 'alias' in API response is side effect of assigining config.
-    #     execution_doc = {
-    #         "alias": "ci0-auth-flow-generic-exec-20-alias",
-    #         "authenticationConfigData": {
-    #             "alias": "ci0-auth-flow-generic-exec-20-alias",
-    #             "config": {
-    #                 "defaultOtpOutcome": "skip",
-    #                 "forceOtpForHeaderPattern": "ci0-force-header",
-    #                 "forceOtpRole": "ci0-client-0.ci0-client0-role0",
-    #                 "noOtpRequiredForHeaderPattern": "ci0-skip-header",
-    #                 "otpControlAttribute": "user-attr",
-    #                 "skipOtpRole": "ci0-role-1"
-    #             }
-    #         },
-    #         "configurable": True,
-    #         "displayName": "Conditional OTP Form",
-    #         "index": 0,
-    #         "level": 0,
-    #         "providerId": "auth-conditional-otp-form",
-    #         "requirement": "ALTERNATIVE",
-    #         "requirementChoices": [
-    #             "REQUIRED",
-    #             "ALTERNATIVE",
-    #             "DISABLED"
-    #         ]
-    #     }
-    #
-    #     self.maxDiff = None
-    #     testbed = self.testbed
-    #     flow0_executions_api = self.flow0_executions_api
-    #     flow0_execution_resource = AuthenticationExecutionsExecutionResource(
-    #         {
-    #             'path': "flow0_filepath---ignore",
-    #             'keycloak_api': testbed.kc,
-    #             'realm': testbed.REALM,
-    #             'datadir': testbed.DATADIR,
-    #         },
-    #         body=execution_doc,
-    #         flow_alias=self.flow0_alias,
-    #     )
-    #
-    #     expected_execution = deepcopy(execution_doc)
-    #
-    #     # publish data - 1st time
-    #     creation_state = flow0_execution_resource.publish()
-    #     self.assertTrue(creation_state)
-    #     flow0_executions_a = flow0_executions_api.all()
-    #     _check_state()
-    #     # publish same data again - idempotence
-    #     creation_state = flow0_execution_resource.publish()
-    #     self.assertFalse(creation_state)
-    #     _check_state()
-    #
-    #     # modify something
-    #     # there is no PUT for "authentication/executions", so use
-    #     # PUT /{realm}/authentication/flows/{flowAlias}/executions
-    #     assert execution_doc["requirement"] != "REQUIRED"
-    #     data1 = flow0_executions_api.all()[0]
-    #     data1.update({
-    #         "requirement": "REQUIRED",
-    #     })
-    #     flow0_executions_api.update(None, data1).isOk()
-    #     data2 = flow0_executions_api.all()[0]
-    #     self.assertEqual(data1, data2)
-    #     #
-    #     creation_state = flow0_execution_resource.publish()
-    #     self.assertTrue(creation_state)
-    #     _check_state()
-    #     # publish same data again - idempotence
-    #     creation_state = flow0_execution_resource.publish()
-    #     self.assertFalse(creation_state)
-    #     _check_state()
-    #
-    #     # remove config
+    def test_publish(self):
+        def _check_state():
+            flow0_executions_b = self.flow0_executions_api.all()
+            self.assertEqual(1, len(flow0_executions_b))
+            self.assertEqual(flow0_executions_a, flow0_executions_b)
+            #
+            config_id_b = flow0_executions_b[0]["authenticationConfig"]
+            config_obj_b = authentication_config_api.get_one(config_id_b)
+            self.assertEqual(config_id_a, config_id_b)
+            self.assertEqual(config_obj_a, config_obj_b)
+            #
+            execution_obj_b = authentication_executions_api.get_one(flow0_executions_b[0]["id"])
+            execution_id_b = execution_obj_b["id"]
+            self.assertEqual(execution_id_a, execution_id_b)
+            self.assertEqual(execution_obj_a, execution_obj_b)
+            # ---------------------------------------------------------------
+
+        # kcfetcher adds to json also authenticationConfigData (it replaces authenticationConfig UUID).
+        # 'alias' in API response is side effect of assigining config.
+        execution_doc = {
+            "alias": "ci0-auth-flow-generic-exec-20-alias",
+            "authenticationConfigData": {
+                "alias": "ci0-auth-flow-generic-exec-20-alias",
+                "config": {
+                    "defaultOtpOutcome": "skip",
+                    "forceOtpForHeaderPattern": "ci0-force-header",
+                    "forceOtpRole": "ci0-client-0.ci0-client0-role0",
+                    "noOtpRequiredForHeaderPattern": "ci0-skip-header",
+                    "otpControlAttribute": "user-attr",
+                    "skipOtpRole": "ci0-role-1"
+                }
+            },
+            "configurable": True,
+            "displayName": "Conditional OTP Form",
+            "index": 0,
+            "level": 0,
+            "providerId": "auth-conditional-otp-form",
+            "requirement": "ALTERNATIVE",
+            "requirementChoices": [
+                "REQUIRED",
+                "ALTERNATIVE",
+                "DISABLED"
+            ]
+        }
+
+        self.maxDiff = None
+        testbed = self.testbed
+        authentication_config_api = self.authentication_config_api
+        authentication_executions_api = self.authentication_executions_api
+        flow0_executions_api = self.flow0_executions_api
+        flow0_execution_resource = AuthenticationExecutionsExecutionResource(
+            {
+                'path': "flow0_filepath---ignore",
+                'keycloak_api': testbed.kc,
+                'realm': testbed.REALM,
+                'datadir': testbed.DATADIR,
+            },
+            body=execution_doc,
+            flow_alias=self.flow0_alias,
+        )
+        expected_execution = deepcopy(execution_doc)
+
+        # publish data - 1st time
+        creation_state = flow0_execution_resource.publish()
+        self.assertTrue(creation_state)
+        flow0_executions_a = flow0_executions_api.all()
+        execution_obj_a = authentication_executions_api.get_one(flow0_executions_a[0]["id"])
+        execution_id_a = execution_obj_a["id"]
+        config_id_a = flow0_executions_a[0]["authenticationConfig"]
+        config_obj_a = authentication_config_api.get_one(config_id_a)
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = flow0_execution_resource.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify something
+        # there is no PUT for "authentication/executions", so use
+        # PUT /{realm}/authentication/flows/{flowAlias}/executions
+        assert execution_doc["requirement"] != "REQUIRED"
+        data1 = flow0_executions_api.all()[0]
+        data1.update({
+            "requirement": "REQUIRED",
+        })
+        flow0_executions_api.update(None, data1).isOk()
+        data2 = flow0_executions_api.all()[0]
+        self.assertEqual(data1, data2)
+        #
+        creation_state = flow0_execution_resource.publish()
+        self.assertTrue(creation_state)
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = flow0_execution_resource.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # remove config, or just modify it
+        data1 = authentication_config_api.get_one(config_id_a)
+        data1["config"].update({
+            "otpControlAttribute": "user-attr-NEW",
+        })
+        authentication_config_api.update(config_id_a, data1).isOk()
+        data2 = authentication_config_api.get_one(config_id_a)
+        self.assertEqual(data1, data2)
+        #
+        creation_state = flow0_execution_resource.publish()
+        self.assertTrue(creation_state)
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = flow0_execution_resource.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
 
 class TestAuthenticationConfigResource(TestCaseBase):
     # POST /{realm}/authentication/executions/{executionId}/config
