@@ -558,8 +558,23 @@ class TestAuthenticationExecutionsExecutionResource(TestCaseBase):
             #
             execution_obj_b = authentication_executions_api.get_one(flow0_executions_b[0]["id"])
             execution_id_b = execution_obj_b["id"]
+            self.assertIn("authenticatorConfig", execution_obj_b)
             self.assertEqual(execution_id_a, execution_id_b)
             self.assertEqual(execution_obj_a, execution_obj_b)
+            # ---------------------------------------------------------------
+
+        def _check_state2():
+            flow0_executions_b = self.flow0_executions_api.all()
+            self.assertEqual(1, len(flow0_executions_b))
+            # self.assertEqual(flow0_executions_a, flow0_executions_b)
+            #
+            self.assertNotIn("authenticationConfig", flow0_executions_b[0])
+            #
+            execution_obj_b = authentication_executions_api.get_one(flow0_executions_b[0]["id"])
+            execution_id_b = execution_obj_b["id"]
+            self.assertNotIn("authenticatorConfig", execution_obj_b)
+            self.assertEqual(execution_id_a, execution_id_b)
+            # self.assertEqual(execution_obj_a, execution_obj_b)
             # ---------------------------------------------------------------
 
         # kcfetcher adds to json also authenticationConfigData (it replaces authenticationConfig UUID).
@@ -606,6 +621,20 @@ class TestAuthenticationExecutionsExecutionResource(TestCaseBase):
             flow_alias=self.flow0_alias,
         )
         expected_execution = deepcopy(execution_doc)
+
+        execution_doc2 = deepcopy(execution_doc)
+        execution_doc2.pop("alias")
+        execution_doc2.pop("authenticationConfigData")
+        flow0_execution_resource2 = AuthenticationExecutionsExecutionResource(
+            {
+                'path': "flow0_filepath---ignore",
+                'keycloak_api': testbed.kc,
+                'realm': testbed.REALM,
+                'datadir': testbed.DATADIR,
+            },
+            body=execution_doc2,
+            flow_alias=self.flow0_alias,
+        )
 
         # publish data - 1st time
         creation_state = flow0_execution_resource.publish()
@@ -657,6 +686,15 @@ class TestAuthenticationExecutionsExecutionResource(TestCaseBase):
         creation_state = flow0_execution_resource.publish()
         self.assertFalse(creation_state)
         _check_state()
+
+        # request config removal
+        creation_state = flow0_execution_resource2.publish()
+        self.assertTrue(creation_state)
+        _check_state2()
+        # publish same data again - idempotence
+        creation_state = flow0_execution_resource2.publish()
+        self.assertFalse(creation_state)
+        _check_state2()
 
 
 class TestAuthenticationConfigResource(TestCaseBase):
