@@ -753,6 +753,7 @@ class TestAuthenticationConfigManager(TestCaseBase):
 
         self.authentication_flows_api = testbed.kc.build("authentication", testbed.REALM)
         self.authentication_config_api = testbed.kc.build("authentication/config", testbed.REALM)
+        self.authentication_executions_api = testbed.kc.build("authentication/executions", testbed.REALM)
         self.flow0_alias = "ci0-auth-flow-generic"
         self.authentication_flows_api.create({
             "alias": self.flow0_alias,
@@ -805,14 +806,22 @@ class TestAuthenticationConfigManager(TestCaseBase):
         def _check_state():
             flow0_executions_b = self.flow0_executions_api.all()
             self.assertEqual(1, len(flow0_executions_b))
+            self.assertEqual(flow0_executions_a, flow0_executions_b)
+            #
             config_id_b = flow0_executions_b[0]["authenticationConfig"]
             config_obj_b = authentication_config_api.get_one(config_id_b)
-            self.assertEqual(flow0_executions_a, flow0_executions_b)
+            self.assertEqual(config_id_a, config_id_b)
             self.assertEqual(config_obj_a, config_obj_b)
+            #
+            execution_obj_b = authentication_executions_api.get_one(flow0_executions_b[0]["id"])
+            execution_id_b = execution_obj_b["id"]
+            self.assertEqual(execution_id_a, execution_id_b)
+            self.assertEqual(execution_obj_a, execution_obj_b)
             # ---------------------------------------------------------------
 
         testbed = self.testbed
         flow0_executions_api = self.flow0_executions_api
+        authentication_executions_api = self.authentication_executions_api
         authentication_config_api = self.authentication_config_api
         flow0_executions = flow0_executions_api.all()
         self.assertEqual(1, len(flow0_executions))
@@ -828,6 +837,8 @@ class TestAuthenticationConfigManager(TestCaseBase):
         creation_state = manager.publish()
         self.assertTrue(creation_state)
         flow0_executions_a = flow0_executions_api.all()
+        execution_obj_a = authentication_executions_api.get_one(flow0_executions_a[0]["id"])
+        execution_id_a = execution_obj_a["id"]
         config_id_a = flow0_executions_a[0]["authenticationConfig"]
         config_obj_a = authentication_config_api.get_one(config_id_a)
         _check_state()
@@ -855,12 +866,46 @@ class TestAuthenticationConfigManager(TestCaseBase):
         _check_state()
 
         # remove the config from server. Manager needs to recreate it.
-        # .
-        # #
-        # creation_state = manager.publish()
-        # self.assertTrue(creation_state)
-        # _check_state()
-        # # publish same data again - idempotence
-        # creation_state = manager.publish()
-        # self.assertFalse(creation_state)
-        # _check_state()
+        execution_obj = authentication_executions_api.get_one(execution_id_a)
+        self.assertIn("authenticatorConfig", execution_obj)
+        authentication_config_api.remove(config_id_a, None).isOk()
+        execution_obj = authentication_executions_api.get_one(execution_id_a)
+        self.assertNotIn("authenticatorConfig", execution_obj)
+        #
+        creation_state = manager.publish()
+        self.assertTrue(creation_state)
+        # update expected data - new config id
+        execution_obj_new = authentication_executions_api.get_one(execution_id_a)
+        config_id_new = execution_obj_new["authenticatorConfig"]
+        flow0_executions_a[0]["authenticationConfig"] = config_id_new
+        execution_obj_a["authenticatorConfig"] = config_id_new
+        config_id_a = config_id_new
+        config_obj_a["id"] = config_id_new
+        #
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = manager.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # test manager does remove config, but does not recreate execution
+        requested_doc2 = {}
+        manager2 = AuthenticationConfigManager(
+            self.testbed.kc, self.testbed.REALM, self.testbed.DATADIR,
+            requested_doc=requested_doc2, execution_id=execution_id,
+        )
+        execution_obj_new = authentication_executions_api.get_one(execution_id_a)
+        self.assertEqual(execution_id_a, execution_obj_new["id"])
+        self.assertIn("authenticatorConfig", execution_obj_new)
+        #
+        creation_state = manager2.publish()
+        self.assertTrue(creation_state)
+        execution_obj_new = authentication_executions_api.get_one(execution_id_a)
+        self.assertEqual(execution_id_a, execution_obj_new["id"])
+        self.assertNotIn("authenticatorConfig", execution_obj_new)
+        #
+        creation_state = manager2.publish()
+        self.assertFalse(creation_state)
+        execution_obj_new = authentication_executions_api.get_one(execution_id_a)
+        self.assertEqual(execution_id_a, execution_obj_new["id"])
+        self.assertNotIn("authenticatorConfig", execution_obj_new)

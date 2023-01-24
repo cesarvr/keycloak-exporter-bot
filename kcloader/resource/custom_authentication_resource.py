@@ -299,6 +299,7 @@ class AuthenticationConfigManager(BaseManager):
             requested_doc: dict,
             execution_id: str,
     ):
+        self._auth_config_api = keycloak_api.build("authentication/config", realm)
         super().__init__(keycloak_api, realm, datadir)
         self._requested_doc = requested_doc
         self._execution_id = execution_id
@@ -306,7 +307,6 @@ class AuthenticationConfigManager(BaseManager):
         self._auth_executions_api = self.keycloak_api.build("authentication/executions", self.realm)
         # self._auth_executions_api.get_one(execution_id)
         # self._execution_config__create_api = KeycloakCRUD.get_child(self._auth_executions_api, execution_id, "config")  # POST {realm}/authentication/executions/{executionId}/config
-        self._auth_config_api = self.keycloak_api.build("authentication/config", self.realm)
 
         self.resources = []
         if self._requested_doc:
@@ -339,7 +339,8 @@ class AuthenticationConfigManager(BaseManager):
     def _get_resource_api(self):
         # this one is used to list all objects on server => _get_server_objects() does this,
         # and it cannot use a single resource_api.
-        return None
+        # It is used also to .remove() objects on server.
+        return self._auth_config_api
 
 
 class AuthenticationConfigResource(SingleResource):
