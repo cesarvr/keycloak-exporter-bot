@@ -96,7 +96,8 @@ class AuthenticationFlowResource(SingleResource):
 
     def publish(self):
         state_self = self.publish_self()
-        return any([state_self])
+        state_executions = self.publish_executions()
+        return any([state_self, state_executions])
 
     def publish_self(self):
         # body = self.body

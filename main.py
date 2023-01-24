@@ -190,7 +190,7 @@ def main(args):
                 'realm': realm_name,
                 'datadir': datadir,
             })
-            creation_state = auth_flow_res.publish_self()
+            creation_state = auth_flow_res.publish()
 
     idp_manager = IdentityProviderManager(keycloak_api, realm_name, datadir)
     uf_manager = UserFederationManager(keycloak_api, realm_name, datadir)
