@@ -101,24 +101,12 @@ class AuthenticationFlowResource(SingleResource):
     def publish_self(self):
         # body = self.body
         state = self.resource.publish_object(self.body, self)
-
         # Now we have client id, and can get URL to client roles
         flow = self.resource.resource_api.findFirstByKV("alias", self.body["alias"])
-
         return state
 
-        # return
-        # [exists, executors_filepath] = lookup_child_resource(self.resource_path, 'executors/executors.json')
-        # assert exists
-        # executors_doc = read_from_json(executors_filepath)
-        #
-        # authentication_api = self.resource.resource_api
-        # auth_flow_importer = AuthenticationFlowsImporter(authentication_api)
-        # auth_flow_importer.update(root_node=self.body, flows=executors_doc)
-        # return True
-
     def publish_executions(self):
-        state_all = [resource.publish_self() for resource in self.resources]
+        state_all = [resource.publish() for resource in self.resources]
         return any(state_all)
 
     def is_equal(self, obj):
@@ -126,7 +114,7 @@ class AuthenticationFlowResource(SingleResource):
         obj2 = deepcopy(obj)
         for oo in [obj1, obj2]:
             oo.pop("id", None)
-            # authenticationExecutions - are not setup by publish_self
+            # authenticationExecutions - are not setup by publish_self, so do not compare them.
             logger.error("auth flow authenticationExecutions is ignored in is_equal")
             oo.pop("authenticationExecutions", None)
 
@@ -209,6 +197,13 @@ class AuthenticationExecutionsExecutionResource(SingleResource):
             oo.pop("alias", None)
             oo.pop("authenticationConfig", None)
             oo.pop("authenticationConfigData", None)
+            # index and level - we ignore them here
+            # resource_api used to get obj is relative to direct parent flow, while
+            # data in json file are relative to top-level-flow.
+            # We just cannot directly compare numbers.
+            # Order will be handled separately.
+            oo.pop("index")
+            oo.pop("level")
         return obj1 == obj2
 
     def get_update_payload(self, obj):

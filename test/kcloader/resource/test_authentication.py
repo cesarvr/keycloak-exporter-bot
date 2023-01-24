@@ -129,6 +129,7 @@ class TestAuthenticationFlowResource(TestCaseBase):
         #
 
     def test_publish_child_executions_flows(self):
+        # Test .publish_executions()
         def _check_state():
             flow0_b = self.authentication_flows_api.findFirstByKV("alias", self.flow0_alias)
             flow0_noid = deepcopy(flow0_b)
@@ -141,14 +142,14 @@ class TestAuthenticationFlowResource(TestCaseBase):
         testbed = self.testbed
         flow0_resource = self.flow0_resource
         expected_flow0 = deepcopy(flow0_resource.body)
-        # old test data from KC 9.0 have "autheticatorFlow", but miss "authenticatorFlow".
         for execution in expected_flow0["authenticationExecutions"]:
             if "authenticatorFlow" not in execution:
-                execution["authenticatorFlow"] = execution["autheticatorFlow"]\
+                # old test data from KC 9.0 have "autheticatorFlow", but miss "authenticatorFlow".
+                execution["authenticatorFlow"] = execution["autheticatorFlow"]
             # TODO implement
-            execution.pop("authenticatorConfig", None)
-            if execution["authenticator"] == "auth-conditional-otp-form":
-                execution["requirement"] = "DISABLED"
+            # execution.pop("authenticatorConfig", None)
+            # if execution["authenticator"] == "auth-conditional-otp-form":
+            #    execution["requirement"] = "DISABLED"
 
         # prepare parent top-level flow
         creation_state = flow0_resource.publish_self()
