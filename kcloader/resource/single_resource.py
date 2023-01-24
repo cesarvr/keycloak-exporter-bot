@@ -39,3 +39,9 @@ class SingleResource:
 
     def get_create_payload(self):
         return self.body
+
+    def is_update_after_create_needed(self):
+        # Authentication flows and some roles cannot be created with required state
+        # We need to first create object with some default configuration,
+        # then object can be reconfigured.
+        return False

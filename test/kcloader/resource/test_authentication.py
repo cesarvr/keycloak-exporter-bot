@@ -332,11 +332,6 @@ class TestAuthenticationExecutionsFlowResource(TestCaseBase):
         # publish data - 1st time
         creation_state = flow0_3_1_resource.publish_self()
         self.assertTrue(creation_state)
-        # flow0_executions_a = flow0_executions_api.all()
-        # _check_state()
-        # publish same data again - still some change needed - requirement is wrong
-        creation_state = flow0_3_1_resource.publish_self()
-        self.assertTrue(creation_state)
         flow0_executions_a = flow0_executions_api.all()
         _check_state()
         # publish same data again - idempotence

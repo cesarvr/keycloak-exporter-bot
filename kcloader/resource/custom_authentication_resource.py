@@ -195,3 +195,6 @@ class AuthenticationExecutionsFlowResource(SingleResource):
     def get_create_payload(self):
         payload = create_child_flow_data(self.body)
         return payload
+
+    def is_update_after_create_needed(self):
+        return True
