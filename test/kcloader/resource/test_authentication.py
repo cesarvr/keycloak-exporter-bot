@@ -147,6 +147,25 @@ class TestAuthenticationFlowManager(TestCaseBase):
         self.assertFalse(creation_state)
         _check_state()
 
+        # modify some existing flow.
+        # intentionally, modify a builtin flow.
+        flow1_alias = "browser"
+        flow1_executions_api = self.testbed.kc.build(f"authentication/flows/{flow1_alias}/executions", self.testbed.realm)
+        flow1_execution0_a = flow1_executions_api.all()[0]
+        self.assertNotEqual(flow1_execution0_a["requirement"], "REQUIRED")
+        flow1_execution0_a["requirement"] = "REQUIRED"
+        flow1_executions_api.update(None, flow1_execution0_a).isOk()
+        flow1_execution0_b = flow1_executions_api.all()[0]
+        self.assertEqual(flow1_execution0_a, flow1_execution0_b)
+        #
+        creation_state = manager.publish()
+        self.assertTrue(creation_state)
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = manager.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
 
 class TestAuthenticationFlowResource(TestCaseBase):
     def setUp(self):
