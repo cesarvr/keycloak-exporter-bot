@@ -127,5 +127,20 @@ class ResourcePublisher:
                 http_ok = resource_api.create(self.body).isOk()
                 return True
         else:
-            http_ok = resource_api.create(self.body).isOk()
+            if self.single_resource:
+                create_payload = self.single_resource.get_create_payload()
+            else:
+                # old code, when there was no self.single_resource.
+                # TODO remove when it is not used anymore
+                create_payload = self.body
+            http_ok = resource_api.create(create_payload).isOk()
+            if self.single_resource and self.single_resource.is_update_after_create_needed():
+                # authentication flows - they need to be updated just after create.
+                # create payload is diffrent from update payload, kcapi AuthenticationExecutionsBaseCRUD.create()
+                # cannot do this.
+                assert update_policy == UpdatePolicy.PUT
+                resource_id, old_data = self.get_id(resource_api)
+                if not self.single_resource.is_equal(old_data):
+                    update_body = self.single_resource.get_update_payload(old_data)
+                    http_ok = resource_api.update(resource_id, update_body).isOk()
             return True

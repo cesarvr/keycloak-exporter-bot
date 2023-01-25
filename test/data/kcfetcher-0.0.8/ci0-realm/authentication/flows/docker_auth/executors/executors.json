@@ -1,0 +1,13 @@
+[
+    {
+        "configurable": false,
+        "displayName": "Docker Authenticator",
+        "index": 0,
+        "level": 0,
+        "providerId": "docker-http-basic-authenticator",
+        "requirement": "REQUIRED",
+        "requirementChoices": [
+            "REQUIRED"
+        ]
+    }
+]

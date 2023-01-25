@@ -11,13 +11,13 @@ keywords = [
 requires-python = ">=3.8"
 
 dependencies = [
-    "kcapi>=1.0.39",
+    "kcapi>=1.0.40",
     "sortedcontainers>=2.4.0",
 ]
 
 [project.optional-dependencies]
 devel = [
-  "keycloak-fetch-bot == 0.0.7",
+  "keycloak-fetch-bot == 0.0.8",
 ]
 
 [project.urls]

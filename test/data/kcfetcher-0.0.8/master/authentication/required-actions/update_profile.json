@@ -1,0 +1,9 @@
+{
+    "alias": "UPDATE_PROFILE",
+    "config": {},
+    "defaultAction": false,
+    "enabled": true,
+    "name": "Update Profile",
+    "priority": 40,
+    "providerId": "UPDATE_PROFILE"
+}

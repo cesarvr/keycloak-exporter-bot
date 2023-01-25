@@ -115,17 +115,23 @@ class BaseRoleResource(SingleResource):
         body.pop("composites", None)
         return body
 
+    def get_create_payload(self):
+        body = copy(self.body)
+        # always remove "composites" - it contains containerName (not containerId)
+        body.pop("composites", None)
+        return body
+
     def publish(self, *, include_composite=True):
         body = copy(self.body)
         # both or none. If this assert fails, we have invalid/synthetic data.
         assert (body["composite"] and body["composites"]) or \
                ((not body["composite"]) and ("composites" not in body))
-        body.pop("composites", None)  # it will be used as create payload
+        # body.pop("composites", None)  # it will be used as create payload
 
         # new role - body.composite and .composites are ignored
         # old role - body.composites must be valid
         self._include_composite = include_composite
-        creation_state = self.resource.publish_object(body, self)
+        creation_state = self.resource.publish_object(self.body, self)
         self._include_composite = None
 
         # We can setup composites only after role is created

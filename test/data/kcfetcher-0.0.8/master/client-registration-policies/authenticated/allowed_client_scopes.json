@@ -1,0 +1,12 @@
+{
+    "config": {
+        "allow-default-scopes": [
+            "true"
+        ]
+    },
+    "name": "Allowed Client Scopes",
+    "parentId": "master",
+    "providerId": "allowed-client-templates",
+    "providerType": "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy",
+    "subType": "authenticated"
+}

@@ -1,0 +1,11 @@
+{
+    "config": {
+        "priority": [
+            "100"
+        ]
+    },
+    "name": "rsa-generated",
+    "parentId": "ci0-realm-OLD",
+    "providerId": "rsa-generated",
+    "providerType": "org.keycloak.keys.KeyProvider"
+}
