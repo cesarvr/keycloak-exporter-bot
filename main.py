@@ -165,7 +165,7 @@ def main(args):
     creation_state = idp_manager.publish()
     creation_state = uf_manager.publish()
     creation_state = realm_role_manager.publish(include_composite=False)
-    creation_state = client_manager.publish(include_composite=False)
+    # creation_state = client_manager.publish(include_composite=False)
     # new client_scopes are not yet created, we need setup_new_links=False.
     creation_state = default_default_client_scope_manager.publish(setup_new_links=False)
     creation_state = default_optional_client_scope_manager.publish(setup_new_links=False)
@@ -176,7 +176,7 @@ def main(args):
     realm_res.publish()
     creation_state = realm_role_manager.publish(include_composite=True)
     creation_state = client_manager.publish(include_composite=True)
-    creation_state = client_scope_manager.publish(include_scope_mappings=True)
+    # creation_state = client_scope_manager.publish(include_scope_mappings=True)
     creation_state = default_default_client_scope_manager.publish(setup_new_links=True)
     creation_state = default_optional_client_scope_manager.publish(setup_new_links=True)
 

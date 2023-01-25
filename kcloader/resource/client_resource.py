@@ -198,6 +198,7 @@ class SingleClientResource(SingleResource):
         else:
             state_scope_mappings = False
         setup_new_links = include_composite
+        # TODO extra client scopes are not removed
         state_default_client_scopes = self.client_default_client_scope_manager.publish(setup_new_links=setup_new_links)
         state_optional_client_scopes = self.client_optional_client_scope_manager.publish(setup_new_links=setup_new_links)
         state_protocol_mappers = self.publish_protocol_mappers()
