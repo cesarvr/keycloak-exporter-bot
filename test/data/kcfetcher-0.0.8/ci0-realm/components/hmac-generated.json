@@ -1,0 +1,14 @@
+{
+    "config": {
+        "algorithm": [
+            "HS256"
+        ],
+        "priority": [
+            "100"
+        ]
+    },
+    "name": "hmac-generated",
+    "parentId": "ci0-realm-OLD",
+    "providerId": "hmac-generated",
+    "providerType": "org.keycloak.keys.KeyProvider"
+}

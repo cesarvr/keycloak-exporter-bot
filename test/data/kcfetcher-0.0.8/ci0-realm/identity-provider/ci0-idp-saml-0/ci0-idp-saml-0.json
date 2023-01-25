@@ -1,0 +1,29 @@
+{
+    "addReadTokenRoleOnCreate": false,
+    "alias": "ci0-idp-saml-0",
+    "authenticateByDefault": false,
+    "config": {
+        "allowCreate": "true",
+        "authnContextClassRefs": "[\"aa\",\"bb\"]",
+        "authnContextComparisonType": "exact",
+        "authnContextDeclRefs": "[\"cc\",\"dd\"]",
+        "entityId": "https://172.17.0.2:8443/auth/realms/ci0-realm",
+        "nameIDPolicyFormat": "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
+        "principalType": "SUBJECT",
+        "signatureAlgorithm": "RSA_SHA256",
+        "singleLogoutServiceUrl": "https://172.17.0.6:8443/logout",
+        "singleSignOnServiceUrl": "https://172.17.0.6:8443/signon",
+        "syncMode": "IMPORT",
+        "useJwksUrl": "true",
+        "wantAssertionsEncrypted": "true",
+        "xmlSigKeyInfoKeyNameTransformer": "KEY_ID"
+    },
+    "displayName": "ci0-idp-saml-0-displayName",
+    "enabled": true,
+    "firstBrokerLoginFlowAlias": "first broker login",
+    "linkOnly": false,
+    "providerId": "saml",
+    "storeToken": false,
+    "trustEmail": false,
+    "updateProfileFirstLoginMode": "on"
+}

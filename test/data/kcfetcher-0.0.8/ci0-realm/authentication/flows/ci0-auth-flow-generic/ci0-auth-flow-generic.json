@@ -1,0 +1,44 @@
+{
+    "alias": "ci0-auth-flow-generic",
+    "authenticationExecutions": [
+        {
+            "authenticator": "direct-grant-validate-username",
+            "authenticatorFlow": false,
+            "autheticatorFlow": false,
+            "priority": 0,
+            "requirement": "REQUIRED",
+            "userSetupAllowed": false
+        },
+        {
+            "authenticator": "auth-conditional-otp-form",
+            "authenticatorConfig": "ci0-auth-flow-generic-exec-20-alias",
+            "authenticatorFlow": false,
+            "autheticatorFlow": false,
+            "priority": 1,
+            "requirement": "ALTERNATIVE",
+            "userSetupAllowed": false
+        },
+        {
+            "authenticator": "registration-page-form",
+            "authenticatorFlow": true,
+            "autheticatorFlow": true,
+            "flowAlias": "ci0-auth-flow-generic-exec-3-generic-alias",
+            "priority": 2,
+            "requirement": "CONDITIONAL",
+            "userSetupAllowed": false
+        },
+        {
+            "authenticator": "registration-page-form",
+            "authenticatorFlow": true,
+            "autheticatorFlow": true,
+            "flowAlias": "ci0-auth-flow-generic-exec-4-flow-alias",
+            "priority": 3,
+            "requirement": "REQUIRED",
+            "userSetupAllowed": false
+        }
+    ],
+    "builtIn": false,
+    "description": "ci0-auth-flow-generic-desc",
+    "providerId": "basic-flow",
+    "topLevel": true
+}

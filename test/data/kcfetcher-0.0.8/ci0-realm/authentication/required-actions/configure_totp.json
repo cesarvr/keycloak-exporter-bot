@@ -1,0 +1,9 @@
+{
+    "alias": "CONFIGURE_TOTP",
+    "config": {},
+    "defaultAction": true,
+    "enabled": true,
+    "name": "Configure OTP",
+    "priority": 10,
+    "providerId": "CONFIGURE_TOTP"
+}

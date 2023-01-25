@@ -1,0 +1,66 @@
+[
+    {
+        "configurable": false,
+        "displayName": "Browser Redirect/Refresh",
+        "index": 0,
+        "level": 0,
+        "providerId": "no-cookie-redirect",
+        "requirement": "REQUIRED",
+        "requirementChoices": [
+            "REQUIRED"
+        ]
+    },
+    {
+        "authenticationFlow": true,
+        "configurable": false,
+        "displayName": "Authentication Options",
+        "index": 1,
+        "level": 0,
+        "requirement": "REQUIRED",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED",
+            "CONDITIONAL"
+        ]
+    },
+    {
+        "configurable": false,
+        "displayName": "Basic Auth Challenge",
+        "index": 0,
+        "level": 1,
+        "providerId": "basic-auth",
+        "requirement": "REQUIRED",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED"
+        ]
+    },
+    {
+        "configurable": false,
+        "displayName": "Basic Auth Password+OTP",
+        "index": 1,
+        "level": 1,
+        "providerId": "basic-auth-otp",
+        "requirement": "DISABLED",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED"
+        ]
+    },
+    {
+        "configurable": false,
+        "displayName": "Kerberos",
+        "index": 2,
+        "level": 1,
+        "providerId": "auth-spnego",
+        "requirement": "ALTERNATIVE",
+        "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED"
+        ]
+    }
+]

@@ -1,0 +1,19 @@
+{
+    "config": {
+        "allowed-protocol-mapper-types": [
+            "oidc-address-mapper",
+            "oidc-full-name-mapper",
+            "oidc-sha256-pairwise-sub-mapper",
+            "oidc-usermodel-attribute-mapper",
+            "oidc-usermodel-property-mapper",
+            "saml-role-list-mapper",
+            "saml-user-attribute-mapper",
+            "saml-user-property-mapper"
+        ]
+    },
+    "name": "Allowed Protocol Mapper Types",
+    "parentId": "master",
+    "providerId": "allowed-protocol-mappers",
+    "providerType": "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy",
+    "subType": "anonymous"
+}

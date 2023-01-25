@@ -1,0 +1,44 @@
+{
+    "config": {
+        "allowPasswordAuthentication": [
+            "true"
+        ],
+        "cachePolicy": [
+            "EVICT_DAILY"
+        ],
+        "debug": [
+            "true"
+        ],
+        "editMode": [
+            "READ_ONLY"
+        ],
+        "enabled": [
+            "true"
+        ],
+        "evictionHour": [
+            "1"
+        ],
+        "evictionMinute": [
+            "2"
+        ],
+        "kerberosRealm": [
+            "ci0-kerberos-realm"
+        ],
+        "keyTab": [
+            "/etc/ci0-keytab"
+        ],
+        "priority": [
+            "2"
+        ],
+        "serverPrincipal": [
+            "ci0-server-pricinpal"
+        ],
+        "updateProfileFirstLogin": [
+            "true"
+        ]
+    },
+    "name": "ci0-uf2-kerberos",
+    "parentName": "ci0-realm",
+    "providerId": "kerberos",
+    "providerType": "org.keycloak.storage.UserStorageProvider"
+}

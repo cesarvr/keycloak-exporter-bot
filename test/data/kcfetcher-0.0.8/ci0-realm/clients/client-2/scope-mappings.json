@@ -1,0 +1,12 @@
+[
+    {
+        "clientRole": true,
+        "containerName": "ci0-client-0",
+        "name": "ci0-client0-role1"
+    },
+    {
+        "clientRole": false,
+        "containerName": "ci0-realm",
+        "name": "ci0-role-1a"
+    }
+]

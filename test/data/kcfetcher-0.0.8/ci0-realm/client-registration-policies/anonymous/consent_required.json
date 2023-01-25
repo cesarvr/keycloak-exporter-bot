@@ -1,0 +1,8 @@
+{
+    "config": {},
+    "name": "Consent Required",
+    "parentId": "ci0-realm-OLD",
+    "providerId": "consent-required",
+    "providerType": "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy",
+    "subType": "anonymous"
+}

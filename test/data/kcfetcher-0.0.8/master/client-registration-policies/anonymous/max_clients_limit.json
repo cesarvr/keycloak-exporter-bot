@@ -1,0 +1,12 @@
+{
+    "config": {
+        "max-clients": [
+            "200"
+        ]
+    },
+    "name": "Max Clients Limit",
+    "parentId": "master",
+    "providerId": "max-clients",
+    "providerType": "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy",
+    "subType": "anonymous"
+}
