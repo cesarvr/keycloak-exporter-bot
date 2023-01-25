@@ -233,6 +233,21 @@ class AuthenticationFlowExecutionsManager(BaseManager):
         # It is used also to .remove() objects on server.
         return self._auth_executions_api  # will work only for object remove, not for object list
 
+    def publish(self, **publish_kwargs):
+        state = super().publish(**publish_kwargs)
+        return state
+
+
+class PriorityManager:
+    """
+    raise_priority_api
+    lower_priority_api
+    id=displayName
+    level, index, sorted()
+    bubble sort
+    """
+    pass
+
 
 class AuthenticationExecutionsExecutionResource(SingleResource):
     _resource_name = "authentication/executions/{execution_id}"

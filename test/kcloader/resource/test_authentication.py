@@ -340,7 +340,7 @@ class TestAuthenticationFlowResource(TestCaseBase):
         if 0:
             logger.error("This test would fail, the execution order is not managed.")
             return
-        else:
+        elif 1:
             # click raise-priority 2 times.
             this_execution_raise_priority_api = KeycloakCRUD.get_child(
                 self.authentication_executions_api, execution_new_id, "raise-priority"
