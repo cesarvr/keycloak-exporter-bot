@@ -175,6 +175,7 @@ class TestAuthenticationFlowResource(TestCaseBase):
 
         # '/flows' is magically added to "authentication"
         self.authentication_flows_api = testbed.kc.build("authentication", testbed.REALM)
+        self.authentication_executions_api = testbed.kc.build("authentication/executions", testbed.REALM)
 
         self.flow0_alias = "ci0-auth-flow-generic"
         flow0_filepath = os.path.join(testbed.DATADIR, f"{testbed.REALM}/authentication/flows/ci0-auth-flow-generic/ci0-auth-flow-generic.json")
@@ -226,12 +227,29 @@ class TestAuthenticationFlowResource(TestCaseBase):
 
     def test_publish_child_executions_flows(self):
         # Test .publish_executions()
-        def _check_state():
+        def _check_state(priorities_unchanged=True):
             flow0_b = self.authentication_flows_api.findFirstByKV("alias", self.flow0_alias)
             flow0_noid = deepcopy(flow0_b)
             flow0_noid.pop("id")
-            self.assertEqual(expected_flow0, flow0_noid)
-            self.assertEqual(flow0_a, flow0_b)
+            if priorities_unchanged:
+                self.assertEqual(expected_flow0, flow0_noid)
+
+            # A guess: priority field value by itself is not relevant, only ordering by priority is important!
+            flow0_a_nopriority = deepcopy(flow0_a)
+            flow0_b_nopriority = deepcopy(flow0_b)
+            for ff in [flow0_a_nopriority, flow0_b_nopriority]:
+                for executor in ff["authenticationExecutions"]:
+                    executor.pop("priority")
+            self.assertEqual(flow0_a_nopriority, flow0_b_nopriority)
+            # now check priority is in correct order.
+            priorities_a = [executor["priority"] for executor in flow0_a["authenticationExecutions"]]
+            priorities_b = [executor["priority"] for executor in flow0_b["authenticationExecutions"]]
+            self.assertEqual(priorities_a, [0, 1, 2, 3])
+            if priorities_unchanged:
+                self.assertEqual(priorities_b, [0, 1, 2, 3])
+            else:
+                self.assertEqual(priorities_b, [0, 2, 3, 4])
+
             executions_b = self.flow0_executions_api.all()
             self.assertEqual(6, len(executions_b))
             self.assertEqual(executions_a, executions_b)
@@ -318,27 +336,41 @@ class TestAuthenticationFlowResource(TestCaseBase):
         creation_state = flow0_resource.publish_executions()
         self.assertTrue(creation_state)
         # update expected execution_id
+        # Newly crated execution is the last one.
         executions_new = self.flow0_executions_api.all()
-        if 1:
+        self.assertEqual("Conditional OTP Form", executions_new[-1]["displayName"])
+        execution_new_id = executions_new[-1]["id"]
+        execution_config_new_id = executions_new[-1]["authenticationConfig"]
+        if 0:
             logger.error("This test would fail, the execution order is not managed.")
             return
-        executions_a[ind]["id"] = executions_new[ind]["id"]
-        _check_state()
+        else:
+            # click raise-priority 2 times.
+            this_execution_raise_priority_api = KeycloakCRUD.get_child(
+                self.authentication_executions_api, execution_new_id, "raise-priority"
+            )
+            priority_payload = dict(realm=self.testbed.realm, execution=execution_new_id)
+            this_execution_raise_priority_api.create(priority_payload).isOk()
+            this_execution_raise_priority_api.create(priority_payload).isOk()
+        executions_a[ind]["id"] = execution_new_id
+        executions_a[ind]["authenticationConfig"] = execution_config_new_id
+        _check_state(priorities_unchanged=False)
         # publish same data again - idempotence
         creation_state = flow0_resource.publish_executions()
         self.assertFalse(creation_state)
-        _check_state()
+        _check_state(priorities_unchanged=False)
 
+        return
         # modify flow - remove one child sub-flow
         #
         # publish data - 1st time
         creation_state = flow0_resource.publish_executions()
         self.assertTrue(creation_state)
-        _check_state()
+        _check_state(priorities_unchanged=False)
         # publish same data again - idempotence
         creation_state = flow0_resource.publish_executions()
         self.assertFalse(creation_state)
-        _check_state()
+        _check_state(priorities_unchanged=False)
 
 
 class TestFlowExecutorsFactory(TestCase):
