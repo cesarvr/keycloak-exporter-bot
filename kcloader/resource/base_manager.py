@@ -94,6 +94,9 @@ class BaseManager(ABC):
         # Try to be ignorant...
         assert len(file_ids) == len(set(file_ids))
         assert len(server_ids) == len(set(server_ids))
+        # TODO - combo displayName+alias should be used.
+        # Or, each subflow would need its own manager.
+        # Or both.
 
         # remove objects that are on server, but missing in datadir
         delete_ids = list(set(server_ids).difference(file_ids))
