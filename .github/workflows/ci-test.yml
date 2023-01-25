@@ -43,6 +43,10 @@ jobs:
   integration-tests:
     runs-on: ubuntu-22.04
     container: python:3.10
+    strategy:
+      matrix:
+        # service container name
+        kc_host: [kc_90, rhsso_74]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -50,17 +54,27 @@ jobs:
       # install dependencies mentioned in pyproject.toml
       - run: pip install .
       - name: Wait on keycloak to be up
-        run: curl -k --connect-timeout 60 --retry 60 --retry-delay 1 --retry-connrefused --retry-max-time 60 https://keycloak:8443 -v
+        run: curl -k --connect-timeout 60 --retry 60 --retry-delay 1 --retry-connrefused --retry-max-time 60 $KC_ENDPOINT -v
       # At least it should not crash
-      - run: ./main.py --url https://keycloak:8443 --username admin --password admin --datadir test/data/kcfetcher-latest   --realm-name ci0-realm
+      - run: ./main.py --url $KC_ENDPOINT --username admin --password admin --datadir test/data/kcfetcher-latest   --realm-name ci0-realm
     env:
       KEYCLOAK_API_CA_BUNDLE:
+      KC_ENDPOINT: http://${{ matrix.kc_host }}:8080
     services:
-      keycloak:
+      kc_90:
         image: quay.io/keycloak/keycloak:9.0.3
         env:
           KEYCLOAK_USER: admin
           KEYCLOAK_PASSWORD: admin
+      rhsso_74:
+        image: registry.redhat.io/rh-sso-7/sso74-openshift-rhel8:7.4-45
+        env:
+          SSO_ADMIN_USERNAME: admin
+          SSO_ADMIN_PASSWORD: admin
+          # SSO_HOSTNAME: localhost
+        credentials:
+          username: ${{ secrets.REGISTRY_REDHAT_IO_USERNAME }}
+          password: ${{ secrets.REGISTRY_REDHAT_IO_TOKEN }}
 
   # check the package is at least importable
   check-import:

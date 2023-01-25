@@ -160,6 +160,24 @@ class AuthenticationFlowResource(SingleResource):
 
         return obj1 == obj2
 
+    def __kc_90_payload_cleanup(self, payload):
+        server_info = self.keycloak_api.server_info
+        server_version_major = int(server_info.version.split('.')[0])
+        if server_info.profile_name == "community" and server_version_major <= 9:
+            # we need to drop "authenticatorFlow" attribute on KC 9.0
+            for oo in payload["authenticationExecutions"]:
+                oo.pop("authenticatorFlow", None)
+
+    def get_update_payload(self, obj):
+        body = deepcopy(self.body)
+        # self.__kc_90_payload_cleanup(body)
+        return body
+
+    def get_create_payload(self):
+        body = deepcopy(self.body)
+        self.__kc_90_payload_cleanup(body)
+        return body
+
 
 class AuthenticationExecutionsExecutionResource(SingleResource):
     _resource_name = "authentication/executions/{execution_id}"
