@@ -264,10 +264,6 @@ class TestAuthenticationFlowResource(TestCaseBase):
             # Testdata was generated with RH SSO 7.4.
             for execution in expected_flow0["authenticationExecutions"]:
                 execution.pop("authenticatorFlow")
-            # TODO implement
-            # execution.pop("authenticatorConfig", None)
-            # if execution["authenticator"] == "auth-conditional-otp-form":
-            #    execution["requirement"] = "DISABLED"
 
         # prepare parent top-level flow
         creation_state = flow0_resource.publish_self()
