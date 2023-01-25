@@ -136,6 +136,11 @@ class TestAuthenticationFlowManager(TestCaseBase):
         #
         creation_state = manager.publish()
         self.assertTrue(creation_state)
+        # new flow has new id, update it in expected data
+        flow0_new = authentication_flows_api.findFirstByKV("alias", self.flow0_alias)
+        flow0_new_id = flow0_new["id"]
+        flow0_a = find_in_list(flows_a, alias=self.flow0_alias)
+        flow0_a["id"] = flow0_new_id
         _check_state()
         # publish same data again - idempotence
         creation_state = manager.publish()
