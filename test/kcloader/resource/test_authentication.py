@@ -183,6 +183,7 @@ class TestAuthenticationFlowResource(TestCaseBase):
             'realm': testbed.REALM,
             'datadir': testbed.DATADIR,
         })
+        self.flow0_executions_api = self.testbed.kc.build(f"authentication/flows/{self.flow0_alias}/executions", self.testbed.realm)
 
     def test_publish_self(self):
         def _check_state():
@@ -230,6 +231,7 @@ class TestAuthenticationFlowResource(TestCaseBase):
             flow0_noid.pop("id")
             self.assertEqual(expected_flow0, flow0_noid)
             self.assertEqual(flow0_a, flow0_b)
+            self.assertEqual(6, len(self.flow0_executions_api.all()))
 
             # -----------------------------------------
         self.maxDiff = None
@@ -255,6 +257,66 @@ class TestAuthenticationFlowResource(TestCaseBase):
         self.assertTrue(creation_state)
         flow_objs_a = self.authentication_flows_api.all()
         flow0_a = find_in_list(flow_objs_a, alias=self.flow0_alias)
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = flow0_resource.publish_executions()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify flow - add extra executions/execution
+        self.assertEqual(6, len(self.flow0_executions_api.all()))
+        flow0_executions_api = self.flow0_resource.resource.resource_api.executions(dict(alias=self.flow0_alias))
+        flow0_executions_api.create({"provider": "auth-conditional-otp-form"}).isOk()
+        self.assertEqual(7, len(self.flow0_executions_api.all()))
+        #
+        # publish data - 1st time
+        creation_state = flow0_resource.publish_executions()
+        self.assertTrue(creation_state)
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = flow0_resource.publish_executions()
+        self.assertFalse(creation_state)
+        _check_state()
+        return
+
+        # modify flow - add extra executions/flow
+        # click 'add flow', flow type = generic, provider = registration-page-form
+        # POST payload, {"alias":"aa1","type":"basic-flow","description":"aa2","provider":"registration-page-form"}
+        extra_flow_payload = {
+            "alias": "aa1",
+            "type": "basic-flow",
+            "description": "aa2",
+            "provider": "registration-page-form",
+        }
+        flow0_flows_api = self.flow0_resource.resource.resource_api.flows(dict(alias=self.flow0_alias))
+        flow0_flows_api.create(extra_flow_payload).isOk()
+        self.assertEqual(7, len(self.flow0_executions_api.all()))
+        #
+        # publish data - 1st time
+        creation_state = flow0_resource.publish_executions()
+        self.assertTrue(creation_state)
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = flow0_resource.publish_executions()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify flow - remove one child execution
+        #
+        # publish data - 1st time
+        creation_state = flow0_resource.publish_executions()
+        self.assertTrue(creation_state)
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = flow0_resource.publish_executions()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify flow - remove one child sub-flow
+        #
+        # publish data - 1st time
+        creation_state = flow0_resource.publish_executions()
+        self.assertTrue(creation_state)
         _check_state()
         # publish same data again - idempotence
         creation_state = flow0_resource.publish_executions()
