@@ -15,7 +15,8 @@ from ...helper import TestBed, remove_field_id, TestCaseBase
 from kcloader.resource import ClientRoleManager, ClientRoleResource, SingleClientResource
 from kcloader.resource.custom_authentication_resource import AuthenticationFlowResource, \
     AuthenticationExecutionsExecutionResource, AuthenticationExecutionsFlowResource, \
-    AuthenticationConfigResource, AuthenticationConfigManager
+    AuthenticationConfigResource, AuthenticationConfigManager, \
+    AuthenticationFlowManager
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +72,75 @@ DELETE /{realm}/authentication/required-actions/{alias}
 POST /{realm}/authentication/required-actions/{alias}/lower-priority
 POST /{realm}/authentication/required-actions/{alias}/raise-priority
 """
+
+class TestAuthenticationFlowManager(TestCaseBase):
+    def setUp(self):
+        super().setUp()
+        testbed = self.testbed
+
+        self.authentication_flows_api = testbed.kc.build("authentication", testbed.REALM)
+        # self.authentication_config_api = testbed.kc.build("authentication/config", testbed.REALM)
+        # self.authentication_executions_api = testbed.kc.build("authentication/executions", testbed.REALM)
+        self.flow0_alias = "ci0-auth-flow-generic"
+        self.extra_flow_alias = "ci0-flow-EXTRA"
+
+    def test_publish(self):
+        def _check_state():
+            flows_b = self.authentication_flows_api.all()
+            self.assertEqual(9, len(flows_b))
+            self.assertEqual(flows_a, flows_b)
+            # ---------------------------------------------------------------
+
+        testbed = self.testbed
+        authentication_flows_api = self.authentication_flows_api
+        flows_x = authentication_flows_api.all()
+        self.assertEqual(8, len(flows_x))
+
+        manager = AuthenticationFlowManager(self.testbed.kc, self.testbed.REALM, self.testbed.DATADIR)
+
+        # publish data - 1st time
+        creation_state = manager.publish()
+        self.assertTrue(creation_state)
+        flows_a = self.authentication_flows_api.all()
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = manager.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify something - add extra top-level flow
+        self.assertEqual(9, len(authentication_flows_api.all()))
+        authentication_flows_api.create({
+            "alias": self.extra_flow_alias,
+            "authenticationExecutions": [],
+            "builtIn": False,
+            "description": self.extra_flow_alias + "-desc",
+            "providerId": "basic-flow",
+            "topLevel": True,
+        }).isOk()
+        self.assertEqual(10, len(authentication_flows_api.all()))
+        #
+        creation_state = manager.publish()
+        self.assertTrue(creation_state)
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = manager.publish()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # remove the flow0_alias server. Manager needs to recreate it.
+        flow0 = authentication_flows_api.findFirstByKV("alias", self.flow0_alias)
+        self.assertEqual(9, len(authentication_flows_api.all()))
+        authentication_flows_api.remove(flow0["id"], None)
+        self.assertEqual(8, len(authentication_flows_api.all()))
+        #
+        creation_state = manager.publish()
+        self.assertTrue(creation_state)
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = manager.publish()
+        self.assertFalse(creation_state)
+        _check_state()
 
 
 class TestAuthenticationFlowResource(TestCaseBase):

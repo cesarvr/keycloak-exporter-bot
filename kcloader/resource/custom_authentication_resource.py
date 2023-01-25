@@ -34,6 +34,41 @@ class SingleCustomAuthenticationResource(SingleResource):
         return True
 
 
+class AuthenticationFlowManager(BaseManager):
+    _resource_name = "authentication"  # kcapi will extend this to "authentication/flows"
+    # TODO kcapi should not auto-extend to "authentication/flows" - we need also "authentication/config" etc.
+    _resource_id = "alias"
+    _resource_delete_id = "id"
+
+    def __init__(
+            self,
+            keycloak_api: kcapi.sso.Keycloak,
+            realm: str,
+            datadir: str,
+    ):
+        super().__init__(keycloak_api, realm, datadir)
+
+        object_filepaths = self._object_filepaths(datadir, realm)
+        self.resources = [
+            AuthenticationFlowResource({
+                'path': object_filepath,
+                'keycloak_api': keycloak_api,
+                'realm': realm,
+                'datadir': datadir,
+            })
+            for object_filepath in object_filepaths
+        ]
+
+    @classmethod
+    def _object_filepaths(cls, datadir: str, realm: str):
+        return glob(os.path.join(datadir, f"{realm}/authentication/flows/*/*.json"))
+
+    def _object_docs(self):
+        object_filepaths = self._object_filepaths(self.datadir, self.realm)
+        file_docs = [read_from_json(object_filepath) for object_filepath in object_filepaths]
+        return file_docs
+
+
 class AuthenticationFlowResource(SingleResource):
     def __init__(self, resource):
         super().__init__({'name': 'authentication', 'id': 'alias', **resource})
@@ -225,6 +260,9 @@ class AuthenticationExecutionsExecutionResource(SingleResource):
 
 
 class AuthenticationExecutionsFlowResource(SingleResource):
+    # TODO try to merge this class with AuthenticationFlowResource;
+    # they are the same thing, difference is only that AuthenticationFlowResource
+    # is for topLevel=True flows.
     _resource_name = "authentication/executions/{execution_id}"
     # POST /{realm}/authentication/flows/{flowAlias}/executions/flow  <- this one
 
