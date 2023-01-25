@@ -263,11 +263,13 @@ class TestAuthenticationFlowResource(TestCaseBase):
         self.assertFalse(creation_state)
         _check_state()
 
-        return
         # modify flow - add extra executions/execution
         self.assertEqual(6, len(self.flow0_executions_api.all()))
         flow0_executions_api = self.flow0_resource.resource.resource_api.executions(dict(alias=self.flow0_alias))
-        flow0_executions_api.create({"provider": "auth-conditional-otp-form"}).isOk()
+        # will trigger bug - non-unique displayName
+        extra_flow_payload = {"provider": "auth-conditional-otp-form"}
+        extra_flow_payload = {"provider":"auth-otp-form"}
+        flow0_executions_api.create(extra_flow_payload).isOk()
         self.assertEqual(7, len(self.flow0_executions_api.all()))
         #
         # publish data - 1st time
