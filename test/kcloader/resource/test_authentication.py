@@ -4,6 +4,7 @@ import os
 import unittest
 from glob import glob
 from copy import copy, deepcopy
+from unittest import TestCase
 
 from kcapi.ie.auth_flows import create_child_flow_data
 from kcapi.rest.crud import KeycloakCRUD
@@ -16,7 +17,7 @@ from kcloader.resource import ClientRoleManager, ClientRoleResource, SingleClien
 from kcloader.resource.custom_authentication_resource import AuthenticationFlowResource, \
     AuthenticationExecutionsExecutionResource, AuthenticationExecutionsFlowResource, \
     AuthenticationConfigResource, AuthenticationConfigManager, \
-    AuthenticationFlowManager
+    AuthenticationFlowManager, FlowExecutorsFactory
 
 logger = logging.getLogger(__name__)
 
@@ -326,6 +327,8 @@ class TestAuthenticationFlowResource(TestCaseBase):
         self.assertFalse(creation_state)
         _check_state()
 
+
+class TestFlowExecutorsFactory(TestCase):
     def test_find_parent_flow_alias(self):
         # , top_level_flow_alias:str, executor_docs: List[dict], executor_pos: int):
         """
@@ -359,10 +362,10 @@ class TestAuthenticationFlowResource(TestCaseBase):
             dict(displayName="p11", level=1, index=4, expected_parent="p4"),
             dict(displayName="p12", level=0, index=4, expected_parent="top"),
         ]
-        flow0_resource = self.flow0_resource
+        factory = FlowExecutorsFactory("top")
         for ii in range(len(executor_docs)):
             expected_parent_flow_alias = executor_docs[ii]["expected_parent"]
-            parent_flow_alias = flow0_resource._find_parent_flow_alias("top", executor_docs, ii)
+            parent_flow_alias = factory._find_parent_flow_alias("top", executor_docs, ii)
             self.assertEqual(expected_parent_flow_alias, parent_flow_alias)
 
 
