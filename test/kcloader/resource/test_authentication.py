@@ -236,10 +236,11 @@ class TestAuthenticationFlowResource(TestCaseBase):
         testbed = self.testbed
         flow0_resource = self.flow0_resource
         expected_flow0 = deepcopy(flow0_resource.body)
-        for execution in expected_flow0["authenticationExecutions"]:
-            if "authenticatorFlow" not in execution:
-                # old test data from KC 9.0 have "autheticatorFlow", but miss "authenticatorFlow".
-                execution["authenticatorFlow"] = execution["autheticatorFlow"]
+        if self.testbed.kc.server_info.profile_name == "community":
+            # keycloak (9.0), it will not include "authenticatorFlow" in API response.
+            # Testdata was generated with RH SSO 7.4.
+            for execution in expected_flow0["authenticationExecutions"]:
+                execution.pop("authenticatorFlow")
             # TODO implement
             # execution.pop("authenticatorConfig", None)
             # if execution["authenticator"] == "auth-conditional-otp-form":
