@@ -232,7 +232,9 @@ class TestAuthenticationFlowResource(TestCaseBase):
             flow0_noid.pop("id")
             self.assertEqual(expected_flow0, flow0_noid)
             self.assertEqual(flow0_a, flow0_b)
-            self.assertEqual(6, len(self.flow0_executions_api.all()))
+            executions_b = self.flow0_executions_api.all()
+            self.assertEqual(6, len(executions_b))
+            self.assertEqual(executions_a, executions_b)
 
             # -----------------------------------------
         self.maxDiff = None
@@ -258,6 +260,7 @@ class TestAuthenticationFlowResource(TestCaseBase):
         self.assertTrue(creation_state)
         flow_objs_a = self.authentication_flows_api.all()
         flow0_a = find_in_list(flow_objs_a, alias=self.flow0_alias)
+        executions_a = self.flow0_executions_api.all()
         _check_state()
         # publish same data again - idempotence
         creation_state = flow0_resource.publish_executions()
@@ -281,7 +284,6 @@ class TestAuthenticationFlowResource(TestCaseBase):
         creation_state = flow0_resource.publish_executions()
         self.assertFalse(creation_state)
         _check_state()
-        return
 
         # modify flow - add extra executions/flow
         # click 'add flow', flow type = generic, provider = registration-page-form
@@ -306,10 +308,21 @@ class TestAuthenticationFlowResource(TestCaseBase):
         _check_state()
 
         # modify flow - remove one child execution
+        ind = 1
+        self.assertEqual("Conditional OTP Form", executions_a[ind]["displayName"])
+        self.assertEqual(6, len(self.flow0_executions_api.all()))
+        flow0_executions_api.remove(executions_a[ind]["id"]).isOk()
+        self.assertEqual(5, len(self.flow0_executions_api.all()))
         #
         # publish data - 1st time
         creation_state = flow0_resource.publish_executions()
         self.assertTrue(creation_state)
+        # update expected execution_id
+        executions_new = self.flow0_executions_api.all()
+        if 0:
+            logger.error("This test would fail, the execution order is not managed.")
+            return
+        executions_a[ind]["id"] = executions_new[ind]["id"]
         _check_state()
         # publish same data again - idempotence
         creation_state = flow0_resource.publish_executions()
