@@ -90,6 +90,14 @@ class BaseManager(ABC):
         # do not try to create/remove/modify blacklisted objects
         server_ids = [sid for sid in server_ids if sid not in self._resource_id_blacklist]
 
+        # auth execution manager - It can have nonunique displayName.
+        # Try to be ignorant...
+        assert len(file_ids) == len(set(file_ids))
+        assert len(server_ids) == len(set(server_ids))
+        # TODO - combo displayName+alias should be used.
+        # Or, each subflow would need its own manager.
+        # Or both.
+
         # remove objects that are on server, but missing in datadir
         delete_ids = list(set(server_ids).difference(file_ids))
         # create objects that are in datdir, but missing on server

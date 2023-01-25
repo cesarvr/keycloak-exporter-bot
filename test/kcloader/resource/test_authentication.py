@@ -4,6 +4,7 @@ import os
 import unittest
 from glob import glob
 from copy import copy, deepcopy
+from unittest import TestCase
 
 from kcapi.ie.auth_flows import create_child_flow_data
 from kcapi.rest.crud import KeycloakCRUD
@@ -16,7 +17,7 @@ from kcloader.resource import ClientRoleManager, ClientRoleResource, SingleClien
 from kcloader.resource.custom_authentication_resource import AuthenticationFlowResource, \
     AuthenticationExecutionsExecutionResource, AuthenticationExecutionsFlowResource, \
     AuthenticationConfigResource, AuthenticationConfigManager, \
-    AuthenticationFlowManager
+    AuthenticationFlowManager, FlowExecutorsFactory
 
 logger = logging.getLogger(__name__)
 
@@ -183,6 +184,7 @@ class TestAuthenticationFlowResource(TestCaseBase):
             'realm': testbed.REALM,
             'datadir': testbed.DATADIR,
         })
+        self.flow0_executions_api = self.testbed.kc.build(f"authentication/flows/{self.flow0_alias}/executions", self.testbed.realm)
 
     def test_publish_self(self):
         def _check_state():
@@ -230,6 +232,9 @@ class TestAuthenticationFlowResource(TestCaseBase):
             flow0_noid.pop("id")
             self.assertEqual(expected_flow0, flow0_noid)
             self.assertEqual(flow0_a, flow0_b)
+            executions_b = self.flow0_executions_api.all()
+            self.assertEqual(6, len(executions_b))
+            self.assertEqual(executions_a, executions_b)
 
             # -----------------------------------------
         self.maxDiff = None
@@ -255,12 +260,88 @@ class TestAuthenticationFlowResource(TestCaseBase):
         self.assertTrue(creation_state)
         flow_objs_a = self.authentication_flows_api.all()
         flow0_a = find_in_list(flow_objs_a, alias=self.flow0_alias)
+        executions_a = self.flow0_executions_api.all()
         _check_state()
         # publish same data again - idempotence
         creation_state = flow0_resource.publish_executions()
         self.assertFalse(creation_state)
         _check_state()
 
+        # modify flow - add extra executions/execution
+        self.assertEqual(6, len(self.flow0_executions_api.all()))
+        flow0_executions_api = self.flow0_resource.resource.resource_api.executions(dict(alias=self.flow0_alias))
+        # will trigger bug - non-unique displayName
+        extra_flow_payload = {"provider": "auth-conditional-otp-form"}
+        extra_flow_payload = {"provider":"auth-otp-form"}
+        flow0_executions_api.create(extra_flow_payload).isOk()
+        self.assertEqual(7, len(self.flow0_executions_api.all()))
+        #
+        # publish data - 1st time
+        creation_state = flow0_resource.publish_executions()
+        self.assertTrue(creation_state)
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = flow0_resource.publish_executions()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify flow - add extra executions/flow
+        # click 'add flow', flow type = generic, provider = registration-page-form
+        # POST payload, {"alias":"aa1","type":"basic-flow","description":"aa2","provider":"registration-page-form"}
+        extra_flow_payload = {
+            "alias": "aa1",
+            "type": "basic-flow",
+            "description": "aa2",
+            "provider": "registration-page-form",
+        }
+        flow0_flows_api = self.flow0_resource.resource.resource_api.flows(dict(alias=self.flow0_alias))
+        flow0_flows_api.create(extra_flow_payload).isOk()
+        self.assertEqual(7, len(self.flow0_executions_api.all()))
+        #
+        # publish data - 1st time
+        creation_state = flow0_resource.publish_executions()
+        self.assertTrue(creation_state)
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = flow0_resource.publish_executions()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify flow - remove one child execution
+        ind = 1
+        self.assertEqual("Conditional OTP Form", executions_a[ind]["displayName"])
+        self.assertEqual(6, len(self.flow0_executions_api.all()))
+        flow0_executions_api.remove(executions_a[ind]["id"]).isOk()
+        self.assertEqual(5, len(self.flow0_executions_api.all()))
+        #
+        # publish data - 1st time
+        creation_state = flow0_resource.publish_executions()
+        self.assertTrue(creation_state)
+        # update expected execution_id
+        executions_new = self.flow0_executions_api.all()
+        if 1:
+            logger.error("This test would fail, the execution order is not managed.")
+            return
+        executions_a[ind]["id"] = executions_new[ind]["id"]
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = flow0_resource.publish_executions()
+        self.assertFalse(creation_state)
+        _check_state()
+
+        # modify flow - remove one child sub-flow
+        #
+        # publish data - 1st time
+        creation_state = flow0_resource.publish_executions()
+        self.assertTrue(creation_state)
+        _check_state()
+        # publish same data again - idempotence
+        creation_state = flow0_resource.publish_executions()
+        self.assertFalse(creation_state)
+        _check_state()
+
+
+class TestFlowExecutorsFactory(TestCase):
     def test_find_parent_flow_alias(self):
         # , top_level_flow_alias:str, executor_docs: List[dict], executor_pos: int):
         """
@@ -294,10 +375,10 @@ class TestAuthenticationFlowResource(TestCaseBase):
             dict(displayName="p11", level=1, index=4, expected_parent="p4"),
             dict(displayName="p12", level=0, index=4, expected_parent="top"),
         ]
-        flow0_resource = self.flow0_resource
+        factory = FlowExecutorsFactory("top")
         for ii in range(len(executor_docs)):
             expected_parent_flow_alias = executor_docs[ii]["expected_parent"]
-            parent_flow_alias = flow0_resource._find_parent_flow_alias("top", executor_docs, ii)
+            parent_flow_alias = factory._find_parent_flow_alias("top", executor_docs, ii)
             self.assertEqual(expected_parent_flow_alias, parent_flow_alias)
 
 
