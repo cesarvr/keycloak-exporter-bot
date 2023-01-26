@@ -1,0 +1,21 @@
+{
+    "name": "ci0-group",
+    "path": "/ci0-group",
+    "attributes": {},
+    "realmRoles": [
+        "offline_access",
+        "ci0-role-0"
+    ],
+    "clientRoles": {
+        "ci0-client-0": [
+            "ci0-client0-role0",
+            "ci0-client0-role1b"
+        ]
+    },
+    "subGroups": [],
+    "access": {
+        "view": true,
+        "manage": true,
+        "manageMembership": true
+    }
+}
