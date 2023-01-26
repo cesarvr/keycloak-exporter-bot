@@ -155,7 +155,7 @@ def main(args):
     # BEGIN copy-paste
     # create realm before mangers
     states = list()
-    states.append(realm_res.publish(minimal_representation=True))
+    states.append(realm_res.publish(minimal_representation=True))  #
 
     auth_manager = AuthenticationFlowManager(keycloak_api, realm_name, datadir)
     idp_manager = IdentityProviderManager(keycloak_api, realm_name, datadir)
@@ -173,7 +173,7 @@ def main(args):
     states.append(idp_manager.publish())
     states.append(uf_manager.publish())
     states.append(realm_role_manager.publish(include_composite=False))
-    states.append(client_manager.publish(include_composite=False))
+    states.append(client_manager.publish(include_composite=False))  #
     states.append(group_manager.publish())
     # new client_scopes are not yet created, we need setup_new_links=False.
     states.append(default_default_client_scope_manager.publish(setup_new_links=False))
@@ -183,9 +183,9 @@ def main(args):
     # ---------------------------------
     # Pass 2, resolve circular dependencies
     states.append(realm_res.publish(minimal_representation=True))
-    states.append(realm_role_manager.publish(include_composite=True))
+    states.append(realm_role_manager.publish(include_composite=True))  #
     states.append(client_manager.publish(include_composite=True))
-    states.append(default_default_client_scope_manager.publish(setup_new_links=True))
+    states.append(default_default_client_scope_manager.publish(setup_new_links=True))  #
     states.append(default_optional_client_scope_manager.publish(setup_new_links=True))
     states.append(client_scope_manager.publish(include_scope_mappings=True))
     # END copy-paste
