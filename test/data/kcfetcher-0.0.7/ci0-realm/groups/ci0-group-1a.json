@@ -12,7 +12,7 @@
     "clientRoles": {},
     "name": "ci0-group-1a",
     "path": "/ci0-group-1a",
-    "realmRoles": [],
+    "realmRoles": ["ci0-role-1a"],
     "subGroups": [
         {
             "attributes": {},
