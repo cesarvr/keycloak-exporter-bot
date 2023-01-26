@@ -48,12 +48,13 @@ class BaseManager(ABC):
     def publish(self, **publish_kwargs):
         create_ids, delete_objs = self._difference_ids()
         status_resources = [resource.publish(**publish_kwargs) for resource in self.resources]
-        status_deleted = False
-        for delete_obj in delete_objs:
-            delete_id = delete_obj[self._resource_delete_id]
-            self.resource_api.remove(delete_id).isOk()
-            status_deleted = True
-        return any(status_resources + [status_deleted])
+        status_deleted = [self.remove_server_object(delete_obj) for delete_obj in delete_objs]
+        return any(status_resources + status_deleted)
+
+    def remove_server_object(self, delete_obj: dict):
+        delete_id = delete_obj[self._resource_delete_id]
+        self.resource_api.remove(delete_id).isOk()
+        return True
 
     # def _object_filepaths(self):
     #     object_filepaths = glob(os.path.join(self.datadir, f"{self.realm}/clients/*/*.json"))
