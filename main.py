@@ -168,9 +168,9 @@ def main(args):
     creation_state = auth_manager.publish()
     creation_state = idp_manager.publish()
     creation_state = uf_manager.publish()
-    creation_state = group_manager.publish()
     creation_state = realm_role_manager.publish(include_composite=False)
     creation_state = client_manager.publish(include_composite=False)
+    creation_state = group_manager.publish()
     # new client_scopes are not yet created, we need setup_new_links=False.
     creation_state = default_default_client_scope_manager.publish(setup_new_links=False)
     creation_state = default_optional_client_scope_manager.publish(setup_new_links=False)
