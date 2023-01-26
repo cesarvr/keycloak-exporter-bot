@@ -211,6 +211,10 @@ class AuthenticationFlowExecutionsManager(BaseManager):
         self._this_flow_executions_api = keycloak_api.build(f"authentication/flows/{flow_alias}/executions", realm)
         super().__init__(keycloak_api, realm, datadir)
 
+        flow_doc = read_from_json(flow_filepath)
+        self._builtin_flow = flow_doc["builtIn"]
+        self.flow_alias = flow_alias
+
         flow_executors_factory = FlowExecutorsFactory(flow_alias)
         resource = {
             'path': flow_filepath,
@@ -232,6 +236,12 @@ class AuthenticationFlowExecutionsManager(BaseManager):
         # and it cannot use a single resource_api.
         # It is used also to .remove() objects on server.
         return self._auth_executions_api  # will work only for object remove, not for object list
+
+    def remove_server_object(self, delete_obj: dict):
+        if self._builtin_flow:
+            logger.error(f"Cannot remove execution from a builtin flow. Flow alias={self.flow_alias}, execution displayName={delete_obj['displayName']} id={delete_obj['id']}.")
+            return False
+        return super().remove_server_object(delete_obj)
 
 
 class AuthenticationExecutionsExecutionResource(SingleResource):
