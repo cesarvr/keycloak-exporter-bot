@@ -71,9 +71,11 @@ class GroupResource(SingleResource):
         
         match = self.find_created_object(parent, self.body)
         if realm_roles or match["realmRoles"]:
-            raise Exception("Handle realm roles")
+            logger.exception("GroupResource doesn't yet support realm roles")
+            # raise Exception("Handle realm roles")
         if client_roles or match["clientRoles"]:
-            raise Exception("Handle realm roles")
+            logger.exception("GroupResource doesn't yet support client roles")
+            # raise Exception("Handle client roles")
         
         subgroup_manager = SubGroupManager(self.keycloak_api, self.realm_name, parent=match, data=sub_groups)
         status_subgroups = subgroup_manager.publish()
