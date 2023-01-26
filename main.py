@@ -191,6 +191,9 @@ def main(args):
     # END copy-paste
     # ==========================================================================
 
+    # logger.info(f"states={states}")
+    changed_state_ind = [ii for ii,state in enumerate(states) if state]
+    logger.info(f"changed_state_ind={changed_state_ind}")
     return
 
     # User federations
