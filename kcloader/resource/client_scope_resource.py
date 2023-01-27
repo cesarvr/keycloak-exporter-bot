@@ -5,6 +5,7 @@ from copy import copy
 from glob import glob
 
 import kcapi
+from kcfetcher.utils import normalize
 from sortedcontainers import SortedDict
 
 from kcloader.resource import SingleResource
@@ -128,7 +129,7 @@ class ClientScopeManager(BaseManager):
         ]
 
     def _object_filepaths(self):
-        object_filepaths = glob(os.path.join(self.datadir, f"{self.realm}/client-scopes/*.json"))
+        object_filepaths = glob(os.path.join(self.datadir, f"{normalize(self.realm)}/client-scopes/*.json"))
         return object_filepaths
 
     def _object_docs(self):

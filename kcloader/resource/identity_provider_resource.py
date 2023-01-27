@@ -74,7 +74,7 @@ class IdentityProviderManager:
         If IdP is present on server but missing in datadir, then it needs to ber removed.
         This function will return list of ids (aliases) that needs to be removed.
         """
-        idp_filepaths = glob(os.path.join(self.datadir, f"{self.realm}/identity-provider/*/*.json"))
+        idp_filepaths = glob(os.path.join(self.datadir, f"{normalize(self.realm)}/identity-provider/*/*.json"))
         file_docs = [read_from_json(idp_filepath) for idp_filepath in idp_filepaths]
         file_ids = [doc[self._resource_id] for doc in file_docs]
         server_objs = self.resource_api.all()
@@ -128,7 +128,7 @@ class IdentityProviderMapperManager:
         If IdP is present on server but missing in datadir, then it needs to ber removed.
         This function will return list of ids (aliases) that needs to be removed.
         """
-        idp_filepaths = glob(os.path.join(self.datadir, f"{self.realm}/identity-provider/{self._idp_alias}/mappers/*.json"))
+        idp_filepaths = glob(os.path.join(self.datadir, f"{normalize(self.realm)}/identity-provider/{normalize(self._idp_alias)}/mappers/*.json"))
         file_docs = [read_from_json(idp_filepath) for idp_filepath in idp_filepaths]
         file_ids = [doc[self._resource_id] for doc in file_docs]
         server_objs = self.resource_api.all()

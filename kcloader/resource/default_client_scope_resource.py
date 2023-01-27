@@ -6,6 +6,7 @@ from glob import glob
 
 import kcapi
 from kcapi.rest.crud import KeycloakCRUD
+from kcfetcher.utils import normalize
 from sortedcontainers import SortedDict
 
 from kcloader.resource import SingleResource
@@ -64,7 +65,7 @@ class BaseDefaultClientScopeManager(BaseManager):
 
     def _object_docs_ids(self):
         # requested_doc contains only client-scope names
-        requested_doc = read_from_json(os.path.join(self.datadir, self.realm, f"client-scopes/default/{self._resource_name}.json"))
+        requested_doc = read_from_json(os.path.join(self.datadir, self.realm, f"client-scopes/default/{normalize(self._resource_name)}.json"))
         return requested_doc
 
 
@@ -108,7 +109,7 @@ class BaseClientXClientScopeManager(BaseDefaultClientScopeManager):
     def _object_docs_ids(self):
         # requested_doc contains only client-scope names
         client_dirname = os.path.dirname(self._client_filepath)
-        object_filepath = os.path.join(client_dirname, f"client-scopes/{self._resource_name}.json")
+        object_filepath = os.path.join(client_dirname, f"client-scopes/{normalize(self._resource_name)}.json")
         requested_doc = read_from_json(object_filepath)
         # self.requested_doc = requested_doc
         return requested_doc

@@ -2,6 +2,8 @@ import logging
 import os
 from glob import glob
 
+from kcfetcher.utils import normalize
+
 from kcloader.resource import SingleResource, ResourcePublisher, UpdatePolicy
 from kcloader.resource.role_resource import find_sub_role, BaseRoleManager, BaseRoleResource
 from kcloader.tools import lookup_child_resource, read_from_json, find_in_list, get_path
@@ -41,6 +43,5 @@ class RealmRoleManager(BaseRoleManager):
         return RealmRoleResource(params)
 
     def _object_filepaths(self):
-        object_filepaths = glob(os.path.join(self.datadir, self.realm, "roles/*.json"))
+        object_filepaths = glob(os.path.join(self.datadir, normalize(self.realm), "roles/*.json"))
         return object_filepaths
-
