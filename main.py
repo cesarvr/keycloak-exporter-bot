@@ -6,6 +6,7 @@ import sys
 import os
 
 from kcapi import Keycloak, OpenID
+from kcfetcher.utils import normalize
 from kcloader.resource import \
     RealmResource, ClientScopeManager, \
     DefaultDefaultClientScopeManager, DefaultOptionalClientScopeManager, \
@@ -29,7 +30,8 @@ def main(args):
     keycloak_api = Keycloak(token, args.url)
     master_realm = keycloak_api.admin()
 
-    realm_filepath = os.path.join(datadir, f"{realm_name}/{realm_name}.json")  # often correct
+    normalized_realm_name = normalize(realm_name)
+    realm_filepath = os.path.join(datadir, f"{normalized_realm_name}/{normalized_realm_name}.json")  # often correct
     realm_res = RealmResource({
         'path': realm_filepath,
         # 'name': '',
