@@ -65,7 +65,7 @@ class BaseDefaultClientScopeManager(BaseManager):
 
     def _object_docs_ids(self):
         # requested_doc contains only client-scope names
-        requested_doc = read_from_json(os.path.join(self.datadir, self.realm, f"client-scopes/default/{normalize(self._resource_name)}.json"))
+        requested_doc = read_from_json(os.path.join(self.datadir, normalize(self.realm), f"client-scopes/default/{normalize(self._resource_name)}.json"))
         return requested_doc
 
 
