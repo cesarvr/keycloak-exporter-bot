@@ -75,7 +75,7 @@ class UserFederationManager:
 
     @classmethod
     def _get_path(cls, datadir: str, realm: str):
-        return glob(os.path.join(datadir, f"{realm}/user-federations/*/*.json"))
+        return glob(os.path.join(datadir, f"{normalize(realm)}/user-federations/*/*.json"))
 
 
     def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str):

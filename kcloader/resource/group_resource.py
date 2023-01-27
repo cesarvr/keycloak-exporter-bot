@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Set
 
 import kcapi
 from kcapi.rest.crud import KeycloakCRUD
+from kcfetcher.utils import normalize
 
 from sortedcontainers import SortedDict
 
@@ -103,7 +104,7 @@ class GroupManager:
 
     @classmethod
     def _get_path(cls, datadir: str, realm: str):
-        return glob(os.path.join(datadir, f"{realm}/groups/*.json"))
+        return glob(os.path.join(datadir, f"{normalize(realm)}/groups/*.json"))
 
     def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str):
         self.keycloak_api = keycloak_api
