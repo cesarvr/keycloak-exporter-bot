@@ -9,6 +9,7 @@ from sortedcontainers import SortedDict
 from kcloader.resource import SingleResource
 from kcloader.tools import find_in_list
 from kcloader.tools import read_from_json
+from kcfetcher.utils import normalize
 
 logger = logging.getLogger(__name__)
 
@@ -185,7 +186,9 @@ class UserFederationMapperManager:
 
     @classmethod
     def _get_path(cls, datadir: str, realm: str, identifier: str):
-        return glob(os.path.join(datadir, f"{realm}/user-federations/{identifier}/mappers/*.json"))
+        normalized_realm = normalize(realm)
+        normalized_identifier = normalize(identifier)
+        return glob(os.path.join(datadir, f"{normalized_realm}/user-federations/{normalized_identifier}/mappers/*.json"))
 
     def __init__(self, keycloak_api: kcapi.sso.Keycloak, realm: str, datadir: str,
                  *, parent: dict):
@@ -195,7 +198,7 @@ class UserFederationMapperManager:
         self.datadir = datadir
         self.resource_api = self.keycloak_api.build(self._resource_name, self.realm)
 
-        mappers_filepaths = self._get_path(datadir, realm, parent[self._resource_id])
+        mappers_filepaths = self._get_path(datadir, realm, parent[self._resource_id])  #
         self.resources = [
             UserFederationProviderMapperResource({
                 'path': mappers_filepath,
