@@ -1,6 +1,6 @@
 import os
 
-from kcloader.resource.user_federation_resource import UserFederationResource
+from kcloader.resource.user_federation_resource import UserFederationResource, UserFederationManager
 from ...helper import TestCaseBase
 
 
@@ -62,3 +62,16 @@ class TestUserFederationResource(TestCaseBase):
         resource_b = self.get_test_resource_b()
         update_state = resource_b.publish(realm_obj)
         self.assertTrue(update_state)
+
+
+class TestUserFederationManager(TestCaseBase):
+    def get_test_manager(self):
+        resource_filepath = os.path.join(self.testbed.DATADIR, f"{self.testbed.REALM}/user-federations/ci0-uf0-ldap/ci0-uf0-ldap.json")
+        return self.get_test_resource(resource_filepath)
+
+    def test_manager(self):
+        manager = UserFederationManager(self.testbed.kc, self.testbed.REALM, self.testbed.DATADIR)
+        creation_state = manager.publish()
+        self.assertTrue(creation_state)
+        creation_state = manager.publish()
+        self.assertFalse(creation_state)
