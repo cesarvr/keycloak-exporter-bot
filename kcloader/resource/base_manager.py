@@ -48,12 +48,13 @@ class BaseManager(ABC):
     def publish(self, **publish_kwargs):
         create_ids, delete_objs = self._difference_ids()
         status_resources = [resource.publish(**publish_kwargs) for resource in self.resources]
-        status_deleted = False
-        for delete_obj in delete_objs:
-            delete_id = delete_obj[self._resource_delete_id]
-            self.resource_api.remove(delete_id).isOk()
-            status_deleted = True
-        return any(status_resources + [status_deleted])
+        status_deleted = [self.remove_server_object(delete_obj) for delete_obj in delete_objs]
+        return any(status_resources + status_deleted)
+
+    def remove_server_object(self, delete_obj: dict):
+        delete_id = delete_obj[self._resource_delete_id]
+        self.resource_api.remove(delete_id).isOk()
+        return True
 
     # def _object_filepaths(self):
     #     object_filepaths = glob(os.path.join(self.datadir, f"{self.realm}/clients/*/*.json"))
@@ -92,6 +93,11 @@ class BaseManager(ABC):
 
         # auth execution manager - It can have nonunique displayName.
         # Try to be ignorant...
+        if len(server_ids) != len(set(server_ids)):
+            extra_msg = ""
+            if type(self).__name__ == "AuthenticationFlowExecutionsManager":
+                extra_msg = f"self.flow_alias={self.flow_alias}"
+            logger.exception(f"ID values should are not unique - {extra_msg} len(file_ids)={len(file_ids)}, len(set(server_ids))={len(set(server_ids))}, file_ids={file_ids}, server_ids={server_ids}, ")
         assert len(file_ids) == len(set(file_ids))
         assert len(server_ids) == len(set(server_ids))
         # TODO - combo displayName+alias should be used.

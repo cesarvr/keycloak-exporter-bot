@@ -211,6 +211,10 @@ class AuthenticationFlowExecutionsManager(BaseManager):
         self._this_flow_executions_api = keycloak_api.build(f"authentication/flows/{flow_alias}/executions", realm)
         super().__init__(keycloak_api, realm, datadir)
 
+        flow_doc = read_from_json(flow_filepath)
+        self._builtin_flow = flow_doc["builtIn"]
+        self.flow_alias = flow_alias
+
         flow_executors_factory = FlowExecutorsFactory(flow_alias)
         resource = {
             'path': flow_filepath,
@@ -219,6 +223,15 @@ class AuthenticationFlowExecutionsManager(BaseManager):
             'datadir': datadir,
         }
         self.resources = flow_executors_factory.create_child_executors(resource)
+
+    def publish(self, **publish_kwargs):
+        if self._builtin_flow:
+            # TODO if _builtin_flow, then execution.requirement value can be changed,
+            # but new executions/subflows cannot be added/removed.
+            # Hack - just ignore executions if _builtin_flow.
+            logger.warning(f"realm={self.realm} flow_alias={self.flow_alias} is built-in, executions will not be updated.")
+            return False
+        return super().publish(**publish_kwargs)
 
     def _object_docs_ids(self):
         return [resource.body["displayName"] for resource in self.resources]
@@ -232,6 +245,12 @@ class AuthenticationFlowExecutionsManager(BaseManager):
         # and it cannot use a single resource_api.
         # It is used also to .remove() objects on server.
         return self._auth_executions_api  # will work only for object remove, not for object list
+
+    def remove_server_object(self, delete_obj: dict):
+        if self._builtin_flow:
+            logger.error(f"Cannot remove execution from a builtin flow. Flow alias={self.flow_alias}, execution displayName={delete_obj['displayName']} id={delete_obj['id']}.")
+            return False
+        return super().remove_server_object(delete_obj)
 
 
 class AuthenticationExecutionsExecutionResource(SingleResource):

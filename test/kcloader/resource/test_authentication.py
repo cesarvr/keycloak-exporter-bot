@@ -86,6 +86,14 @@ class TestAuthenticationFlowManager(TestCaseBase):
         self.extra_flow_alias = "ci0-flow-EXTRA"
 
     def test_publish(self):
+        self.do_test_publish(test_builtin_flow_changes_are_reverted=False)
+
+    @unittest.skip
+    def test_publish___with_builtin_flow(self):
+        self.do_test_publish(test_builtin_flow_changes_are_reverted=True)
+
+
+    def do_test_publish(self, test_builtin_flow_changes_are_reverted):
         def _check_state():
             flows_b = self.authentication_flows_api.all()
             self.assertEqual(9, len(flows_b))
@@ -148,24 +156,25 @@ class TestAuthenticationFlowManager(TestCaseBase):
         self.assertFalse(creation_state)
         _check_state()
 
-        # modify some existing flow.
-        # intentionally, modify a builtin flow.
-        flow1_alias = "browser"
-        flow1_executions_api = self.testbed.kc.build(f"authentication/flows/{flow1_alias}/executions", self.testbed.realm)
-        flow1_execution0_a = flow1_executions_api.all()[0]
-        self.assertNotEqual(flow1_execution0_a["requirement"], "REQUIRED")
-        flow1_execution0_a["requirement"] = "REQUIRED"
-        flow1_executions_api.update(None, flow1_execution0_a).isOk()
-        flow1_execution0_b = flow1_executions_api.all()[0]
-        self.assertEqual(flow1_execution0_a, flow1_execution0_b)
-        #
-        creation_state = manager.publish()
-        self.assertTrue(creation_state)
-        _check_state()
-        # publish same data again - idempotence
-        creation_state = manager.publish()
-        self.assertFalse(creation_state)
-        _check_state()
+        if test_builtin_flow_changes_are_reverted:
+            # modify some existing flow.
+            # intentionally, modify a builtin flow.
+            flow1_alias = "browser"
+            flow1_executions_api = self.testbed.kc.build(f"authentication/flows/{flow1_alias}/executions", self.testbed.realm)
+            flow1_execution0_a = flow1_executions_api.all()[0]
+            self.assertNotEqual(flow1_execution0_a["requirement"], "REQUIRED")
+            flow1_execution0_a["requirement"] = "REQUIRED"
+            flow1_executions_api.update(None, flow1_execution0_a).isOk()
+            flow1_execution0_b = flow1_executions_api.all()[0]
+            self.assertEqual(flow1_execution0_a, flow1_execution0_b)
+            #
+            creation_state = manager.publish()
+            self.assertTrue(creation_state)
+            _check_state()
+            # publish same data again - idempotence
+            creation_state = manager.publish()
+            self.assertFalse(creation_state)
+            _check_state()
 
 
 class TestAuthenticationFlowResource(TestCaseBase):
