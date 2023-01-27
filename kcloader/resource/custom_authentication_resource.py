@@ -224,6 +224,15 @@ class AuthenticationFlowExecutionsManager(BaseManager):
         }
         self.resources = flow_executors_factory.create_child_executors(resource)
 
+    def publish(self, **publish_kwargs):
+        if self._builtin_flow:
+            # TODO if _builtin_flow, then execution.requirement value can be changed,
+            # but new executions/subflows cannot be added/removed.
+            # Hack - just ignore executions if _builtin_flow.
+            logger.warning(f"realm={self.realm} flow_alias={self.flow_alias} is built-in, executions will not be updated.")
+            return False
+        return super().publish(**publish_kwargs)
+
     def _object_docs_ids(self):
         return [resource.body["displayName"] for resource in self.resources]
 

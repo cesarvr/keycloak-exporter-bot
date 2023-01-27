@@ -93,6 +93,11 @@ class BaseManager(ABC):
 
         # auth execution manager - It can have nonunique displayName.
         # Try to be ignorant...
+        if len(server_ids) != len(set(server_ids)):
+            extra_msg = ""
+            if type(self).__name__ == "AuthenticationFlowExecutionsManager":
+                extra_msg = f"self.flow_alias={self.flow_alias}"
+            logger.exception(f"ID values should are not unique - {extra_msg} len(file_ids)={len(file_ids)}, len(set(server_ids))={len(set(server_ids))}, file_ids={file_ids}, server_ids={server_ids}, ")
         assert len(file_ids) == len(set(file_ids))
         assert len(server_ids) == len(set(server_ids))
         # TODO - combo displayName+alias should be used.
