@@ -57,14 +57,14 @@ class BaseManager(ABC):
         return True
 
     # def _object_filepaths(self):
-    #     object_filepaths = glob(os.path.join(self.datadir, f"{self.realm}/clients/*/*.json"))
+    #     object_filepaths = glob(os.path.join(self.datadir, f"{normalize(self.realm)}/clients/*/*.json"))
     #     # remove scope-mappings.json
     #     object_filepaths = [fp for fp in object_filepaths if not fp.endswith("/scope-mappings.json")]
     #     return object_filepaths
 
     def _object_docs(self):
         raise NotImplementedError()
-        # object_filepaths = glob(os.path.join(self.datadir, f"{self.realm}/clients/*/*.json"))
+        # object_filepaths = glob(os.path.join(self.datadir, f"{normalize(self.realm)}/clients/*/*.json"))
         # # remove scope-mappings.json
         # object_filepaths = [fp for fp in object_filepaths if not fp.endswith("/scope-mappings.json")]
         # file_docs = [read_from_json(object_filepath) for object_filepath in object_filepaths]

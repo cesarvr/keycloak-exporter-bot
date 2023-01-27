@@ -86,7 +86,6 @@ class BaseRoleManager(ABC):
         If object is present on server but missing in datadir, then it needs to be removed.
         This function will return list of ids (alias-es, clientId-s, etc.) that needs to be removed.
         """
-        # idp_filepaths = glob(os.path.join(self.datadir, f"{self.realm}/identity-provider/*/*.json"))
         object_filepaths = self._object_filepaths()
 
         file_docs = [read_from_json(object_filepath) for object_filepath in object_filepaths]

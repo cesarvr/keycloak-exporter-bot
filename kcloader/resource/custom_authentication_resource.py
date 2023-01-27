@@ -9,6 +9,7 @@ from kcapi.ie import AuthenticationFlowsImporter
 from kcapi.ie.auth_flows import create_child_flow_data
 from kcapi.rest.auth_flows import AuthenticationExecutionsBaseCRUD
 from kcapi.rest.crud import KeycloakCRUD
+from kcfetcher.utils import normalize
 from sortedcontainers import SortedDict
 
 from kcloader.resource import SingleResource
@@ -62,7 +63,7 @@ class AuthenticationFlowManager(BaseManager):
 
     @classmethod
     def _object_filepaths(cls, datadir: str, realm: str):
-        return glob(os.path.join(datadir, f"{realm}/authentication/flows/*/*.json"))
+        return glob(os.path.join(datadir, f"{normalize(realm)}/authentication/flows/*/*.json"))
 
     def _object_docs(self):
         object_filepaths = self._object_filepaths(self.datadir, self.realm)

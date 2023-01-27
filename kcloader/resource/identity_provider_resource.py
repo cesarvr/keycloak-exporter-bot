@@ -5,6 +5,7 @@ from copy import copy
 from glob import glob
 
 import kcapi
+from kcfetcher.utils import normalize
 
 from kcloader.resource import SingleResource
 from kcloader.tools import find_in_list
@@ -48,7 +49,7 @@ class IdentityProviderManager:
         self.datadir = datadir
         self.resource_api = self.keycloak_api.build(self._resource_name, self.realm)
 
-        idp_filepaths = glob(os.path.join(datadir, f"{realm}/identity-provider/*/*.json"))
+        idp_filepaths = glob(os.path.join(datadir, f"{normalize(realm)}/identity-provider/*/*.json"))
         self.resources = [
             IdentityProviderResource({
                 'path': idp_filepath,
@@ -73,7 +74,7 @@ class IdentityProviderManager:
         If IdP is present on server but missing in datadir, then it needs to ber removed.
         This function will return list of ids (aliases) that needs to be removed.
         """
-        idp_filepaths = glob(os.path.join(self.datadir, f"{self.realm}/identity-provider/*/*.json"))
+        idp_filepaths = glob(os.path.join(self.datadir, f"{normalize(self.realm)}/identity-provider/*/*.json"))
         file_docs = [read_from_json(idp_filepath) for idp_filepath in idp_filepaths]
         file_ids = [doc[self._resource_id] for doc in file_docs]
         server_objs = self.resource_api.all()
@@ -102,7 +103,7 @@ class IdentityProviderMapperManager:
         self.datadir = datadir
         self.resource_api = self.keycloak_api.build(self._resource_name, self.realm)
 
-        idp_mappers_filepaths = glob(os.path.join(datadir, f"{realm}/identity-provider/{idp_alias}/mappers/*.json"))
+        idp_mappers_filepaths = glob(os.path.join(datadir, f"{normalize(realm)}/identity-provider/{normalize(idp_alias)}/mappers/*.json"))
         self.resources = [
             IdentityProviderMapperResource({
                 'path': idp_mappers_filepath,
@@ -127,7 +128,7 @@ class IdentityProviderMapperManager:
         If IdP is present on server but missing in datadir, then it needs to ber removed.
         This function will return list of ids (aliases) that needs to be removed.
         """
-        idp_filepaths = glob(os.path.join(self.datadir, f"{self.realm}/identity-provider/{self._idp_alias}/mappers/*.json"))
+        idp_filepaths = glob(os.path.join(self.datadir, f"{normalize(self.realm)}/identity-provider/{normalize(self._idp_alias)}/mappers/*.json"))
         file_docs = [read_from_json(idp_filepath) for idp_filepath in idp_filepaths]
         file_ids = [doc[self._resource_id] for doc in file_docs]
         server_objs = self.resource_api.all()
