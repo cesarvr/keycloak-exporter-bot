@@ -49,7 +49,7 @@ class UserFederationResource(SingleResource):
         return super().publish()
 
     def publish(self, parent: dict):
-        del self.body["parentName"]
+        self.body.pop("parentName", None)  # might be already deleted
         self.body["parentId"] = parent["id"]
 
         self_state = self.resource.publish_object(self.body, self)
@@ -66,7 +66,7 @@ class UserFederationResource(SingleResource):
             oo.pop("id", None)
         return obj1 == obj2
 
-##### NEW
+
 class UserFederationManager:
     _resource_name = UserFederationResource._resource_name
     _resource_id = UserFederationResource._resource_id
