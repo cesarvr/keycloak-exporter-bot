@@ -13,6 +13,7 @@ from kcloader.resource import \
     UserFederationManager, AuthenticationFlowManager
 from kcloader.resource import IdentityProviderManager, ClientManager, RealmRoleManager
 from kcloader.resource.group_resource import GroupManager
+from kcloader.tools import read_from_json
 
 _level = logging.INFO
 _level = logging.DEBUG
@@ -23,15 +24,16 @@ logger = logging.getLogger(__name__)
 def main(args):
     logger.debug(f"args={args}")
     datadir = args.datadir
-    realm_name = args.realm_name
-    assert realm_name
+    realm_name_commandline = args.realm_name
+    assert realm_name_commandline
 
     token = OpenID.createAdminClient(args.username, args.password, url=args.url).getToken()
     keycloak_api = Keycloak(token, args.url)
     master_realm = keycloak_api.admin()
 
-    normalized_realm_name = normalize(realm_name)
+    normalized_realm_name = normalize(realm_name_commandline)
     realm_filepath = os.path.join(datadir, f"{normalized_realm_name}/{normalized_realm_name}.json")  # often correct
+    realm_name = read_from_json(realm_filepath)["realm"]
     realm_res = RealmResource({
         'path': realm_filepath,
         # 'name': '',
