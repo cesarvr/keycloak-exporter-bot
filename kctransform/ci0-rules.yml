@@ -1,0 +1,23 @@
+---
+realms:
+  -
+    realm: ci0-realm
+    clients:
+      -
+        clientId: ci0-client-0
+        redirectUris:
+          - "https://ci0-client-0-new.example.com/redirect-url"
+        webOrigins:
+          - "https://ci0-client-0-new.example.com"
+    user-federations:
+      -
+        name: ci0-uf0-ldap
+        config:
+          connectionUrl:
+            - "ldaps://172.17.0.14:636"
+    identity-provider:
+      -
+        name: ci0-idp-saml-0
+        config:
+          singleSignOnServiceUrl: "https://172.17.0.16:8443/signon"
+          singleLogoutServiceUrl": "https://172.17.0.16:8443/logout"
